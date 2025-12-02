@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Classroom;
+use App\Models\ClassRoom;  //اصلاح به Classroom
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -58,7 +58,7 @@ class StudentClassController extends Controller
      * GET /dashboard/student/classrooms/{classroom}
      * name: student.classrooms.show
      */
-    public function show(Classroom $classroom)
+    public function show(ClassRoom $classroom)  // ✅ اصلاح شد
     {
         $student = Auth::user();
 
