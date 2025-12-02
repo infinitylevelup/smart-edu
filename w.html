@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta name="csrf-token" content="66t9FmIkUAOpig0V8MSQE8hFEQORI4QqJGnNrdm2">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سامانه هوشمند آموزش | آزمون‌های آنلاین تقویتی، کنکور و المپیاد</title>
+
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+
+
+    <link rel="stylesheet" href="http://127.0.0.1:8000/css/theme.css">
+
+    </head>
+
+<body>
+
+
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="http://127.0.0.1:8000">
+        <i class="fas fa-graduation-cap"></i>
+        سامانه هوشمند آموزش
+      </a>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#authModal">
+          <i class="fas fa-sign-in-alt ms-1"></i> ورود / ثبت‌نام
+        </button>
+        <button class="btn btn-light text-dark fw-bold" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
+          مشاهده پلن‌ها
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <div class="hero-badge">
+          <i class="fa-solid fa-sparkles"></i>
+          آزمون‌های هوشمند + تحلیل عملکرد + مسیر یادگیری شخصی
+        </div>
+
+        <h1 class="hero-title">
+          یادگیری هدفمند، نتیجه‌ی واقعی
+          <span style="background:linear-gradient(90deg,#a5b4fc,#67e8f9);-webkit-background-clip:text;color:transparent;">
+            برای تقویتی، کنکور و المپیاد
+          </span>
+        </h1>
+
+        <p class="hero-sub">
+          با آزمون‌های زمان‌بندی‌شده، تحلیل دقیق نقاط ضعف و قوت، و پیشنهاد تمرین‌های اختصاصی،
+          رشد تحصیلی شما قابل اندازه‌گیری و قابل پیش‌بینی می‌شود.
+        </p>
+
+        <div class="d-flex gap-3 mt-4 hero-actions">
+          <button class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#authModal">
+            شروع رایگان
+            <i class="fas fa-rocket me-2"></i>
+          </button>
+          <button class="btn btn-outline-light btn-lg px-4" onclick="scrollToSection('features')">
+            امکانات سامانه
+            <i class="fas fa-arrow-down me-2"></i>
+          </button>
+        </div>
+
+        <div class="row g-3 mt-4">
+          <div class="col-md-4">
+            <div class="stat">
+              <i class="fas fa-brain"></i>
+              <div>
+                <div class="n">تحلیل هوش‌مصنوعی</div>
+                <div class="t">بعد از هر آزمون</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat">
+              <i class="fas fa-chart-line"></i>
+              <div>
+                <div class="n">گزارش پیشرفت</div>
+                <div class="t">هفتگی و ماهانه</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat">
+              <i class="fas fa-user-graduate"></i>
+              <div>
+                <div class="n">مسیر شخصی‌سازی</div>
+                <div class="t">برای هر دانش‌آموز</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="hero-card">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon rounded-4 p-3 bg-white bg-opacity-10">
+                  <i class="fas fa-laptop-code text-info"></i>
+                </div>
+                <div>
+                  <div class="fw-bold fs-5">همه‌چیز آنلاین و منظم</div>
+                  <div class="text-white-50 small">بدون نیاز به نصب، از موبایل یا لپ‌تاپ</div>
+                </div>
+              </div>
+            </div>
+            <hr class="border-light border-opacity-25 my-2">
+            <div class="col-12">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon rounded-4 p-3 bg-white bg-opacity-10">
+                  <i class="fas fa-shield-halved text-success"></i>
+                </div>
+                <div>
+                  <div class="fw-bold fs-5">استاندارد و قابل اعتماد</div>
+                  <div class="text-white-50 small">طراحی سوال استاندارد + سطح‌بندی دقیق</div>
+                </div>
+              </div>
+            </div>
+            <hr class="border-light border-opacity-25 my-2">
+            <div class="col-12">
+              <div class="d-flex align-items-center gap-3">
+                <div class="icon rounded-4 p-3 bg-white bg-opacity-10">
+                  <i class="fas fa-people-group text-warning"></i>
+                </div>
+                <div>
+                  <div class="fw-bold fs-5">مناسب دانش‌آموز و معلم</div>
+                  <div class="text-white-50 small">پنل جداگانه برای مدیریت کلاس‌ها</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</header>
+  <section id="features">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">چرا این سامانه تفاوت ایجاد می‌کند؟</h2>
+      <p class="section-sub">هر جلسه آزمون، یک قدم واقعی به سمت پیشرفت است.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-brain"></i></div>
+          <h5 class="fw-bold">تحلیل هوشمند نتایج</h5>
+          <p class="text-muted mb-0">
+            سامانه به‌صورت خودکار مبحث‌های ضعیف و قوی را تشخیص می‌دهد،
+            و پیشنهاد تمرین‌ها و آزمون‌های بعدی را دقیق‌تر می‌کند.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-route"></i></div>
+          <h5 class="fw-bold">مسیر یادگیری شخصی</h5>
+          <p class="text-muted mb-0">
+            با توجه به سطح و هدف شما (تقویتی/کنکور/المپیاد)،
+            برنامه آزمون و تمرین اختصاصی می‌سازیم.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-chart-line"></i></div>
+          <h5 class="fw-bold">گزارش پیشرفت دقیق</h5>
+          <p class="text-muted mb-0">
+            نمودار رشد، رتبه در کلاس، مقایسه با میانگین،
+            و روند بهبود در هر درس را شفاف می‌بینید.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-clock"></i></div>
+          <h5 class="fw-bold">آزمون‌های زمان‌بندی‌شده</h5>
+          <p class="text-muted mb-0">
+            شبیه‌سازی کامل فضای آزمون واقعی با تایمر،
+            کنترل تقلب و ثبت پاسخ‌ها.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-chalkboard-teacher"></i></div>
+          <h5 class="fw-bold">پنل ویژه معلمان</h5>
+          <p class="text-muted mb-0">
+            ساخت آزمون، گروه‌بندی کلاس‌ها،
+            مشاهده عملکرد دانش‌آموزان و ارسال تکلیف.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature card p-4">
+          <div class="icon mb-3"><i class="fas fa-medal"></i></div>
+          <h5 class="fw-bold">مناسب اهداف رقابتی</h5>
+          <p class="text-muted mb-0">
+            برای کنکور و المپیاد، سوالات استاندارد شده
+            و با تحلیل عمیق‌تر ارائه می‌شوند.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section id="levels" class="bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">سه سطح آموزشی در یک سامانه</h2>
+      <p class="section-sub">هدف شما هرچه باشد، مسیر و آزمون مناسبش آماده است.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="level-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="level-pill">سطح ۱</span>
+            <i class="fas fa-book-open fa-2x text-primary"></i>
+          </div>
+          <h5 class="fw-bold">آزمون‌های تقویتی</h5>
+          <p class="text-muted">
+            برای تثبیت مباحث مدرسه و رفع اشکال. مناسب همه پایه‌ها.
+          </p>
+          <ul class="text-muted small mb-0">
+            <li>سوالات طبقه‌بندی‌شده بر اساس کتاب درسی</li>
+            <li>پیشنهاد تمرین بعد از آزمون</li>
+            <li>تحلیل دقیق سطح یادگیری</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="level-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="level-pill" style="background:var(--success)">سطح ۲</span>
+            <i class="fas fa-graduation-cap fa-2x text-success"></i>
+          </div>
+          <h5 class="fw-bold">آزمون‌های کنکور</h5>
+          <p class="text-muted">
+            آزمون‌های جامع و شبیه‌سازی کنکور داخل/خارج.
+          </p>
+          <ul class="text-muted small mb-0">
+            <li>زمان‌بندی مشابه کنکور واقعی</li>
+            <li>تحلیل درصد، تراز و رتبه</li>
+            <li>گزارش مقایسه با جامعه آماری</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="level-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="level-pill" style="background:var(--warning)">سطح ۳</span>
+            <i class="fas fa-award fa-2x text-warning"></i>
+          </div>
+          <h5 class="fw-bold">آزمون‌های المپیاد</h5>
+          <p class="text-muted">
+            سوالات سطح بالا برای دانش‌آموزان استعداد درخشان.
+          </p>
+          <ul class="text-muted small mb-0">
+            <li>مباحث پیشرفته و ترکیبی</li>
+            <li>تحلیل مهارت حل مسئله</li>
+            <li>مسیر تمرینی ویژه المپیاد</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section id="pricing">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="section-title">پلن‌های دسترسی و هزینه</h2>
+      <p class="section-sub">پلن خود را هر زمان خواستید ارتقا دهید.</p>
+    </div>
+
+    <div class="discount-banner mb-4 d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+      <div>
+        <div class="fw-bold fs-5">
+          <i class="fa-solid fa-bolt text-danger me-1"></i>
+          تخفیف ویژه شروع سال تحصیلی
+        </div>
+        <div class="text-muted small">
+          تا پایان شمارش معکوس، پلن‌ها با <b>۱۵٪ تخفیف</b> قابل خرید هستند.
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">زمان باقی‌مانده:</span>
+        <div class="countdown" id="discountCountdown">--:--:--</div>
+        <span class="badge text-bg-danger" id="discountStatus">فعال</span>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-2 mb-5 cycle-selector">
+      <button class="btn btn-outline-primary active" data-cycle="monthly" onclick="setCycle('monthly', this)">ماهانه</button>
+      <button class="btn btn-outline-primary" data-cycle="quarterly" onclick="setCycle('quarterly', this)">سه‌ماهه (10٪ تخفیف)</button>
+      <button class="btn btn-outline-primary" data-cycle="yearly" onclick="setCycle('yearly', this)">سالیانه (25٪ تخفیف)</button>
+    </div>
+
+    <div class="row g-4 align-items-stretch">
+
+      <div class="col-md-6 col-lg-3">
+        <div class="pricing-card h-100">
+          <h5 class="fw-bold mb-1">رایگان</h5>
+          <div class="text-muted small mb-3">شروع بدون پرداخت</div>
+          <div class="price mb-3">۰ <small>تومان / همیشه</small></div>
+
+          <ul class="list-unstyled list-check text-muted small">
+            <li>۳ آزمون تقویتی در هفته</li>
+            <li>۲ آزمون کنکور در هفته</li>
+            <li>۱ آزمون المپیاد در هفته</li>
+            <li>تحلیل پایه نتایج</li>
+            <li class="muted">مسیر یادگیری اختصاصی</li>
+            <li class="muted">گزارش پیشرفت حرفه‌ای</li>
+          </ul>
+
+          <button class="btn btn-outline-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#authModal">
+            شروع رایگان
+          </button>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="pricing-card h-100">
+          <h5 class="fw-bold mb-1">پلن اول</h5>
+          <div class="text-muted small mb-3">اقتصادی برای تقویتی</div>
+
+          <div class="price mb-1">
+            <span class="price-val"
+                  data-monthly="99000"
+                  data-quarterly="267000"
+                  data-yearly="891000">99,000</span>
+            <small>تومان</small>
+          </div>
+          <div class="text-muted small mb-3 price-label">ماهانه</div>
+
+          <div class="alert alert-light small py-2">
+            فقط سطح <b>تقویتی</b> فعال می‌شود.
+          </div>
+
+          <ul class="list-unstyled list-check text-muted small">
+            <li>تقویتی نامحدود</li>
+            <li>تحلیل هوشمند کامل</li>
+            <li>پیشنهاد تمرین خودکار</li>
+            <li class="muted">کنکور</li>
+            <li class="muted">المپیاد</li>
+          </ul>
+
+          <button class="btn btn-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#authModal">
+            خرید پلن اول
+          </button>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="pricing-card featured h-100">
+          <div class="pricing-badge">پیشنهادی</div>
+          <h5 class="fw-bold mb-1">پلن دوم</h5>
+          <div class="text-muted small mb-3">برای مسیر کنکور</div>
+
+          <div class="price mb-1">
+            <span class="price-val"
+                  data-monthly="169000"
+                  data-quarterly="456000"
+                  data-yearly="1521000">169,000</span>
+            <small>تومان</small>
+          </div>
+          <div class="text-muted small mb-3 price-label">ماهانه</div>
+
+          <div class="alert alert-primary small py-2">
+            سطح‌های <b>تقویتی + کنکور</b> فعال می‌شوند.
+          </div>
+
+          <ul class="list-unstyled list-check text-muted small">
+            <li>تقویتی نامحدود</li>
+            <li>کنکور نامحدود</li>
+            <li>گزارش رتبه و تراز</li>
+            <li>مسیر یادگیری کنکوری</li>
+            <li class="muted">المپیاد</li>
+          </ul>
+
+          <button class="btn btn-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#authModal">
+            خرید پلن دوم
+          </button>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="pricing-card h-100">
+          <h5 class="fw-bold mb-1">پلن سوم</h5>
+          <div class="text-muted small mb-3">کامل و حرفه‌ای</div>
+
+          <div class="price mb-1">
+            <span class="price-val"
+                  data-monthly="249000"
+                  data-quarterly="672000"
+                  data-yearly="2241000">249,000</span>
+            <small>تومان</small>
+          </div>
+          <div class="text-muted small mb-3 price-label">ماهانه</div>
+
+          <div class="alert alert-warning small py-2">
+            هر سه سطح <b>تقویتی + کنکور + المپیاد</b> فعال می‌شوند.
+          </div>
+
+          <ul class="list-unstyled list-check text-muted small">
+            <li>تقویتی نامحدود</li>
+            <li>کنکور نامحدود</li>
+            <li>المپیاد نامحدود</li>
+            <li>تحلیل پیشرفته مهارتی</li>
+            <li>مسیر ویژه المپیاد</li>
+          </ul>
+
+          <button class="btn btn-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#authModal">
+            خرید پلن سوم
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="text-center text-muted small mt-4">
+      * قیمت‌ها نمونه هستند و از داخل HTML قابل تغییرند.
+    </div>
+  </div>
+</section>
+  <section id="screenshots" class="bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">تصاویر واقعی پنل‌ها</h2>
+      <p class="section-sub">یک نگاه سریع به تجربه‌ی دانش‌آموز و معلم</p>
+    </div>
+
+    <div class="carousel-card">
+      <div id="panelCarousel" class="carousel slide" data-bs-ride="carousel">
+
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#panelCarousel" data-bs-slide-to="0" class="active"></button>
+          <button type="button" data-bs-target="#panelCarousel" data-bs-slide-to="1"></button>
+          <button type="button" data-bs-target="#panelCarousel" data-bs-slide-to="2"></button>
+          <button type="button" data-bs-target="#panelCarousel" data-bs-slide-to="3"></button>
+        </div>
+
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <img class="carousel-img" src="http://127.0.0.1:8000/assets/student-dashboard.png" alt="پنل دانش‌آموز">
+            <div class="carousel-caption d-none d-md-block">
+              <h5 class="fw-bold">پنل دانش‌آموز</h5>
+              <p class="small">دسترسی به آزمون‌ها + گزارش پیشرفت + پیشنهاد تمرین</p>
+            </div>
+          </div>
+
+          <div class="carousel-item">
+            <img class="carousel-img" src="http://127.0.0.1:8000/assets/student-report.png" alt="گزارش آزمون دانش‌آموز">
+            <div class="carousel-caption d-none d-md-block">
+              <h5 class="fw-bold">گزارش هوشمند آزمون</h5>
+              <p class="small">تحلیل نقاط ضعف و قوت به‌صورت خودکار</p>
+            </div>
+          </div>
+
+          <div class="carousel-item">
+            <img class="carousel-img" src="http://127.0.0.1:8000/assets/teacher-panel.png" alt="پنل معلم">
+            <div class="carousel-caption d-none d-md-block">
+              <h5 class="fw-bold">پنل معلم</h5>
+              <p class="small">ساخت آزمون، مدیریت کلاس و بررسی عملکرد هر دانش‌آموز</p>
+            </div>
+          </div>
+
+          <div class="carousel-item">
+            <img class="carousel-img" src="http://127.0.0.1:8000/assets/class-analytics.png" alt="تحلیل کلاس">
+            <div class="carousel-caption d-none d-md-block">
+              <h5 class="fw-bold">تحلیل عملکرد کلاس</h5>
+              <p class="small">نمودار رشد، میانگین کلاس و رتبه‌بندی</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#panelCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+          <span class="visually-hidden">قبلی</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#panelCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+          <span class="visually-hidden">بعدی</span>
+        </button>
+
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <button class="btn btn-primary px-5" data-bs-toggle="modal" data-bs-target="#authModal">
+        ورود و تجربه پنل‌ها
+      </button>
+    </div>
+  </div>
+</section>
+  <section id="samples">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">نمونه سوال رایگان</h2>
+      <p class="section-sub">قبل از خرید، یک آزمون نمونه را همین حالا امتحان کنید.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="sample-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="fw-bold mb-0">نمونه آزمون تقویتی</h5>
+            <span class="badge text-bg-primary">سطح ۱</span>
+          </div>
+          <div class="sample-meta mb-3">
+            <span><i class="fa-regular fa-clock"></i> 15 دقیقه</span>
+            <span><i class="fa-solid fa-list-check"></i> 10 سوال</span>
+            <span><i class="fa-solid fa-signal"></i> متوسط</span>
+          </div>
+          <p class="text-muted small">
+            مناسب دانش‌آموزان پایه‌های مختلف برای آشنایی با سبک سوالات و گزارش‌ها.
+          </p>
+          <div class="d-flex gap-2">
+            <a href="http://127.0.0.1:8000/samples/taghviyati-sample.pdf" class="btn btn-outline-primary w-50">
+              دانلود PDF
+            </a>
+            <button class="btn btn-primary w-50" data-bs-toggle="modal" data-bs-target="#authModal">
+              شروع آنلاین
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="sample-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="fw-bold mb-0">نمونه آزمون کنکور</h5>
+            <span class="badge text-bg-success">سطح ۲</span>
+          </div>
+          <div class="sample-meta mb-3">
+            <span><i class="fa-regular fa-clock"></i> 20 دقیقه</span>
+            <span><i class="fa-solid fa-list-check"></i> 15 سوال</span>
+            <span><i class="fa-solid fa-signal"></i> سخت</span>
+          </div>
+          <p class="text-muted small">
+            شبیه‌سازی کوتاه از آزمون کنکور همراه با رتبه و تحلیل درصدی.
+          </p>
+          <div class="d-flex gap-2">
+            <a href="http://127.0.0.1:8000/samples/konkur-sample.pdf" class="btn btn-outline-success w-50">
+              دانلود PDF
+            </a>
+            <button class="btn btn-success w-50" data-bs-toggle="modal" data-bs-target="#authModal">
+              شروع آنلاین
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="sample-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="fw-bold mb-0">نمونه آزمون المپیاد</h5>
+            <span class="badge text-bg-warning">سطح ۳</span>
+          </div>
+          <div class="sample-meta mb-3">
+            <span><i class="fa-regular fa-clock"></i> 25 دقیقه</span>
+            <span><i class="fa-solid fa-list-check"></i> 8 سوال</span>
+            <span><i class="fa-solid fa-signal"></i> خیلی سخت</span>
+          </div>
+          <p class="text-muted small">
+            مناسب دانش‌آموزان مستعد برای آشنایی با سوالات ترکیبی و تحلیل مهارتی.
+          </p>
+          <div class="d-flex gap-2">
+            <a href="http://127.0.0.1:8000/samples/olympiad-sample.pdf" class="btn btn-outline-warning w-50">
+              دانلود PDF
+            </a>
+            <button class="btn btn-warning w-50" data-bs-toggle="modal" data-bs-target="#authModal">
+              شروع آنلاین
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <div class="alert alert-light border small d-inline-block">
+        برای شروع آنلاین نمونه‌ها کافیست ثبت‌نام کنید. (کمتر از ۱ دقیقه)
+      </div>
+    </div>
+  </div>
+</section>
+  <section id="demo" class="bg-light">
+  <div class="container">
+    <div class="row align-items-center g-4">
+
+      <div class="col-lg-6">
+        <h2 class="section-title">نمونه گزارش هوشمند بعد از آزمون</h2>
+        <p class="section-sub">
+          بعد از هر آزمون، یک گزارش کاملاً قابل‌فهم دریافت می‌کنید که دقیقاً می‌گوید
+          «کجاها باید بیشتر کار کنید» و «چه تمرینی مناسب شماست».
+        </p>
+
+        <div class="row g-3 mt-3">
+          <div class="col-6">
+            <div class="mock">
+              <div class="mock-header">
+                <div class="fw-bold">نقاط قوت</div>
+                <i class="fas fa-thumbs-up text-success"></i>
+              </div>
+              <ul class="small text-muted mb-0">
+                <li>ریاضی: معادلات (۹۰٪)</li>
+                <li>فیزیک: حرکت‌شناسی (۸۵٪)</li>
+                <li>شیمی: استوکیومتری (۸۰٪)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mock">
+              <div class="mock-header">
+                <div class="fw-bold">نقاط ضعف</div>
+                <i class="fas fa-triangle-exclamation text-danger"></i>
+              </div>
+              <ul class="small text-muted mb-0">
+                <li>ریاضی: حد و پیوستگی (۴۰٪)</li>
+                <li>فیزیک: نوسان (۳۵٪)</li>
+                <li>زیست: ژنتیک (۴۵٪)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="mock mt-3">
+          <div class="mock-header">
+            <div class="fw-bold">نمودار پیشرفت هفتگی</div>
+            <span class="badge text-bg-primary">خودکار</span>
+          </div>
+          <div class="bars small text-muted">
+            ریاضی
+            <span style="--w:70%"></span>
+            فیزیک
+            <span style="--w:55%"></span>
+            شیمی
+            <span style="--w:62%"></span>
+            زیست
+            <span style="--w:48%"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-lg-6">
+        <div class="mock h-100">
+          <div class="mock-header">
+            <div class="fw-bold">جمع‌بندی هوشمند</div>
+            <i class="fas fa-wand-magic-sparkles text-primary"></i>
+          </div>
+          <p class="text-muted small">
+            سامانه بعد از هر آزمون، یک برنامه تمرینی کوتاه و هدفمند می‌دهد.
+          </p>
+
+          <div class="p-3 rounded-4 border bg-light">
+            <div class="fw-bold mb-2">پیشنهاد هفته آینده</div>
+            <ul class="small text-muted mb-0">
+              <li>۳ تمرین از مبحث «حد و پیوستگی»</li>
+              <li>۱ آزمون تقویتی فصل ۳ ریاضی</li>
+              <li>۲ جلسه مرور نوسان</li>
+            </ul>
+          </div>
+
+          <button class="btn btn-outline-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#authModal">
+            من هم می‌خواهم گزارش بگیرم
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+  <section id="testimonials">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">نظر کاربران ما</h2>
+      <p class="section-sub">نتیجه‌ی واقعی از زبان دانش‌آموزان و معلمان</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="testimonial">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="avatar">م</div>
+            <div>
+              <div class="fw-bold">محمدرضا - کنکوری</div>
+              <div class="text-muted small">پلن دوم</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">
+            «بعد از هر آزمون دقیق می‌فهمم کجا مشکل دارم.
+            توی دو ماه، درصد ریاضی‌ام ۲۰٪ بالا رفت.»
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="testimonial">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="avatar">س</div>
+            <div>
+              <div class="fw-bold">سارا - پایه دهم</div>
+              <div class="text-muted small">پلن اول</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">
+            «آزمون‌های تقویتی خیلی کمکم کرد درس‌ها رو فصل‌به‌فصل ببندم.
+            گزارش‌هاش خیلی ساده و قابل فهمه.»
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="testimonial">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="avatar">د</div>
+            <div>
+              <div class="fw-bold">دکتر حسینی - معلم</div>
+              <div class="text-muted small">پنل معلم</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">
+            «ساخت آزمون و دیدن تحلیل تک‌تک دانش‌آموزان
+            باعث شد مدیریت کلاس خیلی حرفه‌ای‌تر بشه.»
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+  <section>
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="cta h-100">
+          <h3 class="fw-black mb-2">برای دانش‌آموزان</h3>
+          <p class="text-muted">
+            با آزمون‌های منظم، دقیقاً می‌فهمید کجاها ضعف دارید و چه تمرینی مناسب شماست.
+          </p>
+          <ul class="text-muted small">
+            <li>آزمون‌های استاندارد و برنامه‌دار</li>
+            <li>تحلیل خودکار و مسیر اختصاصی</li>
+            <li>پیشنهاد تمرین برای رفع ضعف‌ها</li>
+          </ul>
+          <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#authModal">
+            ثبت‌نام دانش‌آموز
+          </button>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="cta h-100">
+          <h3 class="fw-black mb-2">برای معلمان</h3>
+          <p class="text-muted">
+            پنل معلم برای ساخت آزمون، مدیریت کلاس و مشاهده‌ی گزارش عملکرد.
+          </p>
+          <ul class="text-muted small">
+            <li>مدیریت کلاس و گروه‌بندی</li>
+            <li>ساخت آزمون با بانک سوال</li>
+            <li>گزارش و تحلیل عملکرد کلاس</li>
+          </ul>
+          <button class="btn btn-outline-primary px-4" data-bs-toggle="modal" data-bs-target="#authModal">
+            ثبت‌نام معلم
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section id="faq" class="bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">سوالات پرتکرار</h2>
+      <p class="section-sub">اگر سوال شما اینجا نبود، پشتیبانی پاسخگوست.</p>
+    </div>
+
+    <div class="accordion" id="faqAcc">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+            آیا بدون پرداخت می‌توانم از سامانه استفاده کنم؟
+          </button>
+        </h2>
+        <div id="q1" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+          <div class="accordion-body text-muted">
+            بله. در حالت رایگان، هر هفته تعداد مشخصی آزمون در هر سطح دارید.
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+            در پلن‌ها چه چیزی تغییر می‌کند؟
+          </button>
+        </h2>
+        <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+          <div class="accordion-body text-muted">
+            با ارتقای پلن، محدودیت آزمون برداشته می‌شود و سطح‌های بیشتری فعال می‌گردد.
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+            معلمان چگونه تایید می‌شوند؟
+          </button>
+        </h2>
+        <div id="q3" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+          <div class="accordion-body text-muted">
+            پس از ثبت‌نام معلم، اطلاعات بررسی و پنل معلم فعال می‌شود.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <footer>
+  <div class="container">
+    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+      <div class="small">© تمامی حقوق متعلق به سامانه هوشمند آموزش است.</div>
+      <div class="small">
+        پشتیبانی: <span class="text-white">۰۹۱۲۳۴۵۶۷۸۹</span>
+        | ایمیل: <span class="text-white">support@example.com</span>
+      </div>
+    </div>
+  </div>
+</footer>
+  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="authModalTitle">ورود / ثبت‌نام</h5>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div id="phoneStep" class="auth-step">
+          <form id="phoneForm">
+            <div class="mb-4">
+              <label for="phone" class="form-label">شماره همراه</label>
+              <div class="input-group">
+                <span class="input-group-text">+98</span>
+                <input type="tel" class="form-control" id="phone"
+                  placeholder="9123456789" required maxlength="10">
+              </div>
+              <div class="form-text text-muted">شماره را بدون صفر وارد کنید.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2">
+              <i class="fas fa-sms ms-2"></i>
+              دریافت کد تایید
+            </button>
+          </form>
+        </div>
+
+        <div id="verificationStep" class="auth-step" style="display:none;">
+          <div class="text-center mb-4">
+            <p class="mb-1">کد تایید به شماره</p>
+            <div id="phoneNumberDisplay" class="fw-bold"></div>
+          </div>
+
+          <form id="verificationForm">
+            <div class="mb-4">
+              <label for="verificationCode" class="form-label">کد تایید</label>
+              <input type="text" class="form-control text-center verification-code"
+                id="verificationCode" placeholder="______" maxlength="6" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">تایید و ادامه</button>
+
+            <button type="button" class="btn btn-outline-secondary w-100" id="resendCodeBtn">
+              ارسال مجدد کد <span id="countdown">(60)</span>
+            </button>
+          </form>
+        </div>
+
+        <div id="roleStep" class="auth-step" style="display:none;">
+          <div class="text-center mb-4">
+            <h6 class="fw-bold">نقش خود را انتخاب کنید</h6>
+            <p class="text-muted small">برای ورود به پنل اختصاصی</p>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <button type="button"
+                class="btn btn-outline-primary w-100 h-100 py-4 role-btn"
+                onclick="selectRole('student')">
+                <i class="fas fa-user-graduate fa-3x mb-3"></i>
+                <div class="fw-bold">دانش‌آموز</div>
+                <small class="text-muted">ورود سریع</small>
+              </button>
+            </div>
+
+            <div class="col-6">
+              <button type="button"
+                class="btn btn-outline-success w-100 h-100 py-4 role-btn"
+                onclick="selectRole('teacher')">
+                <i class="fas fa-chalkboard-teacher fa-3x mb-3"></i>
+                <div class="fw-bold">معلم</div>
+                <small class="text-muted">نیاز به تایید</small>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script src="http://127.0.0.1:8000/js/landing.js"></script>
+
+    </body>
+
+</html>
