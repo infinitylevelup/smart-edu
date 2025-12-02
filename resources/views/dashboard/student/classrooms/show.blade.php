@@ -5,8 +5,8 @@
 @push('styles')
     <style>
         /* ------------------------------------------------------------------
-             | Page Shell
-             |-------------------------------------------------------------------*/
+                 | Page Shell
+                 |-------------------------------------------------------------------*/
         .page-wrap {
             padding: 1.5rem 0;
         }
@@ -19,8 +19,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Classroom Header
-             |-------------------------------------------------------------------*/
+                 | Classroom Header
+                 |-------------------------------------------------------------------*/
         .class-header {
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
             border-radius: 1.25rem;
@@ -60,8 +60,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Exams List
-             |-------------------------------------------------------------------*/
+                 | Exams List
+                 |-------------------------------------------------------------------*/
         .exam-card {
             border: 1px solid #eef2f7;
             border-radius: 1.1rem;
@@ -83,8 +83,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Empty Exams
-             |-------------------------------------------------------------------*/
+                 | Empty Exams
+                 |-------------------------------------------------------------------*/
         .empty-wrap {
             text-align: center;
             padding: 2.5rem 1rem;
@@ -237,8 +237,8 @@
                     آزمون‌های این کلاس
                 </h5>
 
-                <a href="{{ route('student.exams.index', ['classroom_id' => $classroom->id]) }}"
-                    class="btn btn-outline-primary btn-sm">
+                {{-- ✅ اصلاح: بدون classroom_id تا وقتی فیلتر کنترلر اضافه شود --}}
+                <a href="{{ route('student.exams.index') }}" class="btn btn-outline-primary btn-sm">
                     مشاهده همه آزمون‌ها
                 </a>
             </div>
@@ -306,10 +306,17 @@
                                         جزئیات
                                     </a>
 
-                                    <a href="{{ route('student.exams.take', $exam) }}"
-                                        class="btn btn-primary w-100 btn-sm">
-                                        شروع آزمون
-                                    </a>
+                                    {{-- ✅ اصلاح: فقط اگر منتشر شده باشد --}}
+                                    @if ($exam->is_published)
+                                        <a href="{{ route('student.exams.take', $exam) }}"
+                                            class="btn btn-primary w-100 btn-sm">
+                                            شروع آزمون
+                                        </a>
+                                    @else
+                                        <button class="btn btn-secondary w-100 btn-sm" disabled>
+                                            هنوز منتشر نشده
+                                        </button>
+                                    @endif
                                 </div>
 
                             </div>

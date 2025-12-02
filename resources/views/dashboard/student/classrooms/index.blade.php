@@ -5,8 +5,8 @@
 @push('styles')
     <style>
         /* ------------------------------------------------------------------
-             | Page / Layout
-             |-------------------------------------------------------------------*/
+                 | Page / Layout
+                 |-------------------------------------------------------------------*/
         .page-wrap {
             padding: 1.5rem 0;
         }
@@ -33,8 +33,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Search / Filter Bar
-             |-------------------------------------------------------------------*/
+                 | Search / Filter Bar
+                 |-------------------------------------------------------------------*/
         .search-bar {
             background: #f8fafc;
             border-radius: 1rem;
@@ -52,8 +52,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Classroom Cards
-             |-------------------------------------------------------------------*/
+                 | Classroom Cards
+                 |-------------------------------------------------------------------*/
         .class-card {
             border: 1px solid #eef2f7;
             border-radius: 1.25rem;
@@ -108,8 +108,8 @@
         }
 
         /* ------------------------------------------------------------------
-             | Empty State
-             |-------------------------------------------------------------------*/
+                 | Empty State
+                 |-------------------------------------------------------------------*/
         .empty-wrap {
             text-align: center;
             padding: 3rem 1rem;
@@ -195,14 +195,12 @@
 
 
         @php
-            // اگر کنترلر classrooms را پاس داده باشد:
             $classrooms = $classrooms ?? collect();
 
             // برای UI بهتر: یک مقدار پیشفرض برای progress
-            // (در آینده می‌تونیم اینو واقعی کنیم)
             function fakeProgress($id)
             {
-                return ($id * 17) % 100; // صرفاً برای زیبایی ظاهری
+                return ($id * 17) % 100;
             }
         @endphp
 
@@ -259,7 +257,6 @@
                     @php
                         $teacher = $classroom->teacher ?? null;
 
-                        // اگر relation exams لود شده باشد:
                         $examsCount = isset($classroom->exams)
                             ? $classroom->exams->count()
                             : $classroom->exams_count ?? 0;
@@ -365,7 +362,8 @@
                                         ورود به کلاس
                                     </a>
 
-                                    <a href="{{ route('student.exams.index', ['classroom_id' => $classroom->id]) }}"
+                                    {{-- ✅ اصلاح: حذف classroom_id تا وقتی فیلتر داخل کنترلر اضافه شود --}}
+                                    <a href="{{ route('student.exams.index') }}"
                                         class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-2">
                                         <i class="bi bi-ui-checks-grid"></i>
                                         آزمون‌ها

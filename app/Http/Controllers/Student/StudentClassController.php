@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;  //اصلاح به Classroom
+use App\Models\ClassRoom;  //اصلاح به ClassRoom
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -87,7 +87,7 @@ class StudentClassController extends Controller
      */
     public function showJoinForm()
     {
-        return view('dashboard.student.join-class');
+        return view('dashboard.student.classrooms.join-class');
     }
 
     /**
