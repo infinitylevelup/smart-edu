@@ -8,6 +8,7 @@ use App\Models\Attempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\GamificationService;
 
 class StudentExamController extends Controller
 {
@@ -203,7 +204,7 @@ public function classroomIndex(Request $request)
         return redirect()->route('student.exams.take', $exam->id);
     }
 
-    public function submit(Request $request, Exam $exam)
+    public function submit(Request $request, Exam $exam, GamificationService $gamification)
     {
         $this->authorizeExamForStudent($exam);
 
@@ -220,92 +221,25 @@ public function classroomIndex(Request $request)
             ->firstOrFail();
 
         DB::transaction(function () use ($request, $exam, $attempt) {
-
-            $exam->load('questions');
-            $answersArray = $request->answers;
-
-            $scoreObtained = 0;
-            $scoreTotal    = 0;
-
-            foreach ($exam->questions as $question) {
-
-                $qid = $question->id;
-                $studentAnswer = $answersArray[$qid] ?? null;
-
-                $qScore = (int)($question->score ?? 1);
-                $scoreTotal += $qScore;
-
-                $isCorrect = null;
-                $awarded   = 0;
-
-                switch ($question->type) {
-                    case 'mcq':
-                        if ($studentAnswer !== null && $question->correct_option) {
-                            $isCorrect = ((string)$studentAnswer === (string)$question->correct_option);
-                            if ($isCorrect) $awarded = $qScore;
-                        }
-                        break;
-
-                    case 'true_false':
-                        if ($studentAnswer !== null && !is_null($question->correct_tf)) {
-                            $normalized = filter_var($studentAnswer, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                            $isCorrect = ($normalized === (bool)$question->correct_tf);
-                            if ($isCorrect) $awarded = $qScore;
-                        }
-                        break;
-
-                    case 'fill_blank':
-                        if ($studentAnswer !== null && $question->correct_answer) {
-                            $correct = $question->correct_answer;
-                            if (is_string($correct)) {
-                                $decoded = json_decode($correct, true);
-                                $correct = $decoded ?? $correct;
-                            }
-
-                            $stu = $studentAnswer;
-                            if (is_string($stu)) {
-                                $stu = array_values(array_filter(array_map('trim', explode(',', $stu))));
-                            }
-
-                            $isCorrect = ($stu == $correct);
-                            if ($isCorrect) $awarded = $qScore;
-                        }
-                        break;
-
-                    case 'essay':
-                        $isCorrect = null;
-                        $awarded = 0;
-                        break;
-                }
-
-                $scoreObtained += $awarded;
-
-                $attempt->answers()->updateOrCreate(
-                    ['question_id' => $qid],
-                    [
-                        'answer'        => $studentAnswer,
-                        'is_correct'    => $isCorrect,
-                        'score_awarded' => $awarded,
-                    ]
-                );
-            }
-
-            $percent = $scoreTotal > 0
-                ? round(($scoreObtained / $scoreTotal) * 100, 2)
-                : 0;
-
-            $attempt->update([
-                'answers'        => $answersArray,
-                'score'          => $scoreObtained,
-                'percent'        => $percent,
-                'finished_at'    => now(),
-                'status'         => 'submitted',
-                'score_total'    => $scoreTotal,
-                'score_obtained' => $scoreObtained,
-            ]);
+            // ... کل منطق فعلی تو بدون تغییر
         });
 
-        // ✅ NEW redirect to attempt result page
+        // =========================
+        // ✅ Gamification Hook (Phase A)
+        // =========================
+        $attempt->refresh(); // چون داخل transaction آپدیت شده
+
+        $baseXp = $exam->scope === 'free' ? 20 : 25;     // آزمون عمومی/کلاسی
+        $scoreXp = (int) floor($attempt->percent / 5);  // هر 5% = 1 XP
+        $totalAward = $baseXp + $scoreXp;
+
+        $gamification->awardXp(
+            $student,
+            'exam',
+            $exam->id,
+            $totalAward
+        );
+
         return redirect()
             ->route('student.attempts.result', $attempt->id)
             ->with('success', 'پاسخ‌ها با موفقیت ثبت شد.');

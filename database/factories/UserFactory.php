@@ -12,23 +12,31 @@ class UserFactory extends Factory
 {
     public function definition(): array
     {
-        return [
-            // شماره موبایل یکتا
-            'phone' => $this->faker->unique()->numerify('09#########'),
+        $data = [];
 
-            // نقش
-            'role'  => $this->faker->randomElement(['student', 'teacher']),
+        if (\Schema::hasColumn('users','phone')) {
+            $data['phone'] = $this->faker->unique()->numerify('09#########');
+        }
 
-            // زمان انتخاب نقش (اگر ستونش را داری)
-            'role_selected_at' => now(),
+        if (\Schema::hasColumn('users','name')) {
+            $data['name'] = $this->faker->name();
+        }
 
-            // فعال بودن کاربر (اگر ستونش را داری)
-            'is_active' => true,
-            // زمان آخرین ورود (اگر ستونش را داری)
-           'last_login_at' => null,
+        if (\Schema::hasColumn('users','full_name')) {
+            $data['full_name'] = $this->faker->name();
+        }
 
-        ];
+        if (\Schema::hasColumn('users','role')) {
+            $data['role'] = 'student';
+        }
+
+        if (\Schema::hasColumn('users','is_active')) {
+            $data['is_active'] = 1;
+        }
+
+        return $data;
     }
+
 
     public function student(): static
     {

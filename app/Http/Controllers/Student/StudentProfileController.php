@@ -7,13 +7,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\StudentGamificationProfile; // ✅ add
 
 class StudentProfileController extends Controller
 {
     public function edit()
     {
         $user = Auth::user();
-        return view('dashboard.student.profile', compact('user'));
+
+        // ✅ Gamification profile (Phase A)
+        $gamification = StudentGamificationProfile::firstOrCreate(
+            ['student_id' => $user->id],
+            ['total_xp' => 0, 'level' => 1]
+        );
+
+        return view('dashboard.student.profile', compact('user', 'gamification'));
     }
 
     public function update(Request $request)
@@ -24,7 +32,6 @@ class StudentProfileController extends Controller
             'name'  => ['required','string','max:255'],
             'email' => ['nullable','email','max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => ['nullable','string','max:30', Rule::unique('users')->ignore($user->id)],
-            // اگر فیلدهای دیگه داری اینجا اضافه کن:
             'national_code' => ['nullable','string','max:20'],
             'bio' => ['nullable','string','max:1000'],
         ]);
@@ -43,7 +50,6 @@ class StudentProfileController extends Controller
             'avatar' => ['required','image','mimes:jpg,jpeg,png,webp','max:2048'],
         ]);
 
-        // حذف عکس قبلی (اگر وجود دارد)
         if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
             Storage::disk('public')->delete($user->avatar);
         }
