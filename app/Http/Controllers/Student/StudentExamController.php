@@ -54,7 +54,16 @@ class StudentExamController extends Controller
 
         $exams = $examsQuery->paginate(9)->withQueryString();
 
-        return view('dashboard.student.exams.index', compact('exams'));
+        // ✅ چون توی public.blade.php ازش استفاده کردی
+        $classrooms = $student->classrooms()->get();
+
+        // ✅ اگر فیلتر کلاس انتخاب شده → صفحه classroom
+        if ($request->filled('classroom_id')) {
+            return view('dashboard.student.exams.classroom', compact('exams', 'classrooms'));
+        }
+
+        // ✅ در غیر این صورت → صفحه public
+        return view('dashboard.student.exams.public', compact('exams', 'classrooms'));
     }
 
     /**

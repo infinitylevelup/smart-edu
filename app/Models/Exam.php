@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ add this
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Exam extends Model
 {
+    use HasFactory; // ✅ add this
+
     protected $fillable = [
         'teacher_id',
         'classroom_id',
@@ -19,17 +22,15 @@ class Exam extends Model
         'start_at',
         'is_published',
 
-        // ✅ NEW (برای فاز scope)
         'scope',
         'is_active',
     ];
+
     protected $casts = [
         'is_published' => 'boolean',
-        'is_active'    => 'boolean',  // ✅ اضافه شد
+        'is_active'    => 'boolean',
         'start_at'     => 'datetime',
     ];
-
-
 
     public function teacher(): BelongsTo
     {

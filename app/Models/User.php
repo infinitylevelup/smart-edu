@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Role;
 
 /**
  * مدل کاربر اصلی سیستم
@@ -114,5 +115,17 @@ class User extends Authenticatable
 {
     return $this->hasOne(\App\Models\StudentProfile::class, 'user_id');
 }
+
+// نقش‌های کاربر
+public function roles()
+{
+    return $this->belongsToMany(Role::class, 'role_user');
+}
+
+public function hasRole(string $role): bool
+{
+    return $this->roles()->where('name', $role)->exists();
+}
+
 
 }

@@ -16,3 +16,5 @@ require __DIR__.'/student.php';
 require __DIR__.'/teacher.php';
 // Admin Routes
 require __DIR__.'/admin.php';
+// Counselor Routes
+require __DIR__.'/counselor.php';
