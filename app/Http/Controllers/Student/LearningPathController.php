@@ -63,9 +63,9 @@ class LearningPathController extends Controller
         // 3) استخراج نقاط ضعف
         // ==============================
         $wrongAnswers = $attempts
-            ->flatMap(fn($a) => $a->answers)
+            ->flatMap(fn($a) => $a->answers()->get())   // ✅ FIX HERE
             ->filter(fn($ans) => (int) $ans->is_correct === 0);
-
+            // ->values();
         $weakSubjects = $wrongAnswers
             ->groupBy(fn($ans) =>
                 optional($ans->question->exam->subject)->title

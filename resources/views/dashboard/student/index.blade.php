@@ -14,13 +14,20 @@
                 </p>
             </div>
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('student.exams.index') }}" class="btn btn-primary">
-                    <i class="fa-solid fa-play ms-1"></i>
-                    شروع آزمون
+            <div class="d-flex gap-2 flex-wrap">
+                {{-- ✅ NEW: Public exams --}}
+                <a href="{{ route('student.exams.public') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-globe ms-1"></i>
+                    آزمون‌های عمومی
                 </a>
 
-                {{-- ✅ اصلاح شد: به‌جای results → reports --}}
+                {{-- ✅ NEW: Classroom exams --}}
+                <a href="{{ route('student.exams.classroom') }}" class="btn btn-outline-primary">
+                    <i class="fa-solid fa-people-group ms-1"></i>
+                    آزمون‌های کلاسی
+                </a>
+
+                {{-- Reports --}}
                 <a href="{{ route('student.reports.index') }}" class="btn btn-outline-secondary">
                     <i class="fa-solid fa-chart-simple ms-1"></i>
                     گزارش‌ها و تحلیل‌ها
@@ -105,8 +112,10 @@
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                         <h2 class="h6 mb-0">آزمون‌های پیشنهادی</h2>
-                        <a href="{{ route('student.exams.index') }}" class="text-decoration-none small">
-                            مشاهده همه
+
+                        {{-- ✅ change "view all" to public exams as default --}}
+                        <a href="{{ route('student.exams.public') }}" class="text-decoration-none small">
+                            مشاهده همه آزمون‌های عمومی
                             <i class="fa-solid fa-arrow-left-long ms-1"></i>
                         </a>
                     </div>
@@ -148,7 +157,7 @@
                 </div>
             </div>
 
-            {{-- ✅ آخرین گزارش‌ها / تحلیل‌ها (به‌جای results) --}}
+            {{-- آخرین گزارش‌ها / تحلیل‌ها --}}
             <div class="col-lg-5">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
@@ -203,15 +212,24 @@
 
                         <div class="row g-2">
                             <div class="col-md-3 col-sm-6">
-                                <a href="{{ route('student.exams.index') }}"
+                                {{-- ✅ go to public exams as default --}}
+                                <a href="{{ route('student.exams.public') }}"
                                     class="btn btn-light w-100 d-flex align-items-center justify-content-between">
-                                    <span>آزمون‌ها</span>
-                                    <i class="fa-solid fa-file-pen text-primary"></i>
+                                    <span>آزمون‌های عمومی</span>
+                                    <i class="fa-solid fa-globe text-primary"></i>
                                 </a>
                             </div>
 
                             <div class="col-md-3 col-sm-6">
-                                {{-- ✅ اصلاح شد --}}
+                                {{-- ✅ classroom exams --}}
+                                <a href="{{ route('student.exams.classroom') }}"
+                                    class="btn btn-light w-100 d-flex align-items-center justify-content-between">
+                                    <span>آزمون‌های کلاسی</span>
+                                    <i class="fa-solid fa-people-group text-primary"></i>
+                                </a>
+                            </div>
+
+                            <div class="col-md-3 col-sm-6">
                                 <a href="{{ route('student.reports.index') }}"
                                     class="btn btn-light w-100 d-flex align-items-center justify-content-between">
                                     <span>گزارش‌ها</span>
@@ -228,7 +246,8 @@
                             </div>
 
                             <div class="col-md-3 col-sm-6">
-                                <a href="{{ route('student.profile') }}"
+                                {{-- ✅ FIX: support must go to support route, not profile --}}
+                                <a href="{{ route('student.support.index') }}"
                                     class="btn btn-light w-100 d-flex align-items-center justify-content-between">
                                     <span>پشتیبانی</span>
                                     <i class="fa-solid fa-headset text-warning"></i>
