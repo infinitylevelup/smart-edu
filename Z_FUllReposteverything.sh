@@ -1,9 +1,13 @@
-# Smart-Edu Backlog
+#!/usr/bin/env bash
+set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOCS_DIR="$ROOT_DIR/docs"
+OUT_FILE="$DOCS_DIR/current_status_student_ui_phase1.md"
 
-## Current Status Sync
-آخرین همگام‌سازی بکلاگ با وضعیت موجود Student UI Phase 1:
+mkdir -p "$DOCS_DIR"
 
+cat > "$OUT_FILE" <<'MD'
 # Current Status — Student UI (Phase 1)
 
 ## A) Fixed / Completed Blade Files ✅
@@ -27,3 +31,7 @@
 6. resources/views/dashboard/student/learning-path.blade.php
 7. resources/views/dashboard/student/my-teachers.blade.php
 8. resources/views/dashboard/student/profile.blade.php
+MD
+
+echo "✅ Current status report generated at:"
+echo "   $OUT_FILE"

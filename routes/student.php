@@ -6,15 +6,11 @@ use App\Http\Controllers\Student\StudentClassController;
 use App\Http\Controllers\Student\LearningPathController;
 use App\Http\Controllers\Student\MyTeachersController;
 use App\Http\Controllers\Student\StudentProfileController;
+use App\Http\Controllers\Student\PublicExamController;
 
-Route::prefix('dashboard')
-    ->middleware(['auth', 'role.selected'])
-    ->group(function () {
-
-        Route::prefix('student')
-            ->name('student.')
-            ->middleware('role:student')
-            ->group(function () {
+Route::prefix('dashboard')->middleware(['auth', 'role.selected'])->group(function () {
+        Route::prefix('student')->name('student.')->middleware('role:student')->group(function ()
+        {
 
                 // Dashboard
                 Route::view('/', 'dashboard.student.index')->name('index');
@@ -96,5 +92,6 @@ Route::prefix('dashboard')
 
                 Route::post('/profile/avatar', [StudentProfileController::class, 'updateAvatar'])
                     ->name('profile.avatar');
-            });
+        });
+
     });

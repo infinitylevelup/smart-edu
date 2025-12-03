@@ -43,7 +43,6 @@
             }
         }
 
-        /* ===== Hero ===== */
         .result-hero {
             background: linear-gradient(135deg, var(--edu-blue) 0%, var(--edu-blue-2) 55%, var(--edu-green-2) 100%);
             color: #fff;
@@ -83,7 +82,6 @@
             margin-top: .25rem;
         }
 
-        /* ===== Score ring ===== */
         .score-ring {
             width: 170px;
             height: 170px;
@@ -91,8 +89,7 @@
             display: grid;
             place-items: center;
             margin-inline: auto;
-            background:
-                conic-gradient(var(--edu-green) calc(var(--percent)*1%), #e2e8f0 0);
+            background: conic-gradient(var(--edu-green) calc(var(--percent)*1%), #e2e8f0 0);
             position: relative;
             box-shadow: 0 12px 30px rgba(15, 23, 42, .12);
             animation: ringPop .8s ease both;
@@ -138,7 +135,6 @@
             margin-top: .25rem;
         }
 
-        /* ===== Reward card (summary) ===== */
         .reward-card {
             border-radius: var(--radius-xl);
             background: #fff;
@@ -191,7 +187,6 @@
             border-color: #fde68a;
         }
 
-        /* ===== Stats ===== */
         .stat {
             border-radius: var(--radius-lg);
             background: #fff;
@@ -239,7 +234,6 @@
             margin-top: .1rem;
         }
 
-        /* ===== Motivation blocks ===== */
         .motivate {
             border-radius: var(--radius-lg);
             padding: .9rem 1rem;
@@ -268,7 +262,6 @@
             background: #fffbeb;
         }
 
-        /* ===== CTA buttons ===== */
         .btn-cta {
             border-radius: .95rem;
             font-weight: 900;
@@ -290,7 +283,6 @@
             padding: .8rem 1rem;
         }
 
-        /* ===== NEW: Checkpoint + Level + Next Exam ===== */
         .reward-wrap {
             border-radius: 1.25rem;
             background: linear-gradient(180deg, #ffffff, #f8fafc);
@@ -439,7 +431,6 @@
             }
         }
 
-        /* ===== Review accordion ===== */
         .review-card {
             border-radius: var(--radius-xl);
             background: #fff;
@@ -485,25 +476,36 @@
 
 @section('content')
     @php
-        // ====== محاسبات پایه ======
-        $percent = (float) ($attempt->percent ?? 0);
-        $scoreObtained = (int) ($attempt->score_obtained ?? 0);
-        $scoreTotal = (int) ($attempt->score_total ?? 0);
+        // ====== پایه + fallbacks ======
+        $percent = (float) ($attempt->percent ?? ($attempt->percentage ?? 0));
 
-        /**
-         * چون attempts.answers (ستون) و answers (رابطه) همنام‌اند،
-         * رابطه‌ی لود‌شده را اینطوری می‌گیریم:
-         */
+        $scoreObtained = (int) ($attempt->score_obtained ?? ($attempt->score ?? 0));
+
+        $scoreTotal =
+            (int) ($attempt->score_total ?? ($attempt->total_score ?? ($exam?->questions?->sum('score') ?? 0)));
+
+        // ====== answers relation vs answers JSON ======
         $attemptAnswerModels = collect($attempt->getRelation('answers') ?? []);
 
-        // دسته‌بندی بر اساس is_correct در AttemptAnswer
-        $wrongAnswers = $attemptAnswerModels->filter(fn($a) => (int) $a->is_correct === 0);
-        $correctAnswers = $attemptAnswerModels->filter(fn($a) => (int) $a->is_correct === 1);
+        if ($attemptAnswerModels->isEmpty() && is_array($attempt->answers ?? null)) {
+            // answers JSON: [question_id => user_answer]
+            $attemptAnswerModels = collect($attempt->answers)->map(function ($userAns, $qid) use ($exam) {
+                $q = $exam?->questions?->firstWhere('id', (int) $qid);
+                return (object) [
+                    'question' => $q,
+                    'answer' => $userAns,
+                    'is_correct' => null, // چون JSON هست، درست/غلط نداریم
+                ];
+            });
+        }
+
+        $wrongAnswers = $attemptAnswerModels->filter(fn($a) => (int) ($a->is_correct ?? 0) === 0);
+        $correctAnswers = $attemptAnswerModels->filter(fn($a) => (int) ($a->is_correct ?? 0) === 1);
 
         $correctCount = $correctAnswers->count();
         $wrongCount = $wrongAnswers->count();
 
-        // پیام انگیزشی
+        // ====== پیام انگیزشی ======
         if ($percent >= 85) {
             $statusTitle = 'فوق‌العاده بودی! 🌟';
             $statusMsg = 'تو واقعاً آماده‌ای سطح بعدی رو بزنی. بریم یه آزمون سخت‌تر؟';
@@ -521,7 +523,7 @@
             $nextHint = 'هر قهرمانی اولش چند بار زمین می‌خوره.';
         }
 
-        // ====== NEW: Level Up + Next Exam Suggestion ======
+        // ====== LevelUp / Next exam suggestion ======
         if ($percent >= 85) {
             $levelUpText = 'سطح ۲ باز شد 🎉';
             $medalType = 'gold';
@@ -547,8 +549,13 @@
             $nextFilter = 'taghviyati';
             $nextIcon = 'bi-lightning-fill';
         }
-    @endphp
 
+        // ====== Back route smart ======
+        $backRoute =
+            $exam?->scope === 'free' || $exam?->is_public
+                ? route('student.exams.public')
+                : route('student.exams.index');
+    @endphp
 
     <div class="result-page container py-3 py-md-4">
 
@@ -564,7 +571,7 @@
                         آزمون: <span class="fw-bold">{{ $exam?->title ?? '—' }}</span>
                     </div>
                 </div>
-                <a href="{{ route('student.exams.index') }}" class="btn btn-light btn-sm fw-bold">
+                <a href="{{ $backRoute }}" class="btn btn-light btn-sm fw-bold">
                     <i class="bi bi-arrow-right"></i> بازگشت
                 </a>
             </div>
@@ -584,7 +591,6 @@
                     <div class="mt-3 fw-bold fs-5">{{ $statusTitle }}</div>
                     <div class="text-muted small mt-1">{{ $statusMsg }}</div>
 
-                    {{-- تعداد درست/غلط کنار درصد --}}
                     <div class="small text-muted mt-2 fw-bold">
                         درست: <span class="text-success">{{ $correctCount }}</span>
                         |
@@ -639,7 +645,6 @@
                         </div>
                     </div>
 
-                    {{-- انگیزش هوشمند --}}
                     <div class="motivate good mt-3">
                         <div class="emoji">🎯</div>
                         <div>
@@ -666,15 +671,13 @@
                         </div>
                     @endif
 
-                    {{-- CTA --}}
                     <div class="d-flex flex-wrap gap-2 mt-3">
-                        <a href="{{ route('student.exams.index') }}" class="btn btn-cta">
+                        <a href="{{ $backRoute }}" class="btn btn-cta">
                             رفتن به آزمون‌های بعدی
                             <i class="bi bi-arrow-left ms-1"></i>
                         </a>
 
-                        <a href="{{ route('student.classrooms.index') ?? '#' }}"
-                            class="btn btn-outline-secondary btn-ghost">
+                        <a href="{{ route('student.classrooms.index') }}" class="btn btn-outline-secondary btn-ghost">
                             دیدن کلاس‌ها
                             <i class="bi bi-people ms-1"></i>
                         </a>
@@ -683,7 +686,7 @@
             </div>
         </div>
 
-        {{-- ================= NEW CHECKPOINT + NEXT EXAM ================= --}}
+        {{-- ================= CHECKPOINT + NEXT EXAM ================= --}}
         <div class="reward-wrap mb-3">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <div class="level-pill pop-star">
@@ -722,8 +725,8 @@
                     {{ $nextMsg }}
                 </div>
 
-                {{-- فیلتر سطح برای آزمون بعدی --}}
-                <a href="{{ route('student.exams.index', ['level' => $nextFilter]) }}" class="btn next-btn w-100">
+                {{-- query-string فیلتر سطح --}}
+                <a href="{{ $backRoute }}?level={{ $nextFilter }}" class="btn next-btn w-100">
                     شروع آزمون بعدی
                     <i class="bi bi-play-fill ms-1"></i>
                 </a>
@@ -734,9 +737,7 @@
             </div>
         </div>
 
-        {{-- =========================================================
-       SECTION 1: WRONG ONLY
-    ========================================================== --}}
+        {{-- ================= WRONG ONLY ================= --}}
         <div class="review-card mt-3">
             <div class="p-3 p-md-4 border-bottom">
                 <div class="fw-bold d-flex align-items-center gap-2">
@@ -755,7 +756,7 @@
                 </div>
             @else
                 @foreach ($wrongAnswers as $ans)
-                    @php $q = $ans->question; @endphp
+                    @php $q = $ans->question ?? null; @endphp
 
                     <div class="review-item">
                         <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
@@ -771,7 +772,7 @@
                             {!! nl2br(e($q->question_text ?? ($q->question ?? '—'))) !!}
                         </div>
 
-                        @if (!empty($q->explanation))
+                        @if (!empty($q?->explanation))
                             <div class="mt-2 p-2 rounded-3" style="background:#f8fafc; border:1px dashed #e2e8f0;">
                                 <div class="small fw-bold mb-1">
                                     <i class="bi bi-lightbulb"></i> توضیح:
@@ -784,9 +785,7 @@
             @endif
         </div>
 
-        {{-- =========================================================
-       SECTION 2: CORRECT ONLY
-    ========================================================== --}}
+        {{-- ================= CORRECT ONLY ================= --}}
         <div class="review-card mt-3">
             <div class="p-3 p-md-4 border-bottom">
                 <div class="fw-bold d-flex align-items-center gap-2">
@@ -805,7 +804,7 @@
                 </div>
             @else
                 @foreach ($correctAnswers as $ans)
-                    @php $q = $ans->question; @endphp
+                    @php $q = $ans->question ?? null; @endphp
 
                     <div class="review-item">
                         <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
@@ -821,7 +820,7 @@
                             {!! nl2br(e($q->question_text ?? ($q->question ?? '—'))) !!}
                         </div>
 
-                        @if (!empty($q->explanation))
+                        @if (!empty($q?->explanation))
                             <div class="mt-2 p-2 rounded-3" style="background:#fbfffd; border:1px dashed #bbf7d0;">
                                 <div class="small fw-bold mb-1 text-success">
                                     <i class="bi bi-lightbulb"></i> توضیح تکمیلی:

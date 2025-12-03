@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Question extends Model
 {
@@ -11,43 +12,55 @@ class Question extends Model
 
     protected $fillable = [
         'exam_id',
+        'subject_id',
 
         // ستون واقعی DB
         'question_text',
 
-        'type',
+        'type',            // mcq | true_false | fill_blank | essay
         'score',
         'explanation',
 
-        'options',
-        'correct_answer',
-        'correct_tf',
+        // json options / correct for new system
+        'options',         // array/json for mcq
+        'correct_answer',  // json/array for fill_blank / mcq multi
+        'correct_tf',      // boolean for true_false
 
         // legacy mcq
         'option_a',
         'option_b',
         'option_c',
         'option_d',
-        'correct_option',
+        'correct_option',  // a|b|c|d
 
-        'difficulty',
+        'difficulty',      // easy|medium|hard  (سیدر average => medium)
         'is_active',
     ];
 
     protected $casts = [
         'options'        => 'array',
-        'correct_answer' => 'json',   // mixed
+        'correct_answer' => 'array',   // بهتر از json چون توی کنترلر/بلید با آرایه کار می‌کنی
         'correct_tf'     => 'boolean',
         'score'          => 'integer',
         'is_active'      => 'boolean',
+        'difficulty'     => 'string',
     ];
 
-    public function exam()
+    /* ================= Relationships ================= */
+
+    public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
     }
 
-    // ✅ alias مطمئن برای کل پروژه
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
+    /* ================= Alias / Accessors ================= */
+
+    // ✅ alias مطمئن برای کل پروژه (q->question)
     public function getQuestionAttribute()
     {
         return $this->question_text;
@@ -57,9 +70,28 @@ class Question extends Model
     {
         $this->attributes['question_text'] = $value;
     }
-    public function subject()
+
+    /* ================= Difficulty Normalizer ================= */
+
+    /**
+     * ✅ حل مشکل truncate difficulty در سیدر:
+     * اگر سیدر average زد، خودکار medium ذخیره می‌کنیم.
+     */
+    public function setDifficultyAttribute($value)
     {
-        return $this->belongsTo(Subject::class);
+        $v = strtolower((string)$value);
+
+        if ($v === 'average') $v = 'medium';
+        if (!in_array($v, ['easy', 'medium', 'hard'])) $v = 'medium';
+
+        $this->attributes['difficulty'] = $v;
     }
 
+    /**
+     * برای اطمینان اگر مقدار null بود.
+     */
+    public function getDifficultyAttribute($value)
+    {
+        return $value ?: 'medium';
+    }
 }

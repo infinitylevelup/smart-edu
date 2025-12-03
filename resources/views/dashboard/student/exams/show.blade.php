@@ -46,7 +46,6 @@
             overflow: hidden;
         }
 
-        /* ===== hero header ===== */
         .exam-hero {
             background: linear-gradient(135deg, var(--edu-blue) 0%, var(--edu-blue-2) 55%, var(--edu-green-2) 100%);
             color: #fff;
@@ -99,7 +98,6 @@
             line-height: 1.9;
         }
 
-        /* ===== mission badge (level up feel) ===== */
         .mission-badge {
             display: flex;
             align-items: center;
@@ -137,7 +135,6 @@
             }
         }
 
-        /* ===== chips ===== */
         .chip {
             display: inline-flex;
             align-items: center;
@@ -181,7 +178,6 @@
             color: #fff;
         }
 
-        /* ===== stats cards ===== */
         .stat {
             border-radius: var(--radius-lg);
             background: #fff;
@@ -244,7 +240,6 @@
             margin-top: .1rem;
         }
 
-        /* ===== difficulty pill ===== */
         .difficulty-pill {
             display: inline-flex;
             align-items: center;
@@ -274,7 +269,6 @@
             border-color: #fecaca;
         }
 
-        /* ===== final attempt alert ===== */
         .alert-final {
             border: 0;
             border-radius: var(--radius-xl);
@@ -325,7 +319,6 @@
             }
         }
 
-        /* ===== action buttons ===== */
         .btn-start {
             position: relative;
             border-radius: 1rem;
@@ -389,7 +382,6 @@
             line-height: 1.9;
         }
 
-        /* ===== countdown tiny bar (psych-prep) ===== */
         .prep-bar {
             height: 8px;
             border-radius: 999px;
@@ -412,7 +404,6 @@
             }
         }
 
-        /* ===== challenge box ===== */
         .challenge {
             border: 1px solid #e2e8f0;
             border-radius: 1rem;
@@ -444,24 +435,35 @@
         $qCount = $exam->questions_count ?? ($exam->questions->count() ?? 0);
         $duration = $exam->duration ?? 0;
 
-        // difficulty mapping
-        $diffKey = $exam->difficulty ?? 'medium';
+        // ✅ difficulty mapping from level (easy/average/hard/tough)
+        $diffKey = $exam->level ?? 'average';
+
         $diffText = match ($diffKey) {
             'easy' => 'آسان',
             'hard' => 'سخت',
-            default => 'متوسط',
+            'tough' => 'خیلی سخت',
+            default => 'متوسط', // average
         };
+
         $diffClass = match ($diffKey) {
             'easy' => 'difficulty-easy',
-            'hard' => 'difficulty-hard',
+            'hard', 'tough' => 'difficulty-hard',
             default => 'difficulty-medium',
         };
 
-        // short motivational line based on difficulty
         $motivationLine = match ($diffKey) {
             'easy' => 'گرم‌کن عالی برای شروع 💚',
-            'hard' => 'چالش سنگین، اما تو از پسش برمیای 🔥',
+            'hard' => 'چالش جدی، اما تو از پسش برمیای 🔥',
+            'tough' => 'مرحله‌ی حرفه‌ای‌ها — بترکون 💥',
             default => 'سطح استاندارد برای رشد سریع 🚀',
+        };
+
+        // ✅ level chip data
+        $levelChip = match ($diffKey) {
+            'easy' => ['green', 'bi-lightning-fill', 'آسان'],
+            'hard' => ['blue', 'bi-bullseye', 'سخت'],
+            'tough' => ['amber', 'bi-award-fill', 'خیلی سخت'],
+            default => ['blue', 'bi-speedometer2', 'متوسط'],
         };
     @endphp
 
@@ -492,16 +494,16 @@
                     </div>
                 </div>
 
-                <a href="{{ route('student.exams.index') }}" class="btn btn-light btn-sm fw-bold">
+                <a href="{{ route('student.exams.public') }}" class="btn btn-light btn-sm fw-bold">
                     <i class="bi bi-arrow-right"></i>
-                    بازگشت
+                    بازگشت به آزمون‌های عمومی
                 </a>
             </div>
 
             {{-- chips row --}}
             <div class="d-flex flex-wrap gap-2 mt-3">
                 @if ($exam->scope === 'free')
-                    <span class="chip dark"><i class="bi bi-globe2"></i> آزمون آزاد</span>
+                    <span class="chip dark"><i class="bi bi-globe2"></i> آزمون عمومی</span>
                 @else
                     <span class="chip blue">
                         <i class="bi bi-people-fill"></i>
@@ -512,19 +514,10 @@
                     </span>
                 @endif
 
-                @switch($exam->level)
-                    @case('taghviyati')
-                        <span class="chip green"><i class="bi bi-lightning-fill"></i> تقویتی</span>
-                    @break
-
-                    @case('konkur')
-                        <span class="chip blue"><i class="bi bi-bullseye"></i> کنکور</span>
-                    @break
-
-                    @case('olympiad')
-                        <span class="chip amber"><i class="bi bi-award-fill"></i> المپیاد</span>
-                    @break
-                @endswitch
+                <span class="chip {{ $levelChip[0] }}">
+                    <i class="bi {{ $levelChip[1] }}"></i>
+                    {{ $levelChip[2] }}
+                </span>
 
                 <span class="chip">
                     <i class="bi bi-clock-history"></i>
@@ -630,13 +623,13 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
-                <a href="{{ route('student.attempts.show', $lastAttempt->id) }}" class="btn btn-result">
+                <a href="{{ route('student.attempts.result', $lastAttempt->id) }}" class="btn btn-result">
                     مشاهده نتیجه قبلی
                     <i class="bi bi-eye ms-1"></i>
                 </a>
 
-                <a href="{{ route('student.exams.index') }}" class="btn btn-outline-secondary fw-bold">
-                    بازگشت به لیست آزمون‌ها
+                <a href="{{ route('student.exams.public') }}" class="btn btn-outline-secondary fw-bold">
+                    بازگشت به لیست آزمون‌های عمومی
                 </a>
             </div>
         @else
@@ -647,7 +640,7 @@
                     <span class="fw-bold">نفس عمیق بکش و شروع کن 😌</span>
                 </div>
 
-                <form method="POST" action="{{ route('student.exams.start', $exam) }}">
+                <form method="POST" action="{{ route('student.exams.start', $exam->id) }}">
                     @csrf
                     <button class="btn btn-start w-100">
                         شروع مأموریت آزمون

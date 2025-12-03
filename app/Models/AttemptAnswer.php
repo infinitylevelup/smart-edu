@@ -24,7 +24,8 @@ class AttemptAnswer extends Model
     ];
 
     protected $casts = [
-        'answer'        => 'json',     // mixed
+        // answer ممکنه string/array/json باشه → به array تبدیلش می‌کنیم
+        'answer'        => 'array',
         'is_correct'    => 'boolean',
         'score_awarded' => 'integer',
         'graded_at'     => 'datetime',

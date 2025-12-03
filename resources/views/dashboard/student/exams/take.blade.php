@@ -50,7 +50,6 @@
             box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
         }
 
-        /* ===== top hero ===== */
         .top-hero {
             background: linear-gradient(135deg, var(--edu-blue) 0%, var(--edu-blue-2) 55%, var(--edu-green-2) 100%);
             color: #fff;
@@ -89,7 +88,6 @@
             margin-top: .25rem;
         }
 
-        /* ===== timer pill ===== */
         .timer-pill {
             background: #0f172a;
             color: #fff;
@@ -126,7 +124,6 @@
             }
         }
 
-        /* ===== progress bar ===== */
         .progress-wrap {
             background: rgba(255, 255, 255, .15);
             border-radius: 999px;
@@ -161,7 +158,6 @@
             border-radius: 999px;
         }
 
-        /* ===== question section ===== */
         .q-section {
             display: none;
         }
@@ -211,9 +207,6 @@
             font-size: .78rem;
         }
 
-        /* ===== Question vs Answer separation ===== */
-
-        /* card question */
         .q-card {
             border: 1px solid #bfdbfe;
             background: linear-gradient(180deg, #ffffff, #f8fbff);
@@ -239,7 +232,6 @@
             border-radius: 999px;
         }
 
-        /* answer container */
         .answer-box {
             margin-top: .9rem;
             border: 1px dashed #86efac;
@@ -263,7 +255,6 @@
             border-radius: 999px;
         }
 
-        /* options */
         .opt-item {
             border: 1px solid #e2e8f0;
             border-radius: .9rem;
@@ -302,14 +293,12 @@
             border-radius: .9rem;
         }
 
-        /* nav buttons */
         .nav-btn {
             border-radius: .9rem;
             font-weight: 900;
             padding: .6rem .95rem;
         }
 
-        /* ===== side nav ===== */
         .sticky-box {
             position: sticky;
             top: 1rem;
@@ -375,14 +364,12 @@
             gap: .35rem;
         }
 
-        /* submit card */
         .submit-section {
             border: 1px dashed #cbd5e1;
             background: #f8fafc;
             border-radius: var(--radius-lg);
         }
 
-        /* confetti / reward flash */
         .reward-flash {
             position: fixed;
             inset: 0;
@@ -403,7 +390,6 @@
             }
         }
 
-        /* mobile */
         @media (max-width: 992px) {
             .dots-grid {
                 grid-template-columns: repeat(10, 1fr);
@@ -423,7 +409,7 @@
         <div class="container py-4">
             <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>برای شرکت در آزمون باید اول «شروع آزمون» را بزنید.</div>
-                <a href="{{ route('student.exams.show', $exam) }}" class="btn btn-primary btn-sm">
+                <a href="{{ route('student.exams.show', $exam->id) }}" class="btn btn-primary btn-sm">
                     بازگشت به صفحه آزمون
                 </a>
             </div>
@@ -449,14 +435,15 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-2">
-                    @if (!empty($exam->duration_minutes))
-                        <div class="timer-pill" id="timerPill" data-min="{{ $exam->duration_minutes }}">
+                    {{-- ✅ Timer based on exams.duration --}}
+                    @if (!empty($exam->duration))
+                        <div class="timer-pill" id="timerPill" data-min="{{ $exam->duration }}">
                             <i class="bi bi-stopwatch"></i>
-                            <span id="timerText">{{ $exam->duration_minutes }}:00</span>
+                            <span id="timerText">{{ $exam->duration }}:00</span>
                         </div>
                     @endif
 
-                    <a href="{{ route('student.exams.show', $exam) }}" class="btn btn-light btn-sm fw-bold">
+                    <a href="{{ route('student.exams.show', $exam->id) }}" class="btn btn-light btn-sm fw-bold">
                         <i class="bi bi-arrow-right"></i> بازگشت
                     </a>
                 </div>
@@ -481,7 +468,7 @@
             {{-- ================= QUESTIONS ================= --}}
             <div class="col-lg-9">
 
-                <form method="POST" action="{{ route('student.exams.submit', $exam) }}" id="examForm">
+                <form method="POST" action="{{ route('student.exams.submit', $exam->id) }}" id="examForm">
                     @csrf
 
                     @if (isset($attempt) && $attempt)
@@ -492,6 +479,26 @@
                         @php
                             $savedAnswers = $attempt?->answers ?? [];
                             $saved = $savedAnswers[$q->id] ?? null;
+
+                            // ✅ normalize saved for mcq
+                            if (is_array($saved)) {
+                                $saved = $saved[0] ?? null;
+                            }
+
+                            // ✅ MCQ options support legacy + JSON
+                            $opts = [];
+                            if ($q->type === 'mcq') {
+                                if (is_array($q->options) && count($q->options)) {
+                                    $opts = $q->options; // expected {"a":"..","b":".."}
+                                } else {
+                                    $opts = [
+                                        'a' => $q->option_a,
+                                        'b' => $q->option_b,
+                                        'c' => $q->option_c,
+                                        'd' => $q->option_d,
+                                    ];
+                                }
+                            }
                         @endphp
 
                         <div class="card-soft p-3 p-md-4 mb-3 q-section" id="q-{{ $q->id }}"
@@ -529,15 +536,6 @@
                             {{-- Answer box --}}
                             <div class="answer-box">
                                 @if ($q->type === 'mcq')
-                                    @php
-                                        $opts = [
-                                            'a' => $q->option_a,
-                                            'b' => $q->option_b,
-                                            'c' => $q->option_c,
-                                            'd' => $q->option_d,
-                                        ];
-                                    @endphp
-
                                     <div class="vstack gap-2">
                                         @foreach ($opts as $key => $text)
                                             @if ($text)
@@ -547,7 +545,7 @@
                                                         @checked($saved == $key)>
                                                     <div class="flex-grow-1">
                                                         <span class="fw-bold me-1">{{ strtoupper($key) }}.</span>
-                                                        {{ $text }}
+                                                        {{ is_string($text) ? $text : json_encode($text) }}
                                                     </div>
                                                 </label>
                                             @endif
@@ -750,10 +748,12 @@
             fixNavButtonsForCurrent();
 
             // prev/next
-            document.querySelectorAll('.prev-btn').forEach(btn => btn.addEventListener('click', () => showQuestion(
-                currentIndex - 1)));
-            document.querySelectorAll('.next-btn').forEach(btn => btn.addEventListener('click', () => showQuestion(
-                currentIndex + 1)));
+            document.querySelectorAll('.prev-btn').forEach(btn =>
+                btn.addEventListener('click', () => showQuestion(currentIndex - 1))
+            );
+            document.querySelectorAll('.next-btn').forEach(btn =>
+                btn.addEventListener('click', () => showQuestion(currentIndex + 1))
+            );
 
             // dots jump
             dots.forEach((dot, idx) => dot.addEventListener('click', () => showQuestion(idx)));
@@ -799,6 +799,7 @@
                 const timerText = document.getElementById('timerText');
 
                 function setTimerStyle() {
+                    timerPill.classList.remove('warn', 'danger');
                     if (seconds <= 60) timerPill.classList.add('danger');
                     else if (seconds <= 5 * 60) timerPill.classList.add('warn');
                 }
@@ -815,6 +816,8 @@
 
                     if (seconds <= 0) document.getElementById('examForm').submit();
                 }
+
+                setTimerStyle();
                 setInterval(tick, 1000);
             }
 

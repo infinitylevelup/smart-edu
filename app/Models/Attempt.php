@@ -8,12 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Attempt extends Model
 {
-    /**
-     * Fillable
-     * ------------------------------------------------------------
-     * ✅ باید تمام فیلدهایی که در کنترلر submit/start آپدیت می‌شن
-     * اینجا باشند وگرنه ذخیره نمی‌شن.
-     */
     protected $fillable = [
         'exam_id',
         'student_id',
@@ -21,42 +15,38 @@ class Attempt extends Model
         // legacy JSON answers
         'answers',
 
-        // وضعیت attempt
+        // status/time
         'status',
         'started_at',
         'submitted_at',
         'finished_at',
 
-        // نمره‌ها و درصد
+        // scoring
         'score',
         'percent',
         'score_total',
         'score_obtained',
 
-        // meta (اگر بعداً خواستی)
+        // meta
         'meta',
     ];
 
-    /**
-     * Casts
-     * ------------------------------------------------------------
-     */
     protected $casts = [
-        'answers'      => 'array',
-        'meta'         => 'array',
-        'started_at'   => 'datetime',
-        'submitted_at' => 'datetime',
-        'finished_at'  => 'datetime',
-        'score'        => 'decimal:2',
-        'percent'      => 'decimal:2',
-        'score_total'  => 'integer',
-        'score_obtained'=> 'integer',
+        // ستون legacy
+        'answers'        => 'array',
+        'meta'           => 'array',
+
+        'started_at'     => 'datetime',
+        'submitted_at'   => 'datetime',
+        'finished_at'    => 'datetime',
+
+        'score'          => 'decimal:2',
+        'percent'        => 'decimal:2',
+
+        'score_total'    => 'integer',
+        'score_obtained' => 'integer',
     ];
 
-    /**
-     * Relationships
-     * ------------------------------------------------------------
-     */
     public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
@@ -67,17 +57,18 @@ class Attempt extends Model
         return $this->belongsTo(User::class, 'student_id');
     }
 
+    /**
+     * ⚠️ توجه:
+     * این رابطه با ستون JSON هم‌نام است (answers).
+     * موقع eager load مشکلی نیست،
+     * برای دسترسی به ستون legacy از $attempt->answers استفاده می‌شود،
+     * برای دسترسی به رابطه از $attempt->getRelation('answers') یا $attempt->answers()->... استفاده کن.
+     */
     public function answers(): HasMany
     {
         return $this->hasMany(AttemptAnswer::class);
     }
 
-    /**
-     * Helpers
-     * ------------------------------------------------------------
-     * ✅ تشخیص اینکه این Attempt نهایی است یا نه
-     * برای جلوگیری از آزمون مجدد
-     */
     public function isFinal(): bool
     {
         return !is_null($this->finished_at)

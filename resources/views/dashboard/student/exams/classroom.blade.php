@@ -2,22 +2,25 @@
 @section('title', 'Classroom Exams')
 
 @push('styles')
-    {{-- EXACT SAME STYLES as public --}}
     <style>
-        /* (copy-paste the same <style> block from public.blade.php) */
         :root {
             --edu-blue: #2563eb;
             --edu-blue-2: #0ea5e9;
             --edu-blue-soft: #eff6ff;
+
             --edu-green: #16a34a;
             --edu-green-2: #22c55e;
             --edu-green-soft: #ecfdf3;
+
             --edu-amber: #f59e0b;
             --edu-amber-soft: #fffbeb;
+
             --edu-gray: #0f172a;
             --edu-muted: #64748b;
+
             --edu-card: #ffffff;
             --edu-bg: #f8fafc;
+
             --radius-xl: 1.25rem;
             --radius-lg: 1rem;
         }
@@ -348,6 +351,7 @@
                         @endforeach
                     </select>
 
+                    {{-- keep other query params --}}
                     @foreach (request()->except('classroom_id') as $k => $v)
                         <input type="hidden" name="{{ $k }}" value="{{ $v }}">
                     @endforeach
@@ -366,26 +370,37 @@
             <div class="exam-grid">
                 @foreach ($exams as $exam)
                     @php
-                        $lastAttempt = $exam->attempts->first() ?? null;
+                        // safest last attempt (in case controller didn't sort)
+$lastAttempt = $exam->attempts ? $exam->attempts->sortByDesc('id')->first() : null;
 
-                        $isFinalAttempt =
-                            $lastAttempt &&
-                            (!is_null($lastAttempt->finished_at) ||
-                                !is_null($lastAttempt->submitted_at) ||
-                                in_array($lastAttempt->status ?? null, ['submitted', 'graded']));
+$isFinalAttempt =
+    $lastAttempt &&
+    (!is_null($lastAttempt->finished_at) ||
+        !is_null($lastAttempt->submitted_at) ||
+        in_array($lastAttempt->status ?? null, ['submitted', 'graded']));
+
+// level icon + badge (NEW levels)
+$levelIcon = match ($exam->level) {
+    'easy' => 'bi-emoji-smile',
+    'average' => 'bi-speedometer2',
+    'hard' => 'bi-lightning-charge',
+    'tough' => 'bi-fire',
+    default => 'bi-lightning-charge',
+};
+
+$levelBadge = match ($exam->level) {
+    'easy' => ['class' => 'badge-green', 'text' => 'Easy'],
+    'average' => ['class' => 'badge-blue', 'text' => 'Average'],
+    'hard' => ['class' => 'badge-amber', 'text' => 'Hard'],
+    'tough' => ['class' => 'badge-dark', 'text' => 'Tough'],
+    default => ['class' => 'badge-blue', 'text' => ucfirst($exam->level)],
+                        };
                     @endphp
 
                     <div class="exam-card {{ $isFinalAttempt ? 'done' : '' }}">
                         <div class="accent"></div>
 
                         {{-- background icon --}}
-                        @php
-                            $levelIcon = match ($exam->level) {
-                                'konkur' => 'bi-bullseye',
-                                'olympiad' => 'bi-award',
-                                default => 'bi-lightning-charge',
-                            };
-                        @endphp
                         <i class="bi {{ $levelIcon }} bg-icon"></i>
 
                         <div class="exam-body">
@@ -407,6 +422,7 @@
 
                             <div class="d-flex flex-wrap gap-2 mt-2">
 
+                                {{-- classroom name --}}
                                 @if ($exam->classroom)
                                     <span class="badge-soft badge-blue">
                                         <i class="bi bi-mortarboard-fill"></i>
@@ -414,20 +430,11 @@
                                     </span>
                                 @endif
 
-                                @switch($exam->level)
-                                    @case('taghviyati')
-                                        <span class="badge-soft badge-green"><i class="bi bi-lightning-fill"></i>
-                                            Reinforcement</span>
-                                    @break
-
-                                    @case('konkur')
-                                        <span class="badge-soft badge-blue"><i class="bi bi-bullseye"></i> Konkur</span>
-                                    @break
-
-                                    @case('olympiad')
-                                        <span class="badge-soft badge-amber"><i class="bi bi-award-fill"></i> Olympiad</span>
-                                    @break
-                                @endswitch
+                                {{-- difficulty/level --}}
+                                <span class="badge-soft {{ $levelBadge['class'] }}">
+                                    <i class="bi {{ $levelIcon }}"></i>
+                                    {{ $levelBadge['text'] }}
+                                </span>
 
                                 <span class="badge-soft badge-light2">
                                     <i class="bi bi-clock-history"></i>
@@ -465,12 +472,9 @@
                                     Start Exam (Disabled) <i class="bi bi-lock-fill ms-1"></i>
                                 </button>
                             @else
-                                <form method="POST" action="{{ route('student.exams.start', $exam) }}">
-                                    @csrf
-                                    <button class="btn btn-start w-100">
-                                        Start Exam <i class="bi bi-play-fill ms-1"></i>
-                                    </button>
-                                </form>
+                                <a href="{{ route('student.exams.show', $exam) }}" class="btn btn-start w-100">
+                                    Go to Exam <i class="bi bi-arrow-left ms-1"></i>
+                                </a>
                             @endif
                         </div>
                     </div>

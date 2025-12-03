@@ -3,26 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ add this
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Exam extends Model
 {
-    use HasFactory; // ✅ add this
+    use HasFactory;
 
     protected $fillable = [
         'teacher_id',
         'classroom_id',
         'subject_id',
+
         'title',
         'description',
-        'level',
-        'duration',
+        'level',        // taghviyati | konkur | olympiad
+        'duration',     // minutes
         'start_at',
-        'is_published',
 
-        'scope',
+        'scope',        // free | classroom
+        'is_published',
         'is_active',
     ];
 
@@ -30,14 +31,27 @@ class Exam extends Model
         'is_published' => 'boolean',
         'is_active'    => 'boolean',
         'start_at'     => 'datetime',
+        'duration'     => 'integer',
     ];
+
+    /* ================= Relationships ================= */
 
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function questions()
+    public function classroom(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class);
+    }
+
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
+    public function questions(): HasMany
     {
         return $this->hasMany(Question::class);
     }
@@ -47,13 +61,29 @@ class Exam extends Model
         return $this->hasMany(Attempt::class);
     }
 
-    public function classroom()
+    /* ================= Helpers / Scopes ================= */
+
+    public function scopeActive($q)
     {
-        return $this->belongsTo(Classroom::class);
+        return $q->where(function ($act) {
+            $act->whereNull('is_active')->orWhere('is_active', true);
+        });
     }
 
-    public function subject()
+    public function scopePublished($q)
     {
-        return $this->belongsTo(\App\Models\Subject::class);
+        return $q->where(function ($pub) {
+            $pub->whereNull('is_published')->orWhere('is_published', true);
+        });
+    }
+
+    public function isFree(): bool
+    {
+        return $this->scope === 'free';
+    }
+
+    public function isClassroom(): bool
+    {
+        return $this->scope === 'classroom';
     }
 }

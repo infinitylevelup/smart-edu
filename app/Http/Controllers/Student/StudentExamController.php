@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\Attempt;
+use App\Models\AttemptAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,8 @@ use App\Services\GamificationService;
 class StudentExamController extends Controller
 {
     /**
-     * Legacy index (kept for backward compatibility)
-     * Shows both free + classroom exams (joined classrooms only)
+     * Legacy index (backward compatible)
+     * Shows free + classroom exams (only joined classrooms)
      */
     public function index(Request $request)
     {
@@ -24,20 +25,19 @@ class StudentExamController extends Controller
         $examsQuery = Exam::query()
             ->where(function ($q) use ($classroomIds) {
                 $q->where('scope', 'free')
-                  ->orWhere(function ($q2) use ($classroomIds) {
-                      $q2->where('scope', 'classroom')
-                         ->whereIn('classroom_id', $classroomIds)
-                         ->where(function ($pub) {
-                             $pub->whereNull('is_published')
-                                 ->orWhere('is_published', true);
-                         })
-                         ->where(function ($act) {
-                             $act->whereNull('is_active')
-                                 ->orWhere('is_active', true);
-                         });
-                  });
+                    ->orWhere(function ($q2) use ($classroomIds) {
+                        $q2->where('scope', 'classroom')
+                            ->whereIn('classroom_id', $classroomIds)
+                            ->where(function ($pub) {
+                                $pub->whereNull('is_published')->orWhere('is_published', true);
+                            })
+                            ->where(function ($act) {
+                                $act->whereNull('is_active')->orWhere('is_active', true);
+                            });
+                    });
             })
             ->with('classroom')
+            ->withCount('questions')
             ->with(['attempts' => function ($q) use ($student) {
                 $q->where('student_id', $student->id)->latest();
             }])
@@ -55,20 +55,17 @@ class StudentExamController extends Controller
 
         $exams = $examsQuery->paginate(9)->withQueryString();
 
-        // ✅ چون توی public.blade.php ازش استفاده کردی
         $classrooms = $student->classrooms()->get();
 
-        // ✅ اگر فیلتر کلاس انتخاب شده → صفحه classroom
         if ($request->filled('classroom_id')) {
             return view('dashboard.student.exams.classroom', compact('exams', 'classrooms'));
         }
 
-        // ✅ در غیر این صورت → صفحه public
         return view('dashboard.student.exams.public', compact('exams', 'classrooms'));
     }
 
     /**
-     * ✅ NEW: Public exams list (no class membership required)
+     * Public exams list
      */
     public function publicIndex(Request $request)
     {
@@ -77,6 +74,7 @@ class StudentExamController extends Controller
         $examsQuery = Exam::query()
             ->where('scope', 'free')
             ->with('classroom')
+            ->withCount('questions')
             ->with(['attempts' => function ($q) use ($student) {
                 $q->where('student_id', $student->id)->latest();
             }])
@@ -88,51 +86,48 @@ class StudentExamController extends Controller
     }
 
     /**
-     * ✅ NEW: Classroom exams list (only exams for joined classrooms)
+     * Classroom exams list (joined classrooms only)
      */
-public function classroomIndex(Request $request)
-{
-    $student = Auth::user();
-    $classroomIds = $student->classrooms()->pluck('classrooms.id');
+    public function classroomIndex(Request $request)
+    {
+        $student = Auth::user();
+        $classroomIds = $student->classrooms()->pluck('classrooms.id');
 
-    $examsQuery = Exam::query()
-        ->where('scope', 'classroom')
-        ->whereIn('classroom_id', $classroomIds)
-        ->where(function ($pub) {
-            $pub->whereNull('is_published')
-                ->orWhere('is_published', true);
-        })
-        ->where(function ($act) {
-            $act->whereNull('is_active')
-                ->orWhere('is_active', true);
-        })
-        ->with('classroom')
-        ->with(['attempts' => function ($q) use ($student) {
-            $q->where('student_id', $student->id)->latest();
-        }])
-        ->latest();
+        $examsQuery = Exam::query()
+            ->where('scope', 'classroom')
+            ->whereIn('classroom_id', $classroomIds)
+            ->where(function ($pub) {
+                $pub->whereNull('is_published')->orWhere('is_published', true);
+            })
+            ->where(function ($act) {
+                $act->whereNull('is_active')->orWhere('is_active', true);
+            })
+            ->with('classroom')
+            ->withCount('questions')
+            ->with(['attempts' => function ($q) use ($student) {
+                $q->where('student_id', $student->id)->latest();
+            }])
+            ->latest();
 
-    if ($request->filled('classroom_id')) {
-        $examsQuery->where('classroom_id', $request->classroom_id);
+        if ($request->filled('classroom_id')) {
+            $examsQuery->where('classroom_id', $request->classroom_id);
+        }
+
+        $exams = $examsQuery->paginate(9)->withQueryString();
+        $classrooms = $student->classrooms()->get();
+
+        return view('dashboard.student.exams.classroom', compact('exams', 'classrooms'));
     }
 
-    $exams = $examsQuery->paginate(9)->withQueryString();
-
-    // ✅ اینجا اضافه میشه
-    $classrooms = $student->classrooms()->get();
-
-    return view('dashboard.student.exams.classroom', compact('exams', 'classrooms'));
-}
-
-
     /**
-     * ✅ Exam details
+     * Exam details
      */
     public function show(Exam $exam)
     {
         $this->authorizeExamForStudent($exam);
 
         $exam->load(['classroom', 'questions']);
+        $exam->difficulty = $this->normalizeDifficulty($exam->difficulty);
 
         $student = Auth::user();
 
@@ -146,12 +141,19 @@ public function classroomIndex(Request $request)
         return view('dashboard.student.exams.show', compact('exam', 'lastAttempt', 'isFinalAttempt'));
     }
 
+    /**
+     * Take exam page
+     */
     public function take(Exam $exam)
     {
         $this->authorizeExamForStudent($exam);
 
         $student = Auth::user();
         $exam->load('questions');
+
+        if (empty($exam->duration_minutes) && !empty($exam->duration)) {
+            $exam->duration_minutes = $exam->duration;
+        }
 
         $attempt = Attempt::where('exam_id', $exam->id)
             ->where('student_id', $student->id)
@@ -163,7 +165,7 @@ public function classroomIndex(Request $request)
     }
 
     /**
-     * ✅ Start exam
+     * Start exam
      */
     public function start(Exam $exam)
     {
@@ -190,20 +192,28 @@ public function classroomIndex(Request $request)
 
         if (!$attempt) {
             $attempt = Attempt::create([
-                'exam_id'     => $exam->id,
-                'student_id'  => $student->id,
-                'answers'     => [],
-                'score'       => 0,
-                'percent'     => 0,
-                'started_at'  => now(),
-                'finished_at' => null,
-                'status'      => 'in_progress',
+                'exam_id'        => $exam->id,
+                'student_id'     => $student->id,
+                'answers'        => [],
+                'score'          => 0,
+                'percent'        => 0,
+                'score_total'    => 0,
+                'score_obtained' => 0,
+                'started_at'     => now(),
+                'finished_at'    => null,
+                'submitted_at'   => null,
+                'status'         => 'in_progress',
             ]);
         }
 
-        return redirect()->route('student.exams.take', $exam->id);
+        // ✅ CHANGED: بهتره route model binding استفاده بشه
+        return redirect()->route('student.exams.take', $exam);
+        // قبلی: return redirect()->route('student.exams.take', $exam->id);
     }
 
+    /**
+     * Submit exam answers + grading
+     */
     public function submit(Request $request, Exam $exam, GamificationService $gamification)
     {
         $this->authorizeExamForStudent($exam);
@@ -213,6 +223,7 @@ public function classroomIndex(Request $request)
         ]);
 
         $student = Auth::user();
+        $exam->load('questions');
 
         $attempt = Attempt::where('exam_id', $exam->id)
             ->where('student_id', $student->id)
@@ -221,16 +232,53 @@ public function classroomIndex(Request $request)
             ->firstOrFail();
 
         DB::transaction(function () use ($request, $exam, $attempt) {
-            // ... کل منطق فعلی تو بدون تغییر
+            AttemptAnswer::where('attempt_id', $attempt->id)->delete();
+
+            $answersInput = $request->input('answers', []);
+
+            $scoreTotal = 0;
+            $scoreObtained = 0;
+
+            foreach ($exam->questions as $q) {
+                $qScore = (int) ($q->score ?? 1);
+                $scoreTotal += $qScore;
+
+                $studentAnswer = $answersInput[$q->id] ?? null;
+
+                $grading = $this->gradeQuestion($q, $studentAnswer, $qScore);
+
+                AttemptAnswer::create([
+                    'attempt_id'    => $attempt->id,
+                    'question_id'   => $q->id,
+                    'answer'        => $studentAnswer,
+                    'is_correct'    => $grading['is_correct'],
+                    'score_awarded' => $grading['score_awarded'],
+                ]);
+
+                $scoreObtained += $grading['score_awarded'];
+            }
+
+            $percent = $scoreTotal > 0 ? round(($scoreObtained / $scoreTotal) * 100, 2) : 0;
+
+            $attempt->update([
+                'answers'        => $answersInput,
+
+                'score_total'    => $scoreTotal,
+                'score_obtained' => $scoreObtained,
+
+                'score'          => $scoreObtained,
+                'percent'        => $percent,
+
+                'submitted_at'   => now(),
+                'finished_at'    => now(),
+                'status'         => 'submitted',
+            ]);
         });
 
-        // =========================
-        // ✅ Gamification Hook (Phase A)
-        // =========================
-        $attempt->refresh(); // چون داخل transaction آپدیت شده
+        $attempt->refresh();
 
-        $baseXp = $exam->scope === 'free' ? 20 : 25;     // آزمون عمومی/کلاسی
-        $scoreXp = (int) floor($attempt->percent / 5);  // هر 5% = 1 XP
+        $baseXp = $exam->scope === 'free' ? 20 : 25;
+        $scoreXp = (int) floor(((float) $attempt->percent) / 5);
         $totalAward = $baseXp + $scoreXp;
 
         $gamification->awardXp(
@@ -246,7 +294,7 @@ public function classroomIndex(Request $request)
     }
 
     /**
-     * ✅ NEW: Attempt Result page
+     * Attempt Result page
      */
     public function result(Attempt $attempt)
     {
@@ -260,16 +308,20 @@ public function classroomIndex(Request $request)
 
         $exam = $attempt->exam;
 
+        // ✅ CHANGED: به‌صورت صریح رابطه answers را بگیر
+        // چون ستون JSON و رابطه همنام‌اند و ممکنه باگ رندوم بده
+        $attemptAnswerModels = $attempt->getRelation('answers');
+
         return view('dashboard.student.attempts.result', [
             'attempt' => $attempt,
             'exam' => $exam,
-            'attemptAnswers' => $attempt->answers
+            'attemptAnswers' => $attemptAnswerModels, // ✅ رابطه واقعی
+            'legacyAnswers' => $attempt->getAttribute('answers'), // ✅ در صورت نیاز به JSON
         ]);
     }
 
     /**
-     * ✅ NEW: Attempt Analysis page (Phase 1 stub)
-     * Later you will load academic + developmental analysis here.
+     * Attempt Analysis (Phase 1 stub)
      */
     public function analysis(Attempt $attempt)
     {
@@ -281,7 +333,6 @@ public function classroomIndex(Request $request)
             'answers.question'
         ]);
 
-        // TODO Phase 2/3: load real analysis models
         $analysis = null;
 
         return view('dashboard.student.attempts.analysis', [
@@ -292,8 +343,7 @@ public function classroomIndex(Request $request)
     }
 
     /**
-     * Legacy attempt page (keep old links working)
-     * Redirect to new result page.
+     * Legacy attempt show → redirect to result
      */
     public function attemptShow(Attempt $attempt)
     {
@@ -316,7 +366,7 @@ public function classroomIndex(Request $request)
     }
 
     /**
-     * ✅ Final attempt means student already submitted once
+     * Final attempt means student already submitted once
      */
     private function isFinalAttempt(?Attempt $attempt): bool
     {
@@ -326,5 +376,102 @@ public function classroomIndex(Request $request)
             !is_null($attempt->finished_at) ||
             !is_null($attempt->submitted_at) ||
             in_array($attempt->status ?? null, ['submitted', 'graded']);
+    }
+
+    /**
+     * Normalize difficulty to easy|medium|hard
+     */
+    private function normalizeDifficulty(?string $difficulty): string
+    {
+        $difficulty = strtolower(trim((string) $difficulty));
+
+        return match ($difficulty) {
+            'easy', 'low', 'simple' => 'easy',
+            'hard', 'high', 'difficult' => 'hard',
+            default => 'medium',
+        };
+    }
+
+    /**
+     * Grade a single question
+     */
+    private function gradeQuestion($q, $studentAnswer, int $qScore): array
+    {
+        $type = $q->type ?? 'mcq';
+
+        $correctOption = $q->correct_option ?? null;
+        $correctAnswer = $q->correct_answer ?? null;
+
+        $isCorrect = null;
+        $awarded = 0;
+
+        if ($type === 'essay') {
+            $isCorrect = null;
+            $awarded = 0;
+
+        } elseif ($type === 'mcq') {
+            $studentKey = is_array($studentAnswer) ? ($studentAnswer[0] ?? null) : $studentAnswer;
+
+            if (!empty($correctOption)) {
+                $isCorrect = strtolower((string) $studentKey) === strtolower((string) $correctOption);
+            } else {
+                $correctArr = is_string($correctAnswer) ? json_decode($correctAnswer, true) : $correctAnswer;
+                $correctArr = is_array($correctArr) ? $correctArr : [$correctArr];
+                $isCorrect = in_array(
+                    strtolower((string) $studentKey),
+                    array_map(fn($v)=>strtolower((string)$v), $correctArr)
+                );
+            }
+            $awarded = $isCorrect ? $qScore : 0;
+
+        } elseif ($type === 'true_false') {
+
+            // ✅ CHANGED: سازگاری کامل با boolean و correct_tf
+            $studentVal = $studentAnswer;
+            if (is_string($studentVal)) $studentVal = strtolower($studentVal);
+            if ($studentVal === 'true') $studentVal = true;
+            if ($studentVal === 'false') $studentVal = false;
+
+            // اولویت با correct_tf اگر موجود بود
+            if (!is_null($q->correct_tf)) {
+                $correctVal = (bool) $q->correct_tf;
+            } else {
+                $correctVal = $correctAnswer;
+                if (is_string($correctVal)) {
+                    $correctVal = strtolower($correctVal);
+                    $correctVal = $correctVal === 'true';
+                }
+            }
+
+            $isCorrect = (bool)$studentVal === (bool)$correctVal;
+            $awarded = $isCorrect ? $qScore : 0;
+
+        } elseif ($type === 'fill_blank') {
+            $studentText = is_array($studentAnswer) ? implode(',', $studentAnswer) : (string)$studentAnswer;
+            $studentParts = array_filter(array_map(fn($v)=>trim(mb_strtolower($v)), explode(',', $studentText)));
+
+            $correctArr = is_string($correctAnswer) ? json_decode($correctAnswer, true) : $correctAnswer;
+            $correctArr = is_array($correctArr) ? $correctArr : [$correctArr];
+            $correctArr = array_filter(array_map(fn($v)=>trim(mb_strtolower((string)$v)), $correctArr));
+
+            $isCorrect = false;
+            foreach ($studentParts as $sp) {
+                if (in_array($sp, $correctArr, true)) {
+                    $isCorrect = true;
+                    break;
+                }
+            }
+
+            $awarded = $isCorrect ? $qScore : 0;
+
+        } else {
+            $isCorrect = false;
+            $awarded = 0;
+        }
+
+        return [
+            'is_correct' => $isCorrect,
+            'score_awarded' => $awarded,
+        ];
     }
 }

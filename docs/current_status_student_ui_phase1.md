@@ -1,9 +1,3 @@
-# Smart-Edu Backlog
-
-
-## Current Status Sync
-آخرین همگام‌سازی بکلاگ با وضعیت موجود Student UI Phase 1:
-
 # Current Status — Student UI (Phase 1)
 
 ## A) Fixed / Completed Blade Files ✅

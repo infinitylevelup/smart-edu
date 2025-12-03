@@ -1,8 +1,7 @@
 @extends('layouts.app')
-@section('title', 'Public Exams')
+@section('title', 'آزمون‌های عمومی')
 
 @push('styles')
-    {{-- Reuse the exact same styles from exams/index --}}
     <style>
         :root {
             --edu-blue: #2563eb;
@@ -316,14 +315,12 @@
             <div>
                 <h4>
                     <i class="bi bi-globe2 me-1"></i>
-                    Public Exams
+                    آزمون‌های عمومی
                 </h4>
                 <div class="subtitle">
-                    These exams are available for all students. Try them anytime and track your progress 🚀
+                    این آزمون‌ها برای همه دانش‌آموزان فعال هستند. هر زمان خواستی امتحان بده و پیشرفتت رو ببین 🚀
                 </div>
             </div>
-
-            {{-- No classroom filter here (public only) --}}
         </div>
 
 
@@ -331,32 +328,49 @@
         @if ($exams->count() == 0)
             <div class="alert alert-warning d-flex align-items-center gap-2 rounded-3 shadow-sm">
                 <i class="bi bi-emoji-frown fs-4"></i>
-                No public exams are available right now.
+                فعلاً آزمون عمومی منتشر نشده است.
             </div>
         @else
             <div class="exam-grid">
                 @foreach ($exams as $exam)
                     @php
-                        $lastAttempt = $exam->attempts->first() ?? null;
+                        // ✅ safe attempt fetch (loaded or not)
+                        $attemptsRelLoaded =
+                            method_exists($exam, 'relationLoaded') && $exam->relationLoaded('attempts');
 
-                        $isFinalAttempt =
-                            $lastAttempt &&
-                            (!is_null($lastAttempt->finished_at) ||
-                                !is_null($lastAttempt->submitted_at) ||
-                                in_array($lastAttempt->status ?? null, ['submitted', 'graded']));
+                        $lastAttempt = $attemptsRelLoaded
+                            ? $exam->attempts
+                                ->where('student_id', auth()->id())
+                                ->sortByDesc('created_at')
+                                ->first()
+                            : $exam
+                                ->attempts()
+                                ->where('student_id', auth()->id())
+                                ->latest()
+                                ->first();
+
+                        $isFinalAttempt = $lastAttempt && $lastAttempt->isFinal();
+
+                        // ✅ level icon based on current DB enum: easy/average/hard/tough
+                        $levelIcon = match ($exam->level) {
+                            'easy' => 'bi-lightning-charge',
+                            'hard' => 'bi-bullseye',
+                            'tough' => 'bi-award',
+                            default => 'bi-speedometer2', // average
+                        };
+
+                        $levelBadge = match ($exam->level) {
+                            'easy' => ['badge-green', 'آسان', 'bi-lightning-fill'],
+                            'hard' => ['badge-blue', 'سخت', 'bi-bullseye'],
+                            'tough' => ['badge-amber', 'خیلی سخت', 'bi-award-fill'],
+                            default => ['badge-light2', 'متوسط', 'bi-speedometer2'], // average
+                        };
                     @endphp
 
                     <div class="exam-card {{ $isFinalAttempt ? 'done' : '' }}">
                         <div class="accent"></div>
 
                         {{-- background icon --}}
-                        @php
-                            $levelIcon = match ($exam->level) {
-                                'konkur' => 'bi-bullseye',
-                                'olympiad' => 'bi-award',
-                                default => 'bi-lightning-charge',
-                            };
-                        @endphp
                         <i class="bi {{ $levelIcon }} bg-icon"></i>
 
                         <div class="exam-body">
@@ -368,51 +382,41 @@
                                 </div>
 
                                 <span class="badge-soft badge-dark">
-                                    <i class="bi bi-globe2"></i> Public
+                                    <i class="bi bi-globe2"></i> عمومی
                                 </span>
                             </div>
 
                             <p class="exam-desc">
-                                {{ $exam->description ?? 'No description' }}
+                                {{ $exam->description ? \Illuminate\Support\Str::limit($exam->description, 110) : 'بدون توضیح' }}
                             </p>
 
                             <div class="d-flex flex-wrap gap-2 mt-2">
-                                @switch($exam->level)
-                                    @case('taghviyati')
-                                        <span class="badge-soft badge-green"><i class="bi bi-lightning-fill"></i>
-                                            Reinforcement</span>
-                                    @break
-
-                                    @case('konkur')
-                                        <span class="badge-soft badge-blue"><i class="bi bi-bullseye"></i> Konkur</span>
-                                    @break
-
-                                    @case('olympiad')
-                                        <span class="badge-soft badge-amber"><i class="bi bi-award-fill"></i> Olympiad</span>
-                                    @break
-                                @endswitch
+                                <span class="badge-soft {{ $levelBadge[0] }}">
+                                    <i class="bi {{ $levelBadge[2] }}"></i>
+                                    {{ $levelBadge[1] }}
+                                </span>
 
                                 <span class="badge-soft badge-light2">
                                     <i class="bi bi-clock-history"></i>
-                                    {{ $exam->duration }} min
+                                    {{ $exam->duration }} دقیقه
                                 </span>
 
                                 @if ($isFinalAttempt)
                                     <span class="badge-soft badge-amber">
-                                        <i class="bi bi-check2-circle"></i> Completed
+                                        <i class="bi bi-check2-circle"></i> تکمیل‌شده
                                     </span>
                                 @endif
                             </div>
 
                             <div class="motivate">
                                 <i class="bi bi-graph-up-arrow"></i>
-                                Every exam is one step forward — keep going!
+                                هر آزمون یه قدم به جلوئه — ادامه بده!
                             </div>
 
                             @if ($isFinalAttempt)
                                 <div class="done-alert">
                                     <i class="bi bi-shield-exclamation"></i>
-                                    You already took this exam. Retake is disabled.
+                                    شما قبلاً این آزمون رو داده‌اید. تکرار غیرفعال است.
                                 </div>
                             @endif
                         </div>
@@ -421,17 +425,17 @@
                             @if ($isFinalAttempt)
                                 <a href="{{ route('student.attempts.result', $lastAttempt->id) }}"
                                     class="btn btn-result w-100">
-                                    View Result <i class="bi bi-eye ms-1"></i>
+                                    مشاهده نتیجه <i class="bi bi-eye ms-1"></i>
                                 </a>
 
                                 <button class="btn btn-disabled w-100" disabled>
-                                    Start Exam (Disabled) <i class="bi bi-lock-fill ms-1"></i>
+                                    شروع آزمون (غیرفعال) <i class="bi bi-lock-fill ms-1"></i>
                                 </button>
                             @else
-                                <form method="POST" action="{{ route('student.exams.start', $exam) }}">
+                                <form method="POST" action="{{ route('student.exams.start', $exam->id) }}">
                                     @csrf
                                     <button class="btn btn-start w-100">
-                                        Start Exam <i class="bi bi-play-fill ms-1"></i>
+                                        شروع آزمون <i class="bi bi-play-fill ms-1"></i>
                                     </button>
                                 </form>
                             @endif
@@ -445,6 +449,7 @@
                     {{ $exams->links() }}
                 </div>
             @endif
+
         @endif
     </div>
 @endsection
