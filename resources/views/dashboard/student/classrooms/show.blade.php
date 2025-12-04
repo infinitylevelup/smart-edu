@@ -5,8 +5,8 @@
 @push('styles')
     <style>
         /* ------------------------------------------------------------------
-                 | Page Shell
-                 |-------------------------------------------------------------------*/
+                     | Page Shell
+                     |-------------------------------------------------------------------*/
         .page-wrap {
             padding: 1.5rem 0;
         }
@@ -19,8 +19,8 @@
         }
 
         /* ------------------------------------------------------------------
-                 | Classroom Header
-                 |-------------------------------------------------------------------*/
+                     | Classroom Header
+                     |-------------------------------------------------------------------*/
         .class-header {
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
             border-radius: 1.25rem;
@@ -60,8 +60,8 @@
         }
 
         /* ------------------------------------------------------------------
-                 | Exams List
-                 |-------------------------------------------------------------------*/
+                     | Exams List
+                     |-------------------------------------------------------------------*/
         .exam-card {
             border: 1px solid #eef2f7;
             border-radius: 1.1rem;
@@ -83,8 +83,8 @@
         }
 
         /* ------------------------------------------------------------------
-                 | Empty Exams
-                 |-------------------------------------------------------------------*/
+                     | Empty Exams
+                     |-------------------------------------------------------------------*/
         .empty-wrap {
             text-align: center;
             padding: 2.5rem 1rem;
@@ -120,8 +120,8 @@
     <div class="container page-wrap">
 
         {{-- ============================================================
-         | Top Actions
-         |============================================================= --}}
+     | Top Actions
+     |============================================================= --}}
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
                 <h4 class="fw-bold mb-1">
@@ -149,33 +149,58 @@
         </div>
 
 
+        @php
+            $title = $classroom->title ?? ($classroom->name ?? 'کلاس بدون عنوان');
+
+            $joinCode = $classroom->join_code ?? null;
+
+            $teacher = $classroom->teacher ?? null;
+            $teacherName = $teacher->display_name ?? ($teacher->name ?? 'نامشخص');
+
+            $exams = $classroom->exams ?? collect();
+        @endphp
+
         {{-- ============================================================
-         | Classroom Header Card
-         |============================================================= --}}
+     | Classroom Header Card
+     |============================================================= --}}
         <div class="class-header soft-card mb-3">
 
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
                 <div>
                     <div class="fw-bold fs-4 mb-1">
-                        {{ $classroom->title }}
+                        {{ $title }}
                     </div>
 
-                    <div class="meta">
-                        {{ $classroom->subject ?? 'موضوع نامشخص' }}
-                        <span class="mx-1">•</span>
-                        پایه: {{ $classroom->grade ?? '—' }}
-                    </div>
+                    {{-- subject/grade فقط اگر واقعاً وجود داشته باشند نمایش بده --}}
+                    @if (!empty($classroom->subject) || !empty($classroom->grade))
+                        <div class="meta">
+                            {{ $classroom->subject ?? 'موضوع نامشخص' }}
+                            @if (!empty($classroom->grade))
+                                <span class="mx-1">•</span>
+                                پایه: {{ $classroom->grade }}
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <div class="d-flex flex-column align-items-end gap-2">
-                    <span class="class-chip">
-                        <i class="bi bi-key-fill text-primary"></i>
-                        {{ $classroom->join_code }}
-                    </span>
+                    @if ($joinCode)
+                        <span class="class-chip">
+                            <i class="bi bi-key-fill text-primary"></i>
+                            {{ $joinCode }}
+                        </span>
+                    @endif
 
                     <span class="badge {{ $classroom->is_active ? 'bg-success' : 'bg-secondary' }} exam-badge">
                         {{ $classroom->is_active ? 'کلاس فعال' : 'کلاس غیرفعال' }}
                     </span>
+
+                    @if (isset($classroom->is_published))
+                        <span
+                            class="badge {{ $classroom->is_published ? 'bg-primary' : 'bg-light text-dark border' }} exam-badge">
+                            {{ $classroom->is_published ? 'منتشر شده' : 'پیش‌نویس' }}
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -199,17 +224,11 @@
                 </div>
                 <div>
                     <div class="tiny text-muted">معلم کلاس</div>
-                    <div class="fw-semibold">
-                        {{ $classroom->teacher->name ?? 'نامشخص' }}
-                    </div>
+                    <div class="fw-semibold">{{ $teacherName }}</div>
                 </div>
             </div>
 
             {{-- Stats --}}
-            @php
-                $exams = $classroom->exams ?? collect();
-            @endphp
-
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <div class="stat-pill">
                     <i class="bi bi-journal-text me-1 text-primary"></i>
@@ -227,8 +246,8 @@
 
 
         {{-- ============================================================
-         | Exams Section
-         |============================================================= --}}
+     | Exams Section
+     |============================================================= --}}
         <div class="soft-card p-3 p-md-4">
 
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -237,14 +256,14 @@
                     آزمون‌های این کلاس
                 </h5>
 
-                {{-- ✅ اصلاح: بدون classroom_id تا وقتی فیلتر کنترلر اضافه شود --}}
+                {{-- فعلاً بدون classroom_id چون فیلتر در کنترلر نیست --}}
                 <a href="{{ route('student.exams.index') }}" class="btn btn-outline-primary btn-sm">
                     مشاهده همه آزمون‌ها
                 </a>
             </div>
 
             {{-- Empty exams --}}
-            @if ($exams->count() == 0)
+            @if ($exams->isEmpty())
                 <div class="empty-wrap">
                     <div class="empty-illus">
                         <i class="bi bi-journal-x"></i>
@@ -270,6 +289,8 @@
                         @php
                             $qCount =
                                 $exam->questions_count ?? (isset($exam->questions) ? $exam->questions->count() : null);
+
+                            $duration = $exam->duration ?? 0;
                         @endphp
 
                         <div class="col-md-6 col-xl-4">
@@ -278,10 +299,10 @@
                                 <div class="d-flex justify-content-between align-items-start gap-2">
                                     <div>
                                         <div class="fw-bold mb-1">
-                                            {{ $exam->title }}
+                                            {{ $exam->title ?? 'آزمون بدون عنوان' }}
                                         </div>
                                         <div class="tiny text-muted">
-                                            مدت: {{ $exam->duration ?? 0 }} دقیقه
+                                            مدت: {{ $duration }} دقیقه
                                             @if (!is_null($qCount))
                                                 <span class="mx-1">•</span>
                                                 سوال‌ها: {{ $qCount }}
@@ -289,9 +310,12 @@
                                         </div>
                                     </div>
 
-                                    <span class="badge bg-light text-dark border exam-badge">
-                                        {{ $exam->is_published ? 'منتشر شده' : 'پیش‌نویس' }}
-                                    </span>
+                                    @if (isset($exam->is_published))
+                                        <span
+                                            class="badge {{ $exam->is_published ? 'bg-success' : 'bg-light text-dark border' }} exam-badge">
+                                            {{ $exam->is_published ? 'منتشر شده' : 'پیش‌نویس' }}
+                                        </span>
+                                    @endif
                                 </div>
 
                                 @if (!empty($exam->description))
@@ -306,8 +330,7 @@
                                         جزئیات
                                     </a>
 
-                                    {{-- ✅ اصلاح: فقط اگر منتشر شده باشد --}}
-                                    @if ($exam->is_published)
+                                    @if ($exam->is_published ?? false)
                                         <a href="{{ route('student.exams.take', $exam) }}"
                                             class="btn btn-primary w-100 btn-sm">
                                             شروع آزمون
@@ -323,8 +346,8 @@
                         </div>
                     @endforeach
                 </div>
-            @endif
 
+            @endif
         </div>
     </div>
 @endsection

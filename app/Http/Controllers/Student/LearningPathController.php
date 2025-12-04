@@ -235,9 +235,11 @@ private function suggestNextExams(int $studentId, $attempts, int $overallPercent
     if (!empty($weakSubjects)) {
         $weakExam = (clone $base)
             ->whereHas('subject', function ($q) use ($weakSubjects) {
-                $q->whereIn('title', $weakSubjects)
-                  ->orWhereIn('name', $weakSubjects);
+                $q->where(function ($qq) use ($weakSubjects) {
+                    $qq->whereIn('title', $weakSubjects);
+                });
             })
+
             ->latest()
             ->first();
 
