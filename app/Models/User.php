@@ -90,6 +90,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(TeacherProfile::class, 'user_id');
     }
+    // کلاس‌هایی که این کاربر (معلم) ساخته/تدریس می‌کند
+    public function teachingClassrooms()
+    {
+        return $this->hasMany(\App\Models\ClassRoom::class, 'teacher_id');
+    }
+
 
     /**
      * پروفایل گیمیفیکیشن دانش‌آموز
