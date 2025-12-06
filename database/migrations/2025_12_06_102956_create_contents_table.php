@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contents', function (Blueprint $table) {
-            $table->string('id');
-            $table->string('creator_id');
+            $table->uuid('user_id');
+$table->foreign('user_id')->references('id')->on('users');            $table->string('creator_id');
             $table->enum('type', ['video','pdf','article','link','quiz','other']);
             $table->string('title', 250);
             $table->text('description')->nullable();

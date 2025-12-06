@@ -2,61 +2,47 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
-/**
- * Factory برای ساخت کاربران تستی مطابق ساختار واقعی users
- * - OTP ها در جدول otps هستند، پس otp_code / otp_expires_at در users نداریم
- */
 class UserFactory extends Factory
 {
+    protected $model = User::class;
+
     public function definition(): array
     {
-        $data = [];
-
-        if (\Schema::hasColumn('users','phone')) {
-            $data['phone'] = $this->faker->unique()->numerify('09#########');
-        }
-
-        if (\Schema::hasColumn('users','name')) {
-            $data['name'] = $this->faker->name();
-        }
-
-        if (\Schema::hasColumn('users','full_name')) {
-            $data['full_name'] = $this->faker->name();
-        }
-
-        if (\Schema::hasColumn('users','role')) {
-            $data['role'] = 'student';
-        }
-
-        if (\Schema::hasColumn('users','is_active')) {
-            $data['is_active'] = 1;
-        }
-
-        return $data;
+        return [
+            'id'       => (string) fake()->unique()->numerify('##########'),
+            'name'     => fake()->name(),
+            'email'    => null,
+            'phone'    => fake()->unique()->numerify('09#########'),
+            'password' => Hash::make('12345678'),
+            'status'   => 'active',
+        ];
     }
 
-
-    public function student(): static
+    // اگر state لازم داری، فقط فیلدهای واقعی users رو تغییر بده
+    public function inactive()
     {
         return $this->state(fn () => [
-            'role' => 'student',
+            'status' => 'inactive',
         ]);
     }
+    public function student()
+{
+    return $this->state(fn () => [
+        // فقط فیلدهای واقعی جدول users
+        'status' => 'active',
+    ]);
+}
 
-    public function teacher(): static
-    {
-        return $this->state(fn () => [
-            'role' => 'teacher',
-        ]);
-    }
+public function teacher()
+{
+    return $this->state(fn () => [
+        'status' => 'active',
+    ]);
+}
 
-    public function noRoleSelected(): static
-    {
-        return $this->state(fn () => [
-            'role' => null,
-            'role_selected_at' => null,
-        ]);
-    }
 }

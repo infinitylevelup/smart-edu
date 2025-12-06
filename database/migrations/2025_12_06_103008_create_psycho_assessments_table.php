@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('psycho_assessments', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('student_id');
             $table->enum('assessment_type', ['stress','motivation','focus','anxiety','mood','sleep']);
             $table->decimal('value', 5, 2);

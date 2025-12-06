@@ -9,7 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('questions', function (Blueprint $table) {
-            $table->string('id');
+
+            // ✅ کلید اصلی UUID
+            $table->uuid('id')->primary();
+
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+
             $table->string('creator_id');
             $table->string('section_id');
             $table->string('grade_id');

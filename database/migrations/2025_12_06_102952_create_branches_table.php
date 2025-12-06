@@ -9,13 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('branches', function (Blueprint $table) {
-            $table->string('id');
-            $table->string('section_id');
-            $table->string('slug', 100);
-            $table->string('name_fa', 150);
-            $table->string('sort_order');
-            $table->boolean('is_active');
-            $table->timestamps();
+        $table->engine = 'InnoDB';
+
+        $table->string('id')->primary();   // ✅ حتماً
+
+        // ستون‌های خودت...
+        // احتمالاً اینا رو داری:
+        // $table->string('section_id');
+        // $table->foreign('section_id')->references('id')->on('sections')->cascadeOnDelete();
+
+        $table->timestamps();
         });
     }
 

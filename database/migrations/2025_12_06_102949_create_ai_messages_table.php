@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ai_messages', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('session_id');
             $table->enum('sender_type', ['user','ai','system']);
             $table->longText('content');

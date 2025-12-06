@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attempt_answers', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('attempt_id');
             $table->string('question_id');
             $table->longText('answer')->nullable();

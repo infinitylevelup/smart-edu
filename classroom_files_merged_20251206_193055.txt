@@ -1,0 +1,546 @@
+📦 LARAVEL
+📋 Merged from list file: classroom_files.txt
+👤 User: darso2.ir
+🖥️  System: Windows NT 10.0
+📅 Generated: 2025/12/06 - 19:30:55
+✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨
+
+❌ MISSING FILE
+📍 Pattern: app/Http/Controllers/Auth/AuthController.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+📄 File: User.php
+📍 Path: app/Models/User.php
+📁 Section: General
+📊 Size: 4.54 KB
+🔤 Type: .php
+🕒 Last modified: 2025/12/06 18:33:06
+────────────────────────────────────────────────────────────
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
+
+/**
+ * User Model (Smart-Edu)
+ * - Roles are stored directly in users.role column
+ * - NO dependency on roles table or role_user pivot
+ *
+ * users columns:
+ * id, name, email, phone, password, status, role, is_active, created_at, updated_at
+ */
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    /**
+     * Mass Assignment fields
+     */
+    protected $fillable = [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'password',
+        'status',
+        'role',       // ✅ نقش مستقیم در users
+        'is_active',  // ✅ اگر در جدول داری
+    ];
+
+    /**
+     * Hidden fields
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Casts
+     */
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'is_active'  => 'boolean',
+    ];
+
+    // ==========================================================
+    // Role helpers (NO DB lookup)
+    // ==========================================================
+
+    /**
+     * نقش کاربر (مستقیم از ستون role)
+     */
+    public function getRoleAttribute($value): ?string
+    {
+        return $value; // فقط همون مقدار دیتابیس
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->role === 'teacher';
+    }
+
+    public function isCounselor(): bool
+    {
+        return $this->role === 'counselor';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Scope: filter users by role
+     * Usage: User::role('student')->get()
+     */
+    public function scopeRole(Builder $query, string $slug): Builder
+    {
+        return $query->where('role', $slug);
+    }
+
+    // ==========================================================
+    // Relationships
+    // ==========================================================
+
+    /**
+     * Classrooms created by this user as teacher
+     */
+    public function teachingClassrooms(): HasMany
+    {
+        return $this->hasMany(Classroom::class, 'teacher_id');
+    }
+
+    /**
+     * Backward compatible alias for old code.
+     */
+    public function taughtClassrooms(): HasMany
+    {
+        return $this->teachingClassrooms();
+    }
+
+    /**
+     * Classrooms the user joined as student
+     * pivot: classroom_user (classroom_id, user_id)
+     */
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Classroom::class,
+            'classroom_user',
+            'user_id',
+            'classroom_id'
+        );
+    }
+
+    /**
+     * Student profile
+     */
+    public function studentProfile(): HasOne
+    {
+        return $this->hasOne(StudentProfile::class, 'user_id');
+    }
+
+    /**
+     * Teacher profile
+     */
+    public function teacherProfile(): HasOne
+    {
+        return $this->hasOne(TeacherProfile::class, 'user_id');
+    }
+
+    /**
+     * Counselor profile (optional)
+     */
+    public function counselorProfile(): HasOne
+    {
+        return $this->hasOne(CounselorProfile::class, 'user_id');
+    }
+
+    /**
+     * Exams created by this user as teacher
+     */
+    public function examsCreated(): HasMany
+    {
+        return $this->hasMany(Exam::class, 'teacher_id');
+    }
+
+    // ==========================================================
+    // Boot (auto-generate string id)
+    // ==========================================================
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->id)) {
+                // اگر می‌خوای id همون شماره موبایل باشه:
+                // $user->id = $user->phone;
+
+                // در غیر این صورت UUID:
+                $user->id = (string) Str::uuid();
+            }
+        });
+    }
+
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Role::class,
+            "role_user",
+            "user_id",
+            "role_id"
+        );
+    }
+}
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📄 File: Role.php
+📍 Path: app/Models/Role.php
+📁 Section: General
+📊 Size: 277 B
+🔤 Type: .php
+🕒 Last modified: 2025/12/06 16:35:25
+────────────────────────────────────────────────────────────
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Role extends Model
+{
+    protected $table = 'roles';
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = ['id','name','slug','description','is_active'];
+}
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+❌ MISSING FILE
+📍 Pattern: database/migrations/xxxx_xx_xx_create_roles_table.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: database/migrations/xxxx_xx_xx_create_role_user_table.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+📄 File: teacher.php
+📍 Path: routes/teacher.php
+📁 Section: General
+📊 Size: 4.21 KB
+🔤 Type: .php
+🕒 Last modified: 2025/12/02 10:12:42
+────────────────────────────────────────────────────────────
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Controllers (App\Http\Controllers\Teacher)
+|--------------------------------------------------------------------------
+*/
+use App\Http\Controllers\Teacher\DashboardController;
+use App\Http\Controllers\Teacher\TeacherClassController;
+use App\Http\Controllers\Teacher\TeacherExamController;
+use App\Http\Controllers\Teacher\TeacherStudentController;
+use App\Http\Controllers\Teacher\SubjectController;
+use App\Http\Controllers\Teacher\QuestionController;
+
+Route::prefix('dashboard')
+    ->middleware(['auth', 'role.selected'])
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Teacher Dashboard
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('teacher')
+            ->name('teacher.')
+            ->middleware('role:teacher')
+            ->group(function () {
+
+                Route::get('/', [DashboardController::class, 'index'])->name('index');
+
+                // Classes
+                Route::get('/classes', [TeacherClassController::class, 'index'])
+                    ->name('classes.index');
+
+                Route::resource('classes', TeacherClassController::class)
+                    ->parameters(['classes' => 'class'])
+                    ->except(['index']);
+
+                Route::get('classes/{class}/students', [TeacherClassController::class, 'students'])
+                    ->name('classes.students');
+
+                Route::post('classes/{class}/students', [TeacherClassController::class, 'addStudent'])
+                    ->name('classes.students.add');
+
+                Route::delete('classes/{class}/students/{student}', [TeacherClassController::class, 'removeStudent'])
+                    ->name('classes.students.remove');
+
+                // Exams
+                Route::resource('exams', TeacherExamController::class);
+
+                // Questions
+                Route::get('/exams/{exam}/questions', [QuestionController::class, 'index'])
+                    ->name('exams.questions.index');
+                Route::get('/exams/{exam}/questions/create', [QuestionController::class, 'create'])
+                    ->name('exams.questions.create');
+                Route::post('/exams/{exam}/questions', [QuestionController::class, 'store'])
+                    ->name('exams.questions.store');
+                Route::get('/exams/{exam}/questions/{question}/edit', [QuestionController::class, 'edit'])
+                    ->name('exams.questions.edit');
+                Route::put('/exams/{exam}/questions/{question}', [QuestionController::class, 'update'])
+                    ->name('exams.questions.update');
+                Route::delete('/exams/{exam}/questions/{question}', [QuestionController::class, 'destroy'])
+                    ->name('exams.questions.destroy');
+
+                // Students
+                Route::get('/students', [TeacherStudentController::class, 'index'])
+                    ->name('students.index');
+                Route::get('/students/{student}', [TeacherStudentController::class, 'show'])
+                    ->name('students.show');
+                Route::get('/students/{student}/attempts', [TeacherStudentController::class, 'attempts'])
+                    ->name('students.attempts');
+
+                // Attempts
+                Route::get('/attempts/{attempt}', [TeacherStudentController::class, 'attemptShow'])
+                    ->name('attempts.show');
+                Route::post('/attempts/{attempt}/answers/{answer}/grade', [TeacherStudentController::class, 'gradeEssayAnswer'])
+                    ->name('attempts.answers.grade');
+
+                // Subjects
+                Route::get('/subjects', [SubjectController::class, 'index'])
+                    ->name('subjects.index');
+                Route::post('/subjects', [SubjectController::class, 'store'])
+                    ->name('subjects.store');
+
+                // Static
+                Route::view('/reports', 'dashboard.teacher.reports.index')->name('reports.index');
+                Route::view('/profile', 'dashboard.teacher.profile')->name('profile');
+            });
+    });
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📄 File: web.php
+📍 Path: routes/web.php
+📁 Section: General
+📊 Size: 871 B
+🔤 Type: .php
+🕒 Last modified: 2025/12/06 08:16:27
+────────────────────────────────────────────────────────────
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\OTPController;
+
+// Landing Page
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+// Fallback Route
+Route::fallback(function () {
+    return redirect()->route('landing');
+});
+// Route برای صفحه حریم خصوصی
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy');
+
+// Route برای صفحه شرایط استفاده
+Route::get('/terms-of-service', function () {
+    return view('terms-of-service');
+})->name('terms');
+
+
+// Authentication Routes
+require __DIR__.'/auth.php';
+// Dashboard Routes
+require __DIR__.'/student.php';
+// Teacher Routes
+require __DIR__.'/teacher.php';
+// Admin Routes
+require __DIR__.'/admin.php';
+// Counselor Routes
+require __DIR__.'/counselor.php';
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📄 File: RoleMiddleware.php
+📍 Path: app/Http/Middleware/RoleMiddleware.php
+📁 Section: General
+📊 Size: 796 B
+🔤 Type: .php
+🕒 Last modified: 2025/12/03 00:22:24
+────────────────────────────────────────────────────────────
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class RoleMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * استفاده:
+     * ->middleware('role:student')
+     * ->middleware('role:teacher')
+     */
+    public function handle(Request $request, Closure $next, string $role)
+    {
+        $user = Auth::user();
+
+        // اگر لاگین نیست
+        if (!$user) {
+            abort(401, 'Unauthenticated.');
+        }
+
+        // اگر نقش کاربر با نقش موردنیاز یکی نیست
+        if (($user->role ?? null) !== $role) {
+            abort(403, 'شما اجازه دسترسی به این بخش را ندارید.');
+        }
+
+        return $next($request);
+    }
+}
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📄 File: RoleSelectedMiddleware.php
+📍 Path: app/Http/Middleware/RoleSelectedMiddleware.php
+📁 Section: General
+📊 Size: 759 B
+🔤 Type: .php
+🕒 Last modified: 2025/12/02 07:22:52
+────────────────────────────────────────────────────────────
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class RoleSelectedMiddleware
+{
+    /**
+     * اجازه ورود به داشبورد فقط وقتی role انتخاب شده باشد
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(401, 'Unauthenticated.');
+        }
+
+        // اگر role خالی یا null بود یعنی انتخاب نشده
+        if (empty($user->role)) {
+            return redirect()->route('landing')
+                ->withErrors(['role' => 'لطفاً ابتدا نقش خود را انتخاب کنید.']);
+        }
+
+        return $next($request);
+    }
+}
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📄 File: VerifyCsrfToken.php
+📍 Path: app/Http/Middleware/VerifyCsrfToken.php
+📁 Section: General
+📊 Size: 316 B
+🔤 Type: .php
+🕒 Last modified: 2025/12/06 07:55:56
+────────────────────────────────────────────────────────────
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+
+class VerifyCsrfToken extends Middleware
+{
+    protected $except = [
+        // ✅ OTP برای مهمان‌ها نباید CSRF بخواد
+        'auth/send-otp',
+        'auth/verify-otp',
+    ];
+}
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+
+======================================================================
+📊 FINAL SUMMARY
+----------------------------------------------------------------------
+✅ Files processed: 7 of 10
+❌ Missing files: 3
+📈 Success rate: 70%
+⏱️  Completion time: 19:30:55
+📋 List file: classroom_files.txt
+
+⚠️  MISSING FILES (3):
+  1. app/Http/Controllers/Auth/AuthController.php
+  2. database/migrations/xxxx_xx_xx_create_roles_table.php
+  3. database/migrations/xxxx_xx_xx_create_role_user_table.php
+
+⚠️  Some files were missing but operation completed.
+======================================================================
+🏁 End of report - 2025/12/06

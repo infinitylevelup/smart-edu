@@ -9,11 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sections', function (Blueprint $table) {
-            $table->string('id');
-            $table->string('slug', 100);
+            $table->engine = 'InnoDB';
+
+            $table->string('id')->primary();          // ✅ مهم
+            $table->string('slug', 100)->unique();    // بهتره یکتا باشه
             $table->string('name_fa', 150);
-            $table->string('sort_order');
-            $table->boolean('is_active');
+
+            $table->unsignedInteger('sort_order')->default(0); // قبلاً string بود
+
+            $table->boolean('is_active')->default(true);       // قبلاً بدون default بود
+
             $table->timestamps();
         });
     }

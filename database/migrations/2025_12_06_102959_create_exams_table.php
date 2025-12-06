@@ -9,9 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exams', function (Blueprint $table) {
-            $table->string('id');
+
+            // ✅ کلید اصلی UUID
+            $table->uuid('id')->primary();
+
+            // اگر user_id لازم داری نگهش دار
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+
+            // این‌ها هم بهتره uuid/string هماهنگ باشن
             $table->string('teacher_id');
             $table->string('classroom_id')->nullable();
+
             $table->enum('exam_type', ['public','class_single','class_comprehensive']);
             $table->string('title', 250);
             $table->text('description')->nullable();

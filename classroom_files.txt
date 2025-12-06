@@ -1,0 +1,10 @@
+app/Http/Controllers/Auth/AuthController.php
+app/Models/User.php
+app/Models/Role.php
+database/migrations/xxxx_xx_xx_create_roles_table.php
+database/migrations/xxxx_xx_xx_create_role_user_table.php
+routes/teacher.php
+routes/web.php
+app/Http/Middleware/RoleMiddleware.php
+app/Http/Middleware/RoleSelectedMiddleware.php
+app/Http/Middleware/VerifyCsrfToken.php

@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_learning_profiles', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('student_id');
             $table->longText('preferred_style')->nullable();
             $table->unsignedTinyInteger('pace_level');

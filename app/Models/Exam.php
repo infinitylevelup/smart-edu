@@ -6,10 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Exam extends Model
 {
     protected $table = 'exams';
+
+    // ✅ UUID PK
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'teacher_id',
@@ -115,39 +120,23 @@ class Exam extends Model
     }
 
     // --- دسته‌بندی‌های سطحی (همه اختیاری) ---
-    public function section(): BelongsTo
-    {
-        return $this->belongsTo(Section::class);
-    }
+    public function section(): BelongsTo { return $this->belongsTo(Section::class); }
+    public function grade(): BelongsTo { return $this->belongsTo(Grade::class); }
+    public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }
+    public function field(): BelongsTo { return $this->belongsTo(Field::class); }
+    public function subfield(): BelongsTo { return $this->belongsTo(Subfield::class); }
+    public function subjectType(): BelongsTo { return $this->belongsTo(SubjectType::class, 'subject_type_id'); }
+    public function aiSession(): BelongsTo { return $this->belongsTo(AiSession::class, 'ai_session_id'); }
 
-    public function grade(): BelongsTo
+    // ==========================================================
+    // Boot UUID
+    // ==========================================================
+    protected static function booted()
     {
-        return $this->belongsTo(Grade::class);
-    }
-
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
-    }
-
-    public function field(): BelongsTo
-    {
-        return $this->belongsTo(Field::class);
-    }
-
-    public function subfield(): BelongsTo
-    {
-        return $this->belongsTo(Subfield::class);
-    }
-
-    public function subjectType(): BelongsTo
-    {
-        return $this->belongsTo(SubjectType::class, 'subject_type_id');
-    }
-
-    /** اگر آزمون AI داشته باشد */
-    public function aiSession(): BelongsTo
-    {
-        return $this->belongsTo(AiSession::class, 'ai_session_id');
+        static::creating(function ($exam) {
+            if (empty($exam->id)) {
+                $exam->id = (string) Str::uuid();
+            }
+        });
     }
 }

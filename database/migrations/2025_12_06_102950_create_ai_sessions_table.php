@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ai_sessions', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('ai_agent_id');
-            $table->string('user_id');
             $table->enum('context_type', ['teaching','counseling','qna','exam_help','mixed']);
             $table->string('section_id')->nullable();
             $table->string('grade_id')->nullable();

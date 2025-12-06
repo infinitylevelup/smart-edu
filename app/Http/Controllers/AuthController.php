@@ -29,21 +29,21 @@ class AuthController extends Controller
     public function sendOtp(Request $request)
     {
         $data = $request->validate([
-            'phone' => ['required', 'regex:/^9\d{9}$/'],
+            "phone" => ["required", "regex:/^9\d{9}$/"],
         ]);
 
-        $phone = $data['phone'];
+        $phone = $data["phone"];
 
         // ✅ If a valid OTP already exists, don't create another one
-        $existing = Otp::where('phone', $phone)
-            ->where('expires_at', '>', now())
+        $existing = Otp::where("phone", $phone)
+            ->where("expires_at", ">", now())
             ->latest()
             ->first();
 
         if ($existing) {
             return response()->json([
-                'status'  => 'ok',
-                'message' => 'کد تایید ارسال شد.',
+                "status"  => "ok",
+                "message" => "کد تایید ارسال شد.",
             ]);
         }
 
@@ -51,16 +51,16 @@ class AuthController extends Controller
         $code = rand(100000, 999999);
 
         Otp::create([
-            'phone'      => $phone,
-            'code'       => $code,
-            'expires_at' => now()->addMinutes(2),
+            "phone"      => $phone,
+            "code"       => $code,
+            "expires_at" => now()->addMinutes(2),
         ]);
 
         Log::info("OTP for {$phone}: {$code}");
 
         return response()->json([
-            'status'  => 'ok',
-            'message' => 'کد تایید ارسال شد.',
+            "status"  => "ok",
+            "message" => "کد تایید ارسال شد.",
         ]);
     }
 
@@ -70,43 +70,43 @@ class AuthController extends Controller
     public function verifyOtp(Request $request)
     {
         $data = $request->validate([
-            'phone' => ['required', 'regex:/^9\d{9}$/'],
-            'code'  => ['required', 'digits:6'],
+            "phone" => ["required", "regex:/^9\d{9}$/"],
+            "code"  => ["required", "digits:6"],
         ]);
 
-        $otp = Otp::where('phone', $data['phone'])
+        $otp = Otp::where("phone", $data["phone"])
             ->latest()
             ->first();
 
         if (!$otp) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'کد تایید پیدا نشد یا منقضی شده است.',
+                "status"  => "error",
+                "message" => "کد تایید پیدا نشد یا منقضی شده است.",
             ], 422);
         }
 
         if ($otp->expires_at && now()->gt($otp->expires_at)) {
             $otp->delete();
             return response()->json([
-                'status'  => 'error',
-                'message' => 'کد منقضی شده است.',
+                "status"  => "error",
+                "message" => "کد منقضی شده است.",
             ], 422);
         }
 
-        if ((string)$otp->code !== (string)$data['code']) {
+        if ((string) $otp->code !== (string) $data["code"]) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'کد تایید نامعتبر است.',
+                "status"  => "error",
+                "message" => "کد تایید نامعتبر است.",
             ], 422);
         }
 
         // ✅ users table new schema (no role column)
         $user = User::firstOrCreate(
-            ['phone' => $data['phone']],
+            ["phone" => $data["phone"]],
             [
-                'name'     => 'کاربر ' . $data['phone'],
-                'password' => Hash::make(Str::random(12)),
-                'status'   => 'active',
+                "name"     => "کاربر " . $data["phone"],
+                "password" => Hash::make(Str::random(12)),
+                "status"   => "active",
             ]
         );
 
@@ -117,7 +117,7 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         // Load roles pivot
-        $user->load('roles');
+        $user->load("roles");
 
         // OTP delete after success
         $otp->delete();
@@ -128,86 +128,106 @@ class AuthController extends Controller
         $redirect = null;
         if (!$needRole) {
             $redirect = match ($user->role) {
-                'student' => route('student.exams.index'),
-                'teacher' => route('teacher.index'),
-                default   => route('landing'),
+                "student" => route("student.exams.index"),
+                "teacher" => route("teacher.index"),
+                default   => route("landing"),
             };
         }
 
         return response()->json([
-            'status'    => 'ok',
-            'message'   => 'ورود موفق.',
-            'role'      => $user->role,
-            'need_role' => $needRole,
-            'redirect'  => $redirect,
-            'csrf'      => csrf_token(), // ✅ send fresh token to frontend
+            "status"    => "ok",
+            "message"   => "ورود موفق.",
+            "role"      => $user->role,
+            "need_role" => $needRole,
+            "redirect"  => $redirect,
+            "csrf"      => csrf_token(), // ✅ send fresh token to frontend
         ]);
     }
 
     /**
      * Set role only first time (role == null)
+     * ✅ FIXED: no Seeder needed, role auto-creates if table is empty
      */
     public function setRole(Request $request)
     {
         $request->validate([
-            'role' => ['required', 'in:student,teacher'],
+            "role" => ["required", "in:student,teacher"],
         ]);
 
         $user = Auth::user();
         if (!$user) {
-            return response()->json(['message' => 'کاربر لاگین نیست'], 401);
+            return response()->json(["message" => "کاربر لاگین نیست"], 401);
         }
 
-        $user->load('roles');
+        $user->load("roles");
 
         if ($user->roles->isNotEmpty()) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'نقش قبلاً انتخاب شده و فقط از پروفایل قابل تغییر است.',
+                "status"  => "error",
+                "message" => "نقش قبلاً انتخاب شده و فقط از پروفایل قابل تغییر است.",
             ], 403);
         }
 
-        $role = Role::where('slug', $request->role)->firstOrFail();
-        $user->roles()->attach($role->id);
+        // ✅ اگر جدول roles خالی بود، نقش را همینجا بساز
+        $role = Role::firstOrCreate(
+            ["slug" => $request->role],
+            [
+                "id"        => (string) Str::uuid(),
+                "name"      => $request->role === "teacher" ? "معلم" : "دانش‌آموز",
+                "is_active" => true,
+            ]
+        );
+
+        // ✅ چون تک‌نقشی هستیم، بهتره sync کنیم نه attach
+        $user->roles()->sync([$role->id]);
 
         $redirect = match ($request->role) {
-            'student' => route('student.exams.index'),
-            'teacher' => route('teacher.index'),
-            default   => route('landing'),
+            "student" => route("student.exams.index"),
+            "teacher" => route("teacher.index"),
+            default   => route("landing"),
         };
 
         return response()->json([
-            'status'   => 'ok',
-            'message'  => 'نقش ذخیره شد.',
-            'role'     => $request->role,
-            'redirect' => $redirect,
+            "status"   => "ok",
+            "message"  => "نقش ذخیره شد.",
+            "role"     => $request->role,
+            "redirect" => $redirect,
         ]);
     }
 
     /**
      * Change role from profile only
+     * ✅ FIXED: no Seeder needed, role auto-creates if missing
      */
     public function changeRole(Request $request)
     {
         $request->validate([
-            'role' => ['required', 'in:student,teacher'],
+            "role" => ["required", "in:student,teacher"],
         ]);
 
         $user = Auth::user();
         abort_unless($user, 401);
 
-        $role = Role::where('slug', $request->role)->firstOrFail();
+        // ✅ اگر نقش نبود بساز
+        $role = Role::firstOrCreate(
+            ["slug" => $request->role],
+            [
+                "id"        => (string) Str::uuid(),
+                "name"      => $request->role === "teacher" ? "معلم" : "دانش‌آموز",
+                "is_active" => true,
+            ]
+        );
 
-        $user->roles()->detach();
-        $user->roles()->attach($role->id);
+        // تک‌نقشی: قبلی‌ها پاک و جدید ثبت شود
+        $user->roles()->sync([$role->id]);
 
         $redirect = match ($request->role) {
-            'student' => route('student.exams.index'),
-            'teacher' => route('teacher.index'),
-            default   => route('landing'),
+            "student" => route("student.exams.index"),
+            "teacher" => route("teacher.index"),
+            default   => route("landing"),
         };
 
-        return redirect($redirect)->with('success', 'نقش شما با موفقیت تغییر کرد.');
+        return redirect($redirect)->with("success", "نقش شما با موفقیت تغییر کرد.");
     }
 
     /**
@@ -220,6 +240,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('landing');
+        return redirect()->route("landing");
     }
 }

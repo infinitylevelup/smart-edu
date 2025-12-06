@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_goals', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('student_id');
             $table->enum('goal_type', ['academic','psychological','career']);
             $table->string('title', 250);

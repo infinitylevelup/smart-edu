@@ -9,13 +9,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('fields', function (Blueprint $table) {
-            $table->string('id');
+            $table->engine = 'InnoDB';
+
+            $table->string('id')->primary();
+
             $table->string('branch_id');
-            $table->string('slug', 100);
+            $table->string('slug', 100)->unique();
             $table->string('name_fa', 150);
-            $table->string('icon', 50)->nullable();
-            $table->string('sort_order');
-            $table->boolean('is_active');
+            $table->string('sort_order')->nullable();
+            $table->boolean('is_active')->default(true);
+
+            $table->foreign('branch_id')
+                ->references('id')->on('branches')
+                ->cascadeOnDelete();
+
             $table->timestamps();
         });
     }

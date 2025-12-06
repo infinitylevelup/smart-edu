@@ -9,10 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->string('id');
-            $table->string('slug', 50);
-            $table->string('name_fa', 100);
+            $table->string('id')->primary();
+            $table->string('name', 100);
+            $table->string('slug', 100)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
+
     }
 
     public function down(): void

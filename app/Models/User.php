@@ -9,28 +9,35 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 /**
  * User Model (Smart-Edu)
- * - Aligned with new users table (no role column)
- * - Roles are stored in role_user pivot (single-role system)
+ * - Roles are stored in roles table and role_user pivot (single-role)
+ * - NO dependency on users.role column
  *
  * users columns:
- * id, name, email, phone, password, status, created_at, updated_at
+ * id, name, email, phone, password, status, is_active, created_at, updated_at
  */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     /**
      * Mass Assignment fields
      */
     protected $fillable = [
+        'id',
         'name',
         'email',
         'phone',
         'password',
         'status',
+        // 'role'  ❌ حذف شد (نقش از pivot خوانده می‌شود)
+        'is_active',
     ];
 
     /**
@@ -47,75 +54,89 @@ class User extends Authenticatable
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'is_active'  => 'boolean',
     ];
+
+    // ==========================================================
+    // Role helpers (PIVOT-BASED)
+    // ==========================================================
+
+    /**
+     * Backward compatible attribute accessor:
+     * اگر جایی هنوز $user->role را می‌خواند،
+     * از pivot مقدار role را برمی‌گردانیم.
+     */
+    public function getRoleAttribute($value = null): ?string
+    {
+        $this->loadMissing('roles');
+        return $this->roles->first()?->slug;
+    }
+
+    /**
+     * single-role primary slug
+     */
+    public function primaryRole(): ?string
+    {
+        $this->loadMissing('roles');
+        return $this->roles->first()?->slug;
+    }
+
+    public function hasRole(string $slug): bool
+    {
+        $this->loadMissing('roles');
+        return $this->roles->contains('slug', $slug);
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->hasRole('student');
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->hasRole('teacher');
+    }
+
+    public function isCounselor(): bool
+    {
+        return $this->hasRole('counselor');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Scope: filter users by role (pivot-based)
+     * Usage: User::role('student')->get()
+     */
+    public function scopeRole(Builder $query, string $slug): Builder
+    {
+        return $query->whereHas('roles', function ($q) use ($slug) {
+            $q->where('slug', $slug);
+        });
+    }
 
     // ==========================================================
     // Relationships
     // ==========================================================
 
     /**
-     * Roles relation (pivot: role_user)
-     * Note: role_user has no timestamps in DB, so no withTimestamps()
+     * Roles (pivot: role_user)
      */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
             Role::class,
-            'role_user',
-            'user_id',
-            'role_id'
+            "role_user",
+            "user_id",
+            "role_id"
         );
     }
 
     /**
-     * Current role accessor (single-role system)
-     * Returns roles.slug or null
-     */
-    public function getRoleAttribute(): ?string
-    {
-        // prefer loaded relation if exists
-        if ($this->relationLoaded('roles')) {
-            return $this->roles->first()?->slug;
-        }
-
-        return $this->roles()->pluck('slug')->first();
-    }
-
-    /**
-     * Quick helpers
-     */
-    public function isStudent(): bool
-    {
-        return $this->role === 'student';
-    }
-
-    public function isTeacher(): bool
-    {
-        return $this->role === 'teacher';
-    }
-
-    public function isCounselor(): bool
-    {
-        return $this->role === 'counselor';
-    }
-
-    public function isAdmin(): bool
-    {
-        return $this->role === 'admin';
-    }
-
-    /**
-     * Scope: filter users by role slug (replaces where('role', ...))
-     * Usage: User::role('student')->get()
-     */
-    public function scopeRole(Builder $query, string $slug): Builder
-    {
-        return $query->whereHas('roles', fn ($q) => $q->where('slug', $slug));
-    }
-
-    /**
      * Classrooms created by this user as teacher
-     * (Teacher dashboard expects teachingClassrooms())
      */
     public function teachingClassrooms(): HasMany
     {
@@ -174,5 +195,21 @@ class User extends Authenticatable
     public function examsCreated(): HasMany
     {
         return $this->hasMany(Exam::class, 'teacher_id');
+    }
+
+    // ==========================================================
+    // Boot (auto-generate string id)
+    // ==========================================================
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->id)) {
+                // اگر می‌خوای id همون شماره موبایل باشه:
+                // $user->id = $user->phone;
+
+                // در غیر این صورت UUID:
+                $user->id = (string) Str::uuid();
+            }
+        });
     }
 }

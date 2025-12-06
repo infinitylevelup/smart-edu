@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_counseling_task_logs', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('student_id');
             $table->string('counseling_task_id');
             $table->dateTime('done_at');

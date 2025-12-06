@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('academic_assessments', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('student_id');
             $table->string('section_id')->nullable();
             $table->string('grade_id')->nullable();

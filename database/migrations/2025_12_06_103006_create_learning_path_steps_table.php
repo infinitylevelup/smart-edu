@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('learning_path_steps', function (Blueprint $table) {
-            $table->string('id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('learning_path_id');
             $table->enum('step_type', ['topic','subject','content','exercise','exam','counseling_task']);
             $table->string('order_index');
