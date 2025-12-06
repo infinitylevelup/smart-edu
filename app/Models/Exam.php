@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,8 @@ use Illuminate\Support\Str;
 
 class Exam extends Model
 {
+    use HasFactory;
+
     protected $table = 'exams';
 
     // ✅ UUID PK
@@ -98,7 +101,7 @@ class Exam extends Model
 
     /**
      * شرکت‌کننده‌ها / تلاش‌ها
-     * جدول جدید: exam_attempts
+     * جدول: exam_attempts
      */
     public function attempts(): HasMany
     {
@@ -106,7 +109,7 @@ class Exam extends Model
     }
 
     /**
-     * در صورت نیاز به دروس آزمون
+     * دروس آزمون (اگر آزمون چنددرس باشد)
      * pivot: exam_subject(exam_id, subject_id, question_count)
      */
     public function subjects(): BelongsToMany
@@ -120,13 +123,49 @@ class Exam extends Model
     }
 
     // --- دسته‌بندی‌های سطحی (همه اختیاری) ---
-    public function section(): BelongsTo { return $this->belongsTo(Section::class); }
-    public function grade(): BelongsTo { return $this->belongsTo(Grade::class); }
-    public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }
-    public function field(): BelongsTo { return $this->belongsTo(Field::class); }
-    public function subfield(): BelongsTo { return $this->belongsTo(Subfield::class); }
-    public function subjectType(): BelongsTo { return $this->belongsTo(SubjectType::class, 'subject_type_id'); }
-    public function aiSession(): BelongsTo { return $this->belongsTo(AiSession::class, 'ai_session_id'); }
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(Section::class, 'section_id');
+    }
+
+    public function grade(): BelongsTo
+    {
+        return $this->belongsTo(Grade::class, 'grade_id');
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function field(): BelongsTo
+    {
+        return $this->belongsTo(Field::class, 'field_id');
+    }
+
+    public function subfield(): BelongsTo
+    {
+        return $this->belongsTo(Subfield::class, 'subfield_id');
+    }
+
+    public function subjectType(): BelongsTo
+    {
+        return $this->belongsTo(SubjectType::class, 'subject_type_id');
+    }
+
+    /** اگر آزمون AI داشته باشد */
+    public function aiSession(): BelongsTo
+    {
+        return $this->belongsTo(AiSession::class, 'ai_session_id');
+    }
+
+    // ==========================================================
+    // Route Model Binding (UUID)
+    // ==========================================================
+    public function getRouteKeyName()
+    {
+        return 'id';
+    }
 
     // ==========================================================
     // Boot UUID

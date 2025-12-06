@@ -11,10 +11,9 @@ return new class extends Migration
         Schema::create('classroom_user', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->id();
-
-            $table->string('classroom_id');
-            $table->string('user_id');
+            // ✅ FKها UUID
+            $table->uuid('classroom_id');
+            $table->uuid('user_id');
 
             $table->foreign('classroom_id')
                 ->references('id')->on('classrooms')
@@ -24,9 +23,8 @@ return new class extends Migration
                 ->references('id')->on('users')
                 ->cascadeOnDelete();
 
-            $table->unique(['classroom_id', 'user_id']);
-
-            $table->timestamps();
+            // ✅ جلوگیری از ثبت تکراری یک کاربر در یک کلاس
+            $table->primary(['classroom_id', 'user_id']);
         });
     }
 

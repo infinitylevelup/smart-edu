@@ -1057,7 +1057,7 @@
 
                         <div class="class-footer">
                             <div class="class-actions">
-                                <a href="{{ route('teacher.exams.create', ['class_id' => $class->id]) }}"
+                                <a href="{{ route('teacher.exams.wizard.step1', ['class_id' => $class->id]) }}"
                                     class="btn-class-action btn-exam">
                                     <i class="fas fa-plus-circle"></i>
                                     آزمون جدید
@@ -1254,7 +1254,7 @@
                     style="flex:1; padding: 14px; border: none; background: var(--light-gray); color: var(--dark); border-radius: 12px; font-weight: 700; font-size: 1rem;">
                 باشه
             </button>
-            <button onclick="window.location.href='{{ route('teacher.exams.create') }}?class_id=' + ${classId};"
+            <button onclick="window.location.href='{{ route('teacher.exams.wizard.step1') }}?class_id=' + ${classId};"
                     style="flex:1; padding: 14px; border: none; background: var(--gradient-1); color: white; border-radius: 12px; font-weight: 700; font-size: 1rem;">
                 ساخت آزمون
             </button>

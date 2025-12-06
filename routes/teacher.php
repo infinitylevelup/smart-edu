@@ -18,19 +18,19 @@ Route::prefix('dashboard')
     ->middleware(['auth', 'role.selected'])
     ->group(function () {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Teacher Dashboard
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('teacher')
             ->name('teacher.')
             ->middleware('role:teacher')
             ->group(function () {
 
+                // ==========================================================
+                // Teacher Dashboard
+                // ==========================================================
                 Route::get('/', [DashboardController::class, 'index'])->name('index');
 
+                // ==========================================================
                 // Classes
+                // ==========================================================
                 Route::get('/classes', [TeacherClassController::class, 'index'])
                     ->name('classes.index');
 
@@ -47,10 +47,45 @@ Route::prefix('dashboard')
                 Route::delete('classes/{class}/students/{student}', [TeacherClassController::class, 'removeStudent'])
                     ->name('classes.students.remove');
 
-                // Exams
+                // ==========================================================
+                // Exams (create/store برگشت به resource کامل)
+                // ==========================================================
                 Route::resource('exams', TeacherExamController::class);
 
+                // ==========================================================
+                // Exams AJAX Data (برای وصل کردن UUID واقعی به فرانت)
+                // این route ها را در TeacherExamController می‌سازیم
+                // ==========================================================
+                Route::prefix('exams/data')
+                    ->name('exams.data.')
+                    ->group(function () {
+
+                        Route::get('/sections', [TeacherExamController::class, 'sections'])
+                            ->name('sections');
+
+                        Route::get('/grades', [TeacherExamController::class, 'grades'])
+                            ->name('grades');
+
+                        Route::get('/branches', [TeacherExamController::class, 'branches'])
+                            ->name('branches');
+
+                        Route::get('/fields', [TeacherExamController::class, 'fields'])
+                            ->name('fields');
+
+                        Route::get('/subfields', [TeacherExamController::class, 'subfields'])
+                            ->name('subfields');
+
+                        // ✅ FIX: باید دقیقاً subject-types باشد تا Blade خطا ندهد
+                        Route::get('/subject-types', [TeacherExamController::class, 'subjectTypes'])
+                            ->name('subject-types');
+
+                        Route::get('/subjects', [TeacherExamController::class, 'subjects'])
+                            ->name('subjects');
+                    });
+
+                // ==========================================================
                 // Questions
+                // ==========================================================
                 Route::get('/exams/{exam}/questions', [QuestionController::class, 'index'])
                     ->name('exams.questions.index');
                 Route::get('/exams/{exam}/questions/create', [QuestionController::class, 'create'])
@@ -64,7 +99,9 @@ Route::prefix('dashboard')
                 Route::delete('/exams/{exam}/questions/{question}', [QuestionController::class, 'destroy'])
                     ->name('exams.questions.destroy');
 
+                // ==========================================================
                 // Students
+                // ==========================================================
                 Route::get('/students', [TeacherStudentController::class, 'index'])
                     ->name('students.index');
                 Route::get('/students/{student}', [TeacherStudentController::class, 'show'])
@@ -78,13 +115,17 @@ Route::prefix('dashboard')
                 Route::post('/attempts/{attempt}/answers/{answer}/grade', [TeacherStudentController::class, 'gradeEssayAnswer'])
                     ->name('attempts.answers.grade');
 
+                // ==========================================================
                 // Subjects
+                // ==========================================================
                 Route::get('/subjects', [SubjectController::class, 'index'])
                     ->name('subjects.index');
                 Route::post('/subjects', [SubjectController::class, 'store'])
                     ->name('subjects.store');
 
+                // ==========================================================
                 // Static
+                // ==========================================================
                 Route::view('/reports', 'dashboard.teacher.reports.index')->name('reports.index');
                 Route::view('/profile', 'dashboard.teacher.profile')->name('profile');
             });

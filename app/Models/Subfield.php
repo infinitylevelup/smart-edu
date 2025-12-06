@@ -4,12 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
-class Subfield extends Model
+class Section extends Model
 {
     use HasFactory;
 
-    protected $table = 'subfields';
+    protected $table = 'sections';
 
-    protected $fillable = ['field_id', 'slug', 'name_fa', 'icon', 'sort_order', 'is_active'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+
+    protected static function booted()
+    {
+        static::creating(function ($m) {
+            if (empty($m->id)) {
+                $m->id = (string) Str::uuid();
+            }
+        });
+    }
 }

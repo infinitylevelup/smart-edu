@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Classroom extends Model
 {
@@ -14,22 +15,25 @@ class Classroom extends Model
 
     protected $table = 'classrooms';
 
+    // ✅ چون PK جدول UUID است
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'teacher_id',
         'title',
-        'description',
-
         'section_id',
         'grade_id',
         'branch_id',
         'field_id',
         'subfield_id',
         'subject_type_id',
-
+        'metadata',
+        'is_active',
         'classroom_type',
         'join_code',
-        'is_active',
-        'metadata',
+        'description',
     ];
 
     protected $casts = [
@@ -151,6 +155,12 @@ class Classroom extends Model
     protected static function booted()
     {
         static::creating(function ($classroom) {
+
+            // ✅ ساخت خودکار UUID برای id
+            if (empty($classroom->id)) {
+                $classroom->id = (string) Str::uuid();
+            }
+
             if (empty($classroom->join_code)) {
                 // join_code is unique in DB
                 $classroom->join_code = strtoupper(str()->random(6));

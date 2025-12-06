@@ -893,7 +893,7 @@
                         const submitBtn = this.querySelector('button[type="submit"]');
                         const originalText = submitBtn.innerHTML;
                         submitBtn.innerHTML =
-                        '<i class="fas fa-spinner fa-spin"></i> در حال اعمال فیلتر...';
+                            '<i class="fas fa-spinner fa-spin"></i> در حال اعمال فیلتر...';
                         submitBtn.disabled = true;
 
                         setTimeout(() => {

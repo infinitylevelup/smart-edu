@@ -11,22 +11,26 @@ return new class extends Migration
         Schema::create('subjects', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->string('id')->primary();   // ✅ خیلی مهم
+            // ✅ PK UUID
+            $table->uuid('id')->primary();
 
             $table->string('title_fa', 200);
             $table->string('code', 50)->nullable();
-            $table->unsignedTinyInteger('hours')->nullable();
 
-            $table->string('grade_id');
-            $table->string('branch_id');
-            $table->string('field_id');
-            $table->string('subfield_id')->nullable();      // اگر optionalه بهتره nullable
-            $table->string('subject_type_id')->nullable();  // optional
+            // اگر ساعات ممکنه بیشتر از 255 بشه، unsignedSmallInteger بهتره
+            $table->unsignedSmallInteger('hours')->nullable();
+
+            // ✅ همه FKها UUID
+            $table->uuid('grade_id');
+            $table->uuid('branch_id');
+            $table->uuid('field_id');
+            $table->uuid('subfield_id')->nullable();
+            $table->uuid('subject_type_id')->nullable();
 
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
 
-            // اگر این FKها رو داری، نوعشون باید با جداول مقصد یکی باشه
+            // ✅ FKهای UUID
             $table->foreign('grade_id')->references('id')->on('grades')->restrictOnDelete();
             $table->foreign('branch_id')->references('id')->on('branches')->restrictOnDelete();
             $table->foreign('field_id')->references('id')->on('fields')->restrictOnDelete();
@@ -35,7 +39,6 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
     }
 
     public function down(): void

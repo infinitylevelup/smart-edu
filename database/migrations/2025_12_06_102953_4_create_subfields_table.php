@@ -11,23 +11,24 @@ return new class extends Migration
         Schema::create('subfields', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->string('id')->primary();   // ✅ خیلی مهم
+            // ✅ PK UUID
+            $table->uuid('id')->primary();
 
-            // اگر field_id داری (که باید داشته باشی):
-            $table->string('field_id');
+            // ✅ FK به fields (UUID)
+            $table->uuid('field_id');
             $table->foreign('field_id')
                 ->references('id')->on('fields')
                 ->cascadeOnDelete();
 
-            // بقیه ستون‌های خودت...
-            // $table->string('slug', 100)->unique();
-            // $table->string('name_fa', 150);
-            // $table->unsignedInteger('sort_order')->default(0);
-            // $table->boolean('is_active')->default(true);
+            // ✅ فیلدهای لازم
+            $table->string('slug', 100)->unique();
+            $table->string('name_fa', 150);
+            $table->string('icon')->nullable();
+            $table->unsignedInteger('sort_order')->default(0);
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
         });
-
     }
 
     public function down(): void

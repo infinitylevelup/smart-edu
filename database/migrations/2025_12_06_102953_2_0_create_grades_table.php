@@ -8,24 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('fields', function (Blueprint $table) {
+        Schema::create('grades', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
             // ✅ PK UUID
             $table->uuid('id')->primary();
 
-            // ✅ FK به branches (UUID)
-            $table->uuid('branch_id');
-            $table->foreign('branch_id')
-                ->references('id')->on('branches')
+            // ✅ FK به sections (UUID)
+            $table->uuid('section_id');
+            $table->foreign('section_id')
+                ->references('id')->on('sections')
                 ->cascadeOnDelete();
 
-            $table->string('slug', 100)->unique();
-            $table->string('name_fa', 150);
-
-            // ✅ sort_order عددی
+            // ✅ اطلاعات پایه
+            $table->string('value', 50);      // مثل "10", "11", "12" یا "7", "8", ...
+            $table->string('name_fa', 150);   // مثل "دهم", "یازدهم"
             $table->unsignedInteger('sort_order')->default(0);
-
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
@@ -34,6 +32,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('fields');
+        Schema::dropIfExists('grades');
     }
 };

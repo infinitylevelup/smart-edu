@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TeacherClassController extends Controller
 {
@@ -67,57 +68,58 @@ class TeacherClassController extends Controller
 
 public function store(Request $request)
 {
+    $teacherId = Auth::id();
+
     $data = $request->validate([
-        'title' => ['required','string','max:255'],
-        'subject' => ['nullable','string','max:255'],
-        'grade' => ['nullable','string','max:50'],
-        'description' => ['nullable','string'],
-        'is_active' => ['nullable','boolean'],
+        'title'       => 'required|string|max:255',
+        'section_id'  => 'required|uuid|exists:sections,id',
+        'grade_id'    => 'required|uuid|exists:grades,id',
+        'branch_id'   => 'required|uuid|exists:branches,id',
+        'field_id'    => 'required|uuid|exists:fields,id',
+        'subfield_id' => 'required|uuid|exists:subfields,id',
+        'subject_id'  => 'required|uuid|exists:subjects,id',
+        'is_active'   => 'nullable|boolean',
+        'metadata'    => 'nullable|string',
     ]);
 
-    $data['teacher_id'] = auth()->id();
-    $data['is_active'] = $request->boolean('is_active', true);
+    $classroom = Classroom::create([
+        'id'          => (string) Str::uuid(),
+        'teacher_id'  => $teacherId,
+        'title'       => $data['title'],
+        'section_id'  => $data['section_id'],
+        'grade_id'    => $data['grade_id'],
+        'branch_id'   => $data['branch_id'],
+        'field_id'    => $data['field_id'],
+        'subfield_id' => $data['subfield_id'],
+        'subject_id'  => $data['subject_id'],
+        'is_active'   => (bool)($data['is_active'] ?? true),
+        'metadata'    => $data['metadata'] ?? null,
+    ]);
 
-    // 🔥 اضافه کردن کد عضویت (اختیاری اما مفید)
-    if (empty($data['join_code'])) {
-        $data['join_code'] = $this->generateJoinCode();
-    }
-
-$data['name'] = $data['title'];
-
-
-    $classroom = Classroom::create($data);
-
-    // اگر درخواست AJAX است
-// به این تغییر دهید (مطمئن‌تر):
-if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+    if ($request->ajax()) {
         return response()->json([
             'success' => true,
-            'message' => 'کلاس با موفقیت ساخته شد.',
             'classroom' => [
                 'id' => $classroom->id,
                 'title' => $classroom->title,
-                'grade' => $classroom->grade,
-                'subject' => $classroom->subject,
-                'join_code' => $classroom->join_code, // اضافه کردن این خط
-
             ]
         ]);
     }
 
-    // درخواست عادی (فرم HTML)
-    return redirect()->route('teacher.classes.index')
-        ->with('success', 'کلاس با موفقیت ساخته شد.');
+    return redirect()
+        ->route('teacher.classes.index')
+        ->with('success', 'کلاس با موفقیت ایجاد شد.');
 }
-// 🔥 تابع تولید کد عضویت
-private function generateJoinCode()
-{
-    do {
-        $code = strtoupper(substr(md5(uniqid()), 0, 8));
-    } while (Classroom::where('join_code', $code)->exists());
 
-    return $code;
-}
+    // 🔥 تابع تولید کد عضویت
+    private function generateJoinCode()
+    {
+        do {
+            $code = strtoupper(substr(md5(uniqid()), 0, 8));
+        } while (Classroom::where('join_code', $code)->exists());
+
+        return $code;
+    }
 
     public function show(Classroom $class)
     {

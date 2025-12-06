@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('classroom_subject', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->string('classroom_id'); // همون نوع classrooms.id
-            $table->string('subject_id');   // همون نوع subjects.id
+            // ✅ FKها UUID
+            $table->uuid('classroom_id');
+            $table->uuid('subject_id');
 
             $table->foreign('classroom_id')
                 ->references('id')->on('classrooms')
@@ -22,11 +23,9 @@ return new class extends Migration
                 ->references('id')->on('subjects')
                 ->cascadeOnDelete();
 
+            // ✅ کلید مرکب
             $table->primary(['classroom_id', 'subject_id']);
         });
-
-
-
     }
 
     public function down(): void
