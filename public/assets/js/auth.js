@@ -168,7 +168,6 @@ verifyForm?.addEventListener('submit', async (e) => {
     return;
   }
 
-  // قفل فرم برای جلوگیری از submit دوم
   const controls = verifyForm.querySelectorAll('input, button');
   controls.forEach(el => el.disabled = true);
 
@@ -186,10 +185,15 @@ verifyForm?.addEventListener('submit', async (e) => {
       showToast(data.message || 'ورود موفق.', 'success');
       clearInterval(countdownInterval);
 
+      // ✅ UPDATE CSRF after login
+      if (data.csrf) {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.setAttribute('content', data.csrf);
+      }
+
       if (data.need_role) {
         showStep(3);
 
-        // چون مرحله نقش داریم، دوباره آزاد
         isVerifying = false;
         controls.forEach(el => el.disabled = false);
         submitBtn.innerHTML = originalText;

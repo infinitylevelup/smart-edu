@@ -35,14 +35,15 @@ class TeacherStudentController extends Controller
 
         $classrooms = $classroomsQuery->with('students')->get();
 
+        // ✅ یک‌بار آی‌دی کلاس‌های معلم را بگیر (برای performance)
+        $teacherClassroomIds = $teacher->teachingClassrooms()->pluck('id');
+
         // جمع کردن همه دانش‌آموزان متعلق به کلاس‌های معلم
         $studentsQuery = User::query()
-            ->where('role', 'student')
-            ->whereHas('classrooms', function ($q) use ($teacher) {
-                $q->whereIn(
-                    'classrooms.id',
-                    $teacher->teachingClassrooms()->pluck('id')
-                );
+            // ✅ DB جدید: نقش از pivot role_user
+            ->whereHas('roles', fn($q) => $q->where('slug', 'student'))
+            ->whereHas('classrooms', function ($q) use ($teacherClassroomIds) {
+                $q->whereIn('classrooms.id', $teacherClassroomIds);
             })
             ->with(['studentProfile', 'classrooms']);
 
@@ -285,31 +286,7 @@ class TeacherStudentController extends Controller
         return redirect()
             ->back()
             ->with('success', 'نمره‌های تشریحی ثبت شد و Attempt بروزرسانی شد.');
-
-        /*
-        |--------------------------------------------------------------------------
-        | OLD CODE (kept)
-        |--------------------------------------------------------------------------
-        | foreach ($data['scores'] as $answerId => $score) {
-        |     $answer = $attempt->answers()->where('id', $answerId)->first();
-        |     if ($answer && $answer->question->type === 'essay') {
-        |         $answer->update(['score' => $score ?? 0]); // ❌ ستون score نداریم
-        |     }
-        | }
-        |
-        | $totalScore = $attempt->answers()->sum('score');  // ❌
-        | $attempt->score = $totalScore;                   // ❌
-        |
-        | $hasUngradedEssay = $attempt->answers()
-        |   ->whereHas('question', fn($q) => $q->where('type', 'essay'))
-        |   ->whereNull('score')                           // ❌
-        |   ->exists();
-        |
-        | $attempt->status = $hasUngradedEssay ? 'pending' : 'graded'; // ❌ pending نداریم
-        */
     }
-
-    // ...
 
     /**
      * Grade single essay answer (route: teacher.attempts.answers.grade)
@@ -371,6 +348,4 @@ class TeacherStudentController extends Controller
 
         return back()->with('success', 'نمره تشریحی ثبت شد و نتیجه بروزرسانی شد.');
     }
-// ...
-
 }
