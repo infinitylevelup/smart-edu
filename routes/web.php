@@ -2,12 +2,25 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\OTPController;
+
 // Landing Page
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 // Fallback Route
 Route::fallback(function () {
     return redirect()->route('landing');
 });
+// Route برای صفحه حریم خصوصی
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy');
+
+// Route برای صفحه شرایط استفاده
+Route::get('/terms-of-service', function () {
+    return view('terms-of-service');
+})->name('terms');
+
+
 // Authentication Routes
 require __DIR__.'/auth.php';
 // Dashboard Routes

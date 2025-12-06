@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Attempt extends Model
 {
+    // ✅ اسم جدول جدید در DB
+    protected $table = 'exam_attempts';
+
     protected $fillable = [
         'exam_id',
         'student_id',
@@ -32,7 +35,6 @@ class Attempt extends Model
     ];
 
     protected $casts = [
-        // ستون legacy
         'answers'        => 'array',
         'meta'           => 'array',
 
@@ -57,16 +59,9 @@ class Attempt extends Model
         return $this->belongsTo(User::class, 'student_id');
     }
 
-    /**
-     * ⚠️ توجه:
-     * این رابطه با ستون JSON هم‌نام است (answers).
-     * موقع eager load مشکلی نیست،
-     * برای دسترسی به ستون legacy از $attempt->answers استفاده می‌شود،
-     * برای دسترسی به رابطه از $attempt->getRelation('answers') یا $attempt->answers()->... استفاده کن.
-     */
     public function answers(): HasMany
     {
-        return $this->hasMany(AttemptAnswer::class);
+        return $this->hasMany(AttemptAnswer::class, 'attempt_id');
     }
 
     public function isFinal(): bool

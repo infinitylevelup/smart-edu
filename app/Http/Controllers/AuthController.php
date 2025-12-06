@@ -4,17 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Otp;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * AuthController
  *
  * احراز هویت پروژه Smart-Edu بر پایه OTP انجام می‌شود.
  *
- * Flow (Updated):
- * 1) sendOtp(phone) -> کد ارسال می‌شود
+ * Flow:
+ * 1) sendOtp(phone) -> کد ارسال می‌شود (idempotent)
  * 2) verifyOtp(phone, code) -> login/register
  *    - اگر role نداشت => need_role = true
  *    - اگر role داشت => redirect مناسب
@@ -24,37 +27,46 @@ use Illuminate\Support\Facades\Log;
 class AuthController extends Controller
 {
     /**
-     * ارسال OTP به شماره موبایل
+     * ارسال OTP به شماره موبایل (نسخه امن بدون debug_code)
      */
-    public function sendOtp(Request $request)
-    {
-        $data = $request->validate([
-            'phone' => ['required', 'regex:/^9\d{9}$/'], // 9xxxxxxxxx بدون صفر
-        ]);
+        public function sendOtp(Request $request)
+        {
+            $data = $request->validate([
+                'phone' => ['required', 'regex:/^9\d{9}$/'],
+            ]);
 
-        $phone = $data['phone'];
+            $phone = $data['phone'];
 
-        // حذف OTP‌های قبلی
-        Otp::where('phone', $phone)->delete();
+            // ✅ اگر OTP معتبر هست، کد جدید نساز و لاگ هم نزن
+            $existing = Otp::where('phone', $phone)
+                ->where('expires_at', '>', now())
+                ->latest()
+                ->first();
 
-        // تولید کد 6 رقمی
-        $code = rand(100000, 999999);
+            if ($existing) {
+                return response()->json([
+                    'status'  => 'ok',
+                    'message' => 'کد تایید ارسال شد.',
+                ]);
+            }
 
-        // ذخیره OTP
-        Otp::create([
-            'phone'      => $phone,
-            'code'       => $code,
-            'expires_at' => now()->addMinutes(2),
-        ]);
+            // ✅ تولید کد جدید فقط وقتی قبلی معتبر نیست
+            $code = rand(100000, 999999);
 
-        // ✅ فعلاً برای تست، کد رو لاگ می‌کنیم
-        Log::info("OTP for {$phone}: {$code}");
+            Otp::create([
+                'phone'      => $phone,
+                'code'       => $code,
+                'expires_at' => now()->addMinutes(2),
+            ]);
 
-        return response()->json([
-            'status'  => 'ok',
-            'message' => 'کد تایید ارسال شد.',
-        ]);
-    }
+            // ✅ لاگ فقط یکبار، فقط برای کد جدید
+            Log::info("OTP for {$phone}: {$code}");
+
+            return response()->json([
+                'status'  => 'ok',
+                'message' => 'کد تایید ارسال شد.',
+            ]);
+        }
 
     /**
      * تایید OTP و ورود/ثبت‌نام کاربر
@@ -66,14 +78,15 @@ class AuthController extends Controller
             'code'  => ['required', 'digits:6'],
         ]);
 
+        // ✅ آخرین OTP همین شماره را بگیر
         $otp = Otp::where('phone', $data['phone'])
-            ->where('code', $data['code'])
+            ->latest()
             ->first();
 
         if (!$otp) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'کد تایید نامعتبر است.',
+                'message' => 'کد تایید پیدا نشد یا منقضی شده است.',
             ], 422);
         }
 
@@ -85,38 +98,43 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // پیدا/ساخت کاربر
+        if ((string)$otp->code !== (string)$data['code']) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'کد تایید نامعتبر است.',
+            ], 422);
+        }
+
+        // ✅ مطابق DB جدید users: بدون role / is_active
         $user = User::firstOrCreate(
             ['phone' => $data['phone']],
             [
-                'role' => null,
-                'is_active' => 1
+                'name'     => 'کاربر ' . $data['phone'],
+                'password' => Hash::make(Str::random(12)), // فقط برای NOT NULL
+                'status'   => 'active',
             ]
         );
 
-        // لاگین
         Auth::login($user);
 
-        // آخرین ورود
-        $user->update(['last_login_at' => now()]);
+        // اگر ستون last_login_at در DB وجود ندارد، خطا نده
+        try {
+            $user->update(['last_login_at' => now()]);
+        } catch (\Throwable $e) {}
 
-        // پاک کردن OTP بعد از استفاده
+        // OTP بعد از موفقیت حذف شود
         $otp->delete();
 
-        /**
-         * ✅ منطق جدید:
-         * اگر role نداشت => فرانت مرحله انتخاب نقش را نشان می‌دهد
-         * اگر role داشت => فرانت مستقیم redirect می‌کند
-         */
-        $needRole = is_null($user->role);
+        $needRole = is_null($user->role); // role مجازی از pivot خوانده می‌شود
 
         $redirect = null;
         if (!$needRole) {
             $redirect = match ($user->role) {
-                'student' => route('student.exams.index'),
-                'teacher' => route('teacher.index'),
-                'admin'   => route('landing'), // فعلاً ادمین نداریم
-                default   => route('landing'),
+                'student'   => route('student.exams.index'),
+                'teacher'   => route('teacher.index'),
+                'counselor' => route('counselor.index'),
+                'admin'     => route('landing'),
+                default     => route('landing'),
             };
         }
 
@@ -143,7 +161,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'کاربر لاگین نیست'], 401);
         }
 
-        // ✅ قفل: اگر قبلاً نقش دارد، دیگر از اینجا قابل تغییر نیست
         if (!is_null($user->role)) {
             return response()->json([
                 'status'  => 'error',
@@ -151,14 +168,11 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // ذخیره نقش + زمان انتخاب نقش + فعال‌سازی
-        $user->update([
-            'role'             => $request->role,
-            'role_selected_at' => now(),
-            'is_active'        => 1,
-        ]);
+        // ✅ نقش از roles.slug پیدا می‌شود و در pivot ثبت می‌شود
+        $role = Role::where('slug', $request->role)->firstOrFail();
+        $user->roles()->attach($role->id);
 
-        $redirect = match ($user->role) {
+        $redirect = match ($request->role) {
             'student' => route('student.exams.index'),
             'teacher' => route('teacher.index'),
             default   => route('landing'),
@@ -167,14 +181,13 @@ class AuthController extends Controller
         return response()->json([
             'status'   => 'ok',
             'message'  => 'نقش ذخیره شد.',
-            'role'     => $user->role,
+            'role'     => $request->role,
             'redirect' => $redirect,
         ]);
     }
 
     /**
      * تغییر نقش فقط از پروفایل
-     * Route: POST /dashboard/profile/change-role
      */
     public function changeRole(Request $request)
     {
@@ -185,13 +198,13 @@ class AuthController extends Controller
         $user = Auth::user();
         abort_unless($user, 401);
 
-        // ✅ اینجا اجازه تغییر می‌دهیم چون مسیر پروفایل است
-        $user->update([
-            'role'             => $request->role,
-            'role_selected_at' => $user->role_selected_at ?? now(),
-        ]);
+        $role = Role::where('slug', $request->role)->firstOrFail();
 
-        $redirect = match ($user->role) {
+        // ✅ تک‌نقشی: نقش قبلی پاک و جدید ثبت می‌شود
+        $user->roles()->detach();
+        $user->roles()->attach($role->id);
+
+        $redirect = match ($request->role) {
             'student' => route('student.exams.index'),
             'teacher' => route('teacher.index'),
             default   => route('landing'),

@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
+        // ✅ این بخش رو اضافه کن (OTP بدون CSRF)
+        $middleware->validateCsrfTokens(except: [
+            'auth/send-otp',
+            'auth/verify-otp',
+        ]);
+
         $middleware->alias([
             'role.selected' => RoleSelectedMiddleware::class,
             'role'          => RoleMiddleware::class,

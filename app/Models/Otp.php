@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Otp extends Model
 {
@@ -11,13 +11,5 @@ class Otp extends Model
 
     protected $table = 'otps';
 
-    protected $fillable = [
-        'phone',
-        'code',
-        'expires_at',
-    ];
-
-    protected $casts = [
-        'expires_at' => 'datetime',
-    ];
+    protected $fillable = ['phone', 'code', 'token', 'type', 'attempts', 'verified', 'expires_at', 'verified_at'];
 }

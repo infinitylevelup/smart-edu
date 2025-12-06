@@ -39,7 +39,24 @@ class TeacherClassController extends Controller
             ->when($sort === 'latest', fn($query)=>$query->latest())
             ->paginate(9)
             ->withQueryString();
-
+ // اگر درخواست AJAX است
+    if ($request->ajax() || $request->filled('ajax')) {
+        return response()->json([
+            'success' => true,
+            'classrooms' => $classes->map(function($class) {
+                return [
+                    'id' => $class->id,
+                    'title' => $class->title,
+                    'subject' => $class->subject,
+                    'grade' => $class->grade,
+                    'students_count' => $class->students_count,
+                    'exams_count' => $class->exams_count,
+                    'is_active' => $class->is_active
+                ];
+            })
+        ]);
+    }
+// کد قبلی شما برای نمایش view...
         return view('dashboard.teacher.classes.index', compact('classes'));
     }
 
@@ -48,24 +65,59 @@ class TeacherClassController extends Controller
         return view('dashboard.teacher.classes.create');
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'title' => ['required','string','max:255'],
-            'subject' => ['nullable','string','max:255'],
-            'grade' => ['nullable','string','max:50'],
-            'description' => ['nullable','string'],
-            'is_active' => ['nullable','boolean'],
-        ]);
+public function store(Request $request)
+{
+    $data = $request->validate([
+        'title' => ['required','string','max:255'],
+        'subject' => ['nullable','string','max:255'],
+        'grade' => ['nullable','string','max:50'],
+        'description' => ['nullable','string'],
+        'is_active' => ['nullable','boolean'],
+    ]);
 
-        $data['teacher_id'] = auth()->id();
-        $data['is_active'] = $request->boolean('is_active', true);
+    $data['teacher_id'] = auth()->id();
+    $data['is_active'] = $request->boolean('is_active', true);
 
-        Classroom::create($data);
-
-        return redirect()->route('teacher.classes.index')
-            ->with('success', 'کلاس با موفقیت ساخته شد.');
+    // 🔥 اضافه کردن کد عضویت (اختیاری اما مفید)
+    if (empty($data['join_code'])) {
+        $data['join_code'] = $this->generateJoinCode();
     }
+
+$data['name'] = $data['title'];
+
+
+    $classroom = Classroom::create($data);
+
+    // اگر درخواست AJAX است
+// به این تغییر دهید (مطمئن‌تر):
+if ($request->header('X-Requested-With') === 'XMLHttpRequest') {
+        return response()->json([
+            'success' => true,
+            'message' => 'کلاس با موفقیت ساخته شد.',
+            'classroom' => [
+                'id' => $classroom->id,
+                'title' => $classroom->title,
+                'grade' => $classroom->grade,
+                'subject' => $classroom->subject,
+                'join_code' => $classroom->join_code, // اضافه کردن این خط
+
+            ]
+        ]);
+    }
+
+    // درخواست عادی (فرم HTML)
+    return redirect()->route('teacher.classes.index')
+        ->with('success', 'کلاس با موفقیت ساخته شد.');
+}
+// 🔥 تابع تولید کد عضویت
+private function generateJoinCode()
+{
+    do {
+        $code = strtoupper(substr(md5(uniqid()), 0, 8));
+    } while (Classroom::where('join_code', $code)->exists());
+
+    return $code;
+}
 
     public function show(Classroom $class)
     {

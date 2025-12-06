@@ -979,7 +979,14 @@
                 <div class="kpi-value">{{ $stats['students_count'] ?? '—' }}</div>
                 <div class="kpi-trend trend-up">
                     <i class="fas fa-users"></i>
-                    {{ $stats['new_students'] ?? '5' }} دانش‌آموز جدید
+                    {{-- تعداد دانش آموز واقعی --}}
+                    @if (($stats['new_students'] ?? 0) > 0)
+                        {{ $stats['new_students'] }} دانش‌آموز جدید
+                    @else
+                        بدون دانش‌آموز جدید
+                    @endif
+                    {{-- تعداد دانش آموز واقعی --}}
+
                 </div>
             </div>
 
@@ -1013,46 +1020,48 @@
                     </a>
                 </div>
 
-                @php $recentExams = $recentExams ?? []; @endphp
-
-                @if (count($recentExams))
+                {{-- Data Real (no fake defaults, no array support) --}}
+                @forelse($recentExams as $exam)
                     <ul class="exams-list">
-                        @foreach ($recentExams as $exam)
-                            <a href="{{ route('teacher.exams.edit', $exam->id ?? $exam['id']) }}" class="exam-item">
-                                <div class="exam-info">
-                                    <div class="exam-title">
-                                        <i class="fas fa-file-pen"></i>
-                                        {{ $exam->title ?? ($exam['title'] ?? 'آزمون بدون عنوان') }}
-                                    </div>
-                                    <div class="exam-meta">
-                                        <span class="meta-item">
-                                            <i class="fas fa-layer-group"></i>
-                                            سطح: {{ $exam->level ?? ($exam['level'] ?? 'نامشخص') }}
-                                        </span>
-                                        <span class="meta-item">
-                                            <i class="fas fa-calendar-day"></i>
-                                            تاریخ:
-                                            {{ \Illuminate\Support\Carbon::parse($exam->start_at ?? ($exam['start_at'] ?? now()))->format('Y/m/d H:i') }}
-                                        </span>
-                                        <span class="meta-item">
-                                            <i class="fas fa-question-circle"></i>
-                                            سوالات: {{ $exam->questions_count ?? ($exam['questions_count'] ?? 0) }}
-                                        </span>
-                                    </div>
+                        <a href="{{ route('teacher.exams.edit', $exam->id) }}" class="exam-item">
+                            <div class="exam-info">
+                                <div class="exam-title">
+                                    <i class="fas fa-file-pen"></i>
+                                    {{ $exam->title }}
                                 </div>
-                                <div class="exam-badge">
-                                    <i class="fas fa-user-check"></i>
-                                    {{ $exam->attempts_count ?? ($exam['attempts_count'] ?? 0) }} شرکت‌کننده
+
+                                <div class="exam-meta">
+                                    <span class="meta-item">
+                                        <i class="fas fa-layer-group"></i>
+                                        سطح: {{ $exam->level }}
+                                    </span>
+
+                                    <span class="meta-item">
+                                        <i class="fas fa-calendar-day"></i>
+                                        تاریخ:
+                                        {{ $exam->start_at ? $exam->start_at->format('Y/m/d H:i') : 'نامشخص' }}
+                                    </span>
+
+                                    <span class="meta-item">
+                                        <i class="fas fa-question-circle"></i>
+                                        سوالات: {{ $exam->questions_count }}
+                                    </span>
                                 </div>
-                            </a>
-                        @endforeach
+                            </div>
+
+                            <div class="exam-badge">
+                                <i class="fas fa-user-check"></i>
+                                {{ $exam->attempts_count }} شرکت‌کننده
+                            </div>
+                        </a>
                     </ul>
-                @else
+                @empty
                     <div class="empty-state">
                         <div class="empty-icon">
                             <i class="fas fa-clipboard-list"></i>
                         </div>
-                        <h3 style="color: var(--dark); margin-bottom: 15px; font-weight: 900;">هنوز آزمونی ثبت نکرده‌اید
+                        <h3 style="color: var(--dark); margin-bottom: 15px; font-weight: 900;">
+                            هنوز آزمونی ثبت نکرده‌اید
                         </h3>
                         <p class="empty-text">
                             برای شروع کار و ایجاد اولین آزمون، روی دکمه زیر کلیک کنید.
@@ -1063,7 +1072,7 @@
                             ایجاد اولین آزمون
                         </a>
                     </div>
-                @endif
+                @endforelse
             </div>
 
             {{-- SIDEBAR --}}
@@ -1169,6 +1178,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 @endsection
 

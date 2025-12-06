@@ -31,53 +31,52 @@ class DashboardController extends Controller
      * - $stats : آمار خلاصه
      * - $recentExams : آخرین آزمون‌ها
      */
-    public function index()
-    {
-        // شناسه معلم لاگین‌شده
-        $teacherId = Auth::id();
 
-        /**
-         * کوئری پایه برای آزمون‌های این معلم
-         * (با clone بعداً چند بار بدون تداخل استفاده می‌کنیم)
-         */
-        $examsQuery = Exam::where('teacher_id', $teacherId);
+public function index()
+{
+    $user = Auth::user();
 
-        /**
-         * آمار اصلی داشبورد
-         * اگر در Exam فیلد is_active داری، این شمارش‌ها درست کار می‌کنند.
-         */
-        $stats = [
-            // تعداد کل آزمون‌های این معلم
-            'exams_total' => (clone $examsQuery)->count(),
+    // اگر پروفایل teacher جدا داری، از اون استفاده می‌کنیم
+    $teacher = $user->teacher ?? null;
 
-            // تعداد آزمون‌های فعال
-            'exams_active' => (clone $examsQuery)
-                                ->where('is_published', true)
-                                ->count(),
+    // اگر exams.teacher_id به جدول teachers وصل است → id پروفایل معلم
+    // اگر exams.teacher_id همان user_id است → id خود user
+    $teacherKey = $teacher?->id ?? $user->id;
 
-            // تعداد آزمون‌های غیرفعال
-            'exams_inactive' => (clone $examsQuery)
-                                ->where('is_published', false)
-                                ->count(),
+    /**
+     * کوئری پایه برای آزمون‌های معلم
+     */
+    $examsQuery = Exam::where('teacher_id', $teacherKey);
 
-            /**
-             * تعداد کل سوال‌های متعلق به آزمون‌های این معلم
-             * از whereHas استفاده می‌کنیم تا فقط سوال‌های Examهای همین معلم شمرده شود.
-             */
-            'questions_total' => Question::whereHas('exam', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId);
-            })->count(),
-        ];
+    /**
+     * stats با کلیدهای استاندارد مطابق Blade
+     */
+    $stats = [
+        'total_exams' => (clone $examsQuery)->count(),
 
-        /**
-         * آخرین 5 آزمون ساخته‌شده برای نمایش در جدول داشبورد
-         */
-        $recentExams = (clone $examsQuery)
-                        ->latest()
-                        ->take(5)
-                        ->get();
+        'active_exams' => (clone $examsQuery)
+            ->where('is_published', true)
+            ->count(),
 
-        // ارسال داده‌ها به ویو داشبورد معلم
-        return view('dashboard.teacher.index', compact('stats', 'recentExams'));
-    }
+        // فعلاً تا وقتی مدل/رابطه‌ی کلاس و attempt/answer رو مچ نکردیم
+        'students_count' => 0,
+        'new_students' => 0,
+        'pending_reviews' => 0,
+    ];
+
+    /**
+     * آخرین ۵ آزمون + شمارش سوالات و شرکت‌کننده‌ها
+     * نکته: باید روی Exam رابطه‌ی questions و attempts تعریف شده باشد.
+     */
+    $recentExams = (clone $examsQuery)
+        ->latest()
+        ->withCount(['questions', 'attempts'])
+        ->take(5)
+        ->get();
+
+    return view('dashboard.teacher.index', compact('stats', 'recentExams'));
+}
+
+
+
 }

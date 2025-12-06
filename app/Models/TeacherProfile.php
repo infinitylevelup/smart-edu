@@ -2,38 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
 
 class TeacherProfile extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'first_name',
-        'last_name',
-        'avatar',
-        'specialty',
-        'bio',
-    ];
+    protected $table = 'teacher_profiles';
 
-    protected $casts = [
-        'user_id' => 'integer',
-    ];
-
-    /* ================= Relationships ================= */
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /* ================= Helpers (اختیاری ولی کاربردی) ================= */
-
-    public function getFullNameAttribute(): string
-    {
-        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
-    }
+    protected $fillable = ['user_id', 'bio', 'main_section_id', 'main_branch_id', 'main_field_id', 'main_subfield_id'];
 }

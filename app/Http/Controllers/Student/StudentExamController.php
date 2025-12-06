@@ -17,52 +17,44 @@ class StudentExamController extends Controller
      * Legacy index (backward compatible)
      * Shows free + classroom exams (only joined classrooms)
      */
-    public function index(Request $request)
-    {
-        $student = Auth::user();
-        $classroomIds = $student->classrooms()->pluck('classrooms.id');
+public function index(Request $request)
+{
+    $student = Auth::user();
 
-        $examsQuery = Exam::query()
-            ->where(function ($q) use ($classroomIds) {
-                $q->where('scope', 'free')
-                    ->orWhere(function ($q2) use ($classroomIds) {
-                        $q2->where('scope', 'classroom')
-                            ->whereIn('classroom_id', $classroomIds)
-                            ->where(function ($pub) {
-                                $pub->whereNull('is_published')->orWhere('is_published', true);
-                            })
-                            ->where(function ($act) {
-                                $act->whereNull('is_active')->orWhere('is_active', true);
-                            });
-                    });
-            })
-            ->with('classroom')
-            ->withCount('questions')
-            ->with(['attempts' => function ($q) use ($student) {
-                $q->where('student_id', $student->id)->latest();
-            }])
-            ->latest();
+    // کلاس‌هایی که دانش‌آموز عضو آن‌هاست
+    $classroomIds = $student->classrooms()->pluck('classrooms.id')->toArray();
 
-        if ($request->filled('classroom_id')) {
-            $examsQuery->where(function ($q) use ($request) {
-                $q->where('scope', 'free')
-                  ->orWhere(function ($q2) use ($request) {
-                      $q2->where('scope', 'classroom')
-                         ->where('classroom_id', $request->classroom_id);
-                  });
-            });
-        }
+    $now = now();
 
-        $exams = $examsQuery->paginate(9)->withQueryString();
+    $exams = Exam::query()
+        ->where(function ($q) use ($classroomIds) {
 
-        $classrooms = $student->classrooms()->get();
+            // 1) آزمون‌های عمومی (free قدیمی)
+            $q->where('exam_type', 'public')
 
-        if ($request->filled('classroom_id')) {
-            return view('dashboard.student.exams.classroom', compact('exams', 'classrooms'));
-        }
+              // 2) آزمون‌های کلاسی فقط برای کلاس‌هایی که دانش‌آموز عضوشه
+              ->orWhere(function ($q2) use ($classroomIds) {
+                  $q2->whereIn('exam_type', ['class_single', 'class_comprehensive'])
+                     ->whereIn('classroom_id', $classroomIds);
+              });
+        })
+        // اگر ستون is_active در DB داری (که داری)، فقط فعال‌ها
+        ->where('is_active', 1)
 
-        return view('dashboard.student.exams.public', compact('exams', 'classrooms'));
-    }
+        // (اختیاری ولی خوب) فقط آزمون‌هایی که زمانش رسیده/منقضی نشده
+        ->where(function ($q) use ($now) {
+            $q->whereNull('start_at')->orWhere('start_at', '<=', $now);
+        })
+        ->where(function ($q) use ($now) {
+            $q->whereNull('end_at')->orWhere('end_at', '>=', $now);
+        })
+
+        ->latest()
+        ->paginate(10);
+
+    return view('dashboard.student.exams.public', compact('exams'));
+}
+
 
     /**
      * Public exams list
