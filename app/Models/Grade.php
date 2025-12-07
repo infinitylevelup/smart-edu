@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Section extends Model
+class Grade extends Model
 {
     use HasFactory;
 
-    protected $table = 'sections';
+    protected $table = 'grades'; // Adjusted to match the context of the file
 
     public $incrementing = false;
     protected $keyType = 'string';
