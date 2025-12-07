@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OTPController;
+// ✅ اضافه شود (بالای require ها)
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
 
 // Landing Page
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -19,6 +23,7 @@ Route::get('/privacy-policy', function () {
 Route::get('/terms-of-service', function () {
     return view('terms-of-service');
 })->name('terms');
+
 
 
 // Authentication Routes

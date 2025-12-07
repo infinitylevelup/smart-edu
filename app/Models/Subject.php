@@ -10,12 +10,35 @@ class Subject extends Model
 {
     use HasFactory;
 
-    protected $table = 'subjects'; // Adjusted to match the context of the file
-
+    protected $table = 'subjects';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    public function section()     { return $this->belongsTo(\App\Models\Section::class); }
+    public function grade()       { return $this->belongsTo(\App\Models\Grade::class); }
+    public function branch()      { return $this->belongsTo(\App\Models\Branch::class); }
+    public function field()       { return $this->belongsTo(\App\Models\Field::class); }
+    public function subfield()    { return $this->belongsTo(\App\Models\Subfield::class); }
+    public function subjectType() { return $this->belongsTo(\App\Models\SubjectType::class); }
+
+    protected $fillable = [
+        'id',
+        'title_fa',
+        'slug',
+        'code',
+        'hours',
+        'sort_order',
+        'is_active',
+        'section_id',
+        'grade_id',
+        'branch_id',
+        'field_id',
+        'subfield_id',
+        'subject_type_id',
+    ];
+
+
+
 
     protected static function booted()
     {
@@ -25,4 +48,13 @@ class Subject extends Model
             }
         });
     }
+
+
+
+    // exams pivot
+    public function exams()
+    {
+        return $this->belongsToMany(Exam::class, 'exam_subject', 'subject_id', 'exam_id');
+    }
+
 }

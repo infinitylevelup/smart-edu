@@ -5,22 +5,30 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role)
+    /**
+     * Usage:
+     * ->middleware('role:admin')
+     * ->middleware('role:admin,teacher')
+     */
+    public function handle(Request $request, Closure $next, ...$roles)
     {
-        /** @var User|null $user */
         $user = Auth::user();
 
         if (!$user) {
             abort(401, 'Unauthenticated.');
         }
 
-        $user->loadMissing('roles');
+        /**
+         * نقش جاری:
+         * selected_role (نقش انتخابی برای ورود)
+         * اگر خالی بود status (نقش اصلی کاربر)
+         */
+        $currentRole = $user->selected_role ?? $user->status;
 
-        if (!$user->hasRole($role)) {
+        if (!$currentRole || !in_array($currentRole, $roles)) {
             abort(403, 'شما اجازه دسترسی به این بخش را ندارید.');
         }
 

@@ -10,12 +10,18 @@ class Subfield extends Model
 {
     use HasFactory;
 
-    protected $table = 'subfields'; // Adjusted to match the context of the file
-
+    protected $table = 'subfields';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'id',
+        'field_id',
+        'slug',
+        'name_fa',
+        'sort_order',
+        'is_active',
+    ];
 
     protected static function booted()
     {
@@ -25,4 +31,9 @@ class Subfield extends Model
             }
         });
     }
+
+    // روابط
+    public function field(){ return $this->belongsTo(\App\Models\Field::class); }
+    public function subjects(){ return $this->hasMany(\App\Models\Subject::class); }
+
 }

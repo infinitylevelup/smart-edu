@@ -13,7 +13,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/dashboard.css') }}">
 
     <style>
         body {
@@ -78,28 +78,34 @@
 
         <div class="app-body">
 
-            {{-- SIDEBAR --}}
-            <div class="sidebar-wrap">
-                @php
-                    $role = auth()->check() ? auth()->user()->role : null;
-                @endphp
+{{-- SIDEBAR --}}
+<div class="sidebar-wrap">
+    @php
+        $user = auth()->user();
+
+        // نقش فعلی: اول selected_role (نقش انتخابی)، اگر نبود status
+        $role = $role
+            ?? ($user->selected_role ?? null)
+            ?? ($user->status ?? null);
+    @endphp
 
                 @if ($role === 'student')
                     @include('layouts.app.sidebar-student')
+
                 @elseif ($role === 'teacher')
                     @include('layouts.app.sidebar-teacher')
+
                 @elseif ($role === 'admin')
-                    @if (view()->exists('layouts.app.sidebar-admin'))
-                        @include('layouts.app.sidebar-admin')
-                    @else
-                        <div class="p-3 text-muted small">سایدبار ادمین هنوز ساخته نشده است.</div>
-                    @endif
+                    {{-- ✅ سایدبار ادمین توی partials هست --}}
+                    @include('layouts.app.sidebar-admin')
+
                 @else
                     <div class="p-3 text-muted small">
                         نقش شما مشخص نیست. لطفاً از صفحه اصلی دوباره وارد شوید.
                     </div>
                 @endif
             </div>
+
 
             {{-- MAIN --}}
             <main class="content-wrap">

@@ -6,16 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Subject_type extends Model
+class SubjectType extends Model
 {
     use HasFactory;
 
-    protected $table = 'subject_types'; // Adjusted to match the context of the file
-
+    protected $table = 'subject_types';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'id',
+        'slug',
+        'name_fa',
+        'sort_order',
+        'is_active',
+    ];
 
     protected static function booted()
     {
@@ -24,5 +29,11 @@ class Subject_type extends Model
                 $m->id = (string) Str::uuid();
             }
         });
+    }
+
+    // روابط
+    public function subjects()
+    {
+        return $this->hasMany(Subject::class, 'subject_type_id');
     }
 }

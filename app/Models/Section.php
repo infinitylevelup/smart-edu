@@ -11,11 +11,15 @@ class Section extends Model
     use HasFactory;
 
     protected $table = 'sections';
-
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'slug',
+        'name_fa',
+        'sort_order',
+        'is_active',
+    ];
 
     protected static function booted()
     {
@@ -25,4 +29,9 @@ class Section extends Model
             }
         });
     }
+
+    // روابط
+    public function grades(){ return $this->hasMany(Grade::class); }
+    public function branches(){ return $this->hasMany(Branch::class); }
+
 }

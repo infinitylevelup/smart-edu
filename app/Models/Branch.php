@@ -6,16 +6,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Barnch extends Model
+class Branch extends Model
 {
     use HasFactory;
 
-    protected $table = 'branches'; // Adjusted to match the context of the file
-
+    protected $table = 'branches';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'id',
+        'section_id',
+        'slug',
+        'name_fa',
+        'sort_order',
+        'is_active',
+    ];
 
     protected static function booted()
     {
@@ -25,4 +31,10 @@ class Barnch extends Model
             }
         });
     }
+
+    // روابط
+    public function section(){ return $this->belongsTo(\App\Models\Section::class); }
+    public function fields(){ return $this->hasMany(\App\Models\Field::class); }
+    public function subjects(){ return $this->hasMany(\App\Models\Subject::class); }
+
 }

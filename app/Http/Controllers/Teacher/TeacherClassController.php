@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Auth;
 class TeacherClassController extends Controller
 {
     public function index(Request $request)
     {
-        $teacherId = auth()->id();
+        $teacherId = Auth::id();
 
         $q = $request->q;
         $grade = $request->grade;
@@ -210,6 +210,6 @@ public function store(Request $request)
     // بررسی اینکه معلم مالک کلاس است
     private function authorizeTeacher(Classroom $class)
     {
-        abort_unless($class->teacher_id === auth()->id(), 403);
+        abort_unless($class->teacher_id ===Auth::id(), 403);
     }
 }

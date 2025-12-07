@@ -10,12 +10,18 @@ class Grade extends Model
 {
     use HasFactory;
 
-    protected $table = 'grades'; // Adjusted to match the context of the file
-
+    protected $table = 'grades';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['slug', 'name_fa', 'sort_order', 'is_active'];
+    protected $fillable = [
+        'section_id',
+        'slug',
+        'value',      // ✅ حتماً اینجا باشد
+        'name_fa',
+        'sort_order',
+        'is_active',
+    ];
 
     protected static function booted()
     {
@@ -25,4 +31,9 @@ class Grade extends Model
             }
         });
     }
+
+    // روابط
+    public function section(){ return $this->belongsTo(\App\Models\Section::class); }
+    public function subjects(){ return $this->hasMany(\App\Models\Subject::class); }
+
 }

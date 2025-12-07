@@ -15,12 +15,19 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
-        // ✅ این بخش رو اضافه کن (OTP بدون CSRF)
+        // ✅ مهم: مقصد مهمان‌ها (guest) وقتی auth رد می‌شود
+        $middleware->redirectGuestsTo('/admin/login');
+
+        // ✅ OTP بدون CSRF
         $middleware->validateCsrfTokens(except: [
             'auth/send-otp',
             'auth/verify-otp',
+            // اگر ادمین OTP هم آدرس جدا دارد:
+            'admin/send-otp',
+            'admin/verify-otp',
         ]);
 
+        // middleware alias های نقش
         $middleware->alias([
             'role.selected' => RoleSelectedMiddleware::class,
             'role'          => RoleMiddleware::class,
