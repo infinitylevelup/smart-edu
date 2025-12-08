@@ -1,155 +1,127 @@
-{{-- resources/views/dashboard/admin/taxonomy/subjects/edit.blade.php --}}
-@extends('layouts.app')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const section  = document.getElementById('section_id');
+    const grade    = document.getElementById('grade_id');
+    const branch   = document.getElementById('branch_id');
+    const field    = document.getElementById('field_id');
+    const subfield = document.getElementById('subfield_id');
 
-@section('title', ($title ?? 'دروس') . ' | ویرایش')
+    // ✅ old() اگر فرم خطا خورد، وگرنه مقدار فعلی مدل
+    const oldGrade    = "{{ old('grade_id', $item->grade_id) }}";
+    const oldBranch   = "{{ old('branch_id', $item->branch_id) }}";
+    const oldField    = "{{ old('field_id', $item->field_id) }}";
+    const oldSubfield = "{{ old('subfield_id', $item->subfield_id) }}";
 
-@section('content')
-<div class="container-fluid py-3">
+    function reset(sel, placeholder="انتخاب کنید...", disable=true) {
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+        sel.disabled = disable;
+    }
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0">ویرایش {{ $title ?? 'درس' }}</h5>
-        <a href="{{ route($routeName.'.index') }}" class="btn btn-sm btn-outline-secondary">برگشت</a>
-    </div>
+    function fill(sel, items, oldValue=null, placeholder="انتخاب کنید...") {
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+        items.forEach(i => {
+            const opt = document.createElement('option');
+            opt.value = i.id;
+            opt.textContent = i.name_fa;
+            if (oldValue && oldValue === i.id) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        sel.disabled = false;
+    }
 
-    @if ($errors->any())
-        <div class="alert alert-danger small">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $err)
-                    <li>{{ $err }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    async function get(url) {
+        const r = await fetch(url, { headers: {Accept: 'application/json'} });
+        if(!r.ok) return [];
+        return await r.json();
+    }
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form action="{{ route($routeName.'.update', $item->id) }}" method="POST">
-                @csrf
-                @method('PUT')
+    async function loadGradesAndBranches(sectionId){
+        reset(grade,  'در حال بارگذاری...', true);
+        reset(branch, 'در حال بارگذاری...', true);
+        reset(field,  'ابتدا شاخه را انتخاب کنید', true);
+        reset(subfield,'---', true);
 
-                <div class="row g-3">
+        const gradesUrl   = section.dataset.gradesUrl.replace(':id', sectionId);
+        const branchesUrl = section.dataset.branchesUrl.replace(':id', sectionId);
 
-                    <div class="col-md-6">
-                        <label class="form-label">نام درس</label>
-                        <input type="text" name="title_fa" class="form-control"
-                               required value="{{ old('title_fa', $item->title_fa) }}">
-                    </div>
+        const [gradesData, branchesData] = await Promise.all([
+            get(gradesUrl),
+            get(branchesUrl),
+        ]);
 
-                    <div class="col-md-6">
-                        <label class="form-label">اسلاگ</label>
-                        <input type="text" name="slug" class="form-control"
-                               required value="{{ old('slug', $item->slug) }}">
-                    </div>
+        fill(grade, gradesData, oldGrade, 'انتخاب پایه...');
+        fill(branch, branchesData, oldBranch, 'انتخاب شاخه...');
 
-                    <div class="col-md-4">
-                        <label class="form-label">کد درس</label>
-                        <input type="text" name="code" class="form-control"
-                               value="{{ old('code', $item->code) }}">
-                    </div>
+        if(oldBranch){
+            await loadFields(oldBranch);
+        }
+    }
 
-                    <div class="col-md-4">
-                        <label class="form-label">ساعت</label>
-                        <input type="number" name="hours" min="0" class="form-control"
-                               value="{{ old('hours', $item->hours ?? 0) }}">
-                    </div>
+    async function loadFields(branchId){
+        reset(field, 'در حال بارگذاری...', true);
+        reset(subfield,'---', true);
 
-                    <div class="col-md-4">
-                        <label class="form-label">ترتیب نمایش</label>
-                        <input type="number" name="sort_order" min="0" class="form-control"
-                               value="{{ old('sort_order', $item->sort_order ?? 0) }}">
-                    </div>
+        const fieldsUrl = branch.dataset.fieldsUrl.replace(':id', branchId);
+        const fieldsData = await get(fieldsUrl);
 
-                    <div class="col-md-4">
-                        <label class="form-label">مقطع</label>
-                        <select name="section_id" class="form-select" required>
-                            @foreach($sections as $s)
-                                <option value="{{ $s->id }}"
-                                    {{ old('section_id', $item->section_id) == $s->id ? 'selected' : '' }}>
-                                    {{ $s->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+        fill(field, fieldsData, oldField, 'انتخاب زمینه...');
 
-                    <div class="col-md-4">
-                        <label class="form-label">پایه</label>
-                        <select name="grade_id" class="form-select" required>
-                            @foreach($grades as $g)
-                                <option value="{{ $g->id }}"
-                                    {{ old('grade_id', $item->grade_id) == $g->id ? 'selected' : '' }}>
-                                    {{ $g->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+        if(oldField){
+            await loadSubfields(oldField);
+        }
+    }
 
-                    <div class="col-md-4">
-                        <label class="form-label">شاخه</label>
-                        <select name="branch_id" class="form-select" required>
-                            @foreach($branches as $b)
-                                <option value="{{ $b->id }}"
-                                    {{ old('branch_id', $item->branch_id) == $b->id ? 'selected' : '' }}>
-                                    {{ $b->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+    async function loadSubfields(fieldId){
+        reset(subfield,'در حال بارگذاری...', true);
 
-                    <div class="col-md-4">
-                        <label class="form-label">زمینه</label>
-                        <select name="field_id" class="form-select" required>
-                            @foreach($fields as $f)
-                                <option value="{{ $f->id }}"
-                                    {{ old('field_id', $item->field_id) == $f->id ? 'selected' : '' }}>
-                                    {{ $f->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+        const subfieldsUrl = field.dataset.subfieldsUrl.replace(':id', fieldId);
+        const subfieldsData = await get(subfieldsUrl);
 
-                    <div class="col-md-4">
-                        <label class="form-label">زیررشته (اختیاری)</label>
-                        <select name="subfield_id" class="form-select">
-                            <option value="">---</option>
-                            @foreach($subfields as $sf)
-                                <option value="{{ $sf->id }}"
-                                    {{ old('subfield_id', $item->subfield_id) == $sf->id ? 'selected' : '' }}>
-                                    {{ $sf->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+        if(subfieldsData.length){
+            fill(subfield, subfieldsData, oldSubfield, 'انتخاب زیررشته (اختیاری)...');
+        } else {
+            reset(subfield,'---', false);
+        }
+    }
 
-                    <div class="col-md-4">
-                        <label class="form-label">نوع درس (اختیاری)</label>
-                        <select name="subject_type_id" class="form-select">
-                            <option value="">---</option>
-                            @foreach($subjectTypes as $st)
-                                <option value="{{ $st->id }}"
-                                    {{ old('subject_type_id', $item->subject_type_id) == $st->id ? 'selected' : '' }}>
-                                    {{ $st->name_fa }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+    section.addEventListener('change', async () => {
+        if(!section.value){
+            reset(grade,  'ابتدا مقطع را انتخاب کنید');
+            reset(branch, 'ابتدا مقطع را انتخاب کنید');
+            reset(field,  'ابتدا شاخه را انتخاب کنید');
+            reset(subfield,'---');
+            return;
+        }
 
-                    <div class="col-12">
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="checkbox" name="is_active"
-                                   value="1" id="is_active"
-                                   {{ old('is_active', $item->is_active) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="is_active">فعال باشد</label>
-                        </div>
-                    </div>
+        // وقتی کاربر تغییر دستی داد old ها دیگر ملاک نیست
+        const sectionId = section.value;
+        reset(grade,  'در حال بارگذاری...');
+        reset(branch, 'در حال بارگذاری...');
+        await loadGradesAndBranches(sectionId);
+    });
 
-                </div>
+    branch.addEventListener('change', async () => {
+        if(!branch.value){
+            reset(field, 'ابتدا شاخه را انتخاب کنید');
+            reset(subfield,'---');
+            return;
+        }
+        await loadFields(branch.value);
+    });
 
-                <div class="mt-3">
-                    <button class="btn btn-primary">ذخیره تغییرات</button>
-                </div>
+    field.addEventListener('change', async () => {
+        if(!field.value){
+            reset(subfield,'---');
+            return;
+        }
+        await loadSubfields(field.value);
+    });
 
-            </form>
-        </div>
-    </div>
-</div>
-@endsection
+    // ✅ لود اولیه روی مقادیر فعلی درس
+    if(section.value){
+        loadGradesAndBranches(section.value);
+    }
+});
+</script>
+@endpush

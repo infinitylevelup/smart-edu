@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use App\Services\OTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AdminAuthController extends Controller
 {
@@ -16,7 +18,7 @@ class AdminAuthController extends Controller
 
     public function showLogin()
     {
-        return view('admin.login');
+        return view('dashboard.admin.login');
     }
 
     private function normalizePhone(string $phone): string
@@ -71,10 +73,24 @@ class AdminAuthController extends Controller
             return response()->json(['message' => 'کد معتبر نیست.'], 422);
         }
 
-        Auth::login($user, false);
-        // یا کوتاه‌تر:
         Auth::login($user);
+        $request->session()->regenerate();
+        $request->session()->regenerateToken();
 
+        // ✅ 1) نقش admin را بساز یا بگیر
+        $adminRole = Role::firstOrCreate(
+            ['slug' => 'admin'],
+            [
+                'id'        => (string) Str::uuid(),
+                'name'      => 'ادمین',
+                'is_active' => true,
+            ]
+        );
+
+        // ✅ 2) نقش admin را در pivot وصل کن (تک‌نقشی)
+        $user->roles()->sync([$adminRole->id]);
+
+        // ✅ 3) نقش انتخابی برای سایدبار/ورود را هم ست کن
         if (($user->selected_role ?? null) !== 'admin') {
             $user->selected_role = 'admin';
             $user->save();

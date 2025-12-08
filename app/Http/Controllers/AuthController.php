@@ -148,52 +148,46 @@ class AuthController extends Controller
      * Set role only first time (role == null)
      * ✅ FIXED: no Seeder needed, role auto-creates if table is empty
      */
-    public function setRole(Request $request)
-    {
-        $request->validate([
-            "role" => ["required", "in:student,teacher"],
-        ]);
 
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json(["message" => "کاربر لاگین نیست"], 401);
-        }
+        public function setRole(Request $request)
+        {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
 
-        $user->load("roles");
+            $roleSlug = $request->validate([
+                'role' => 'required|in:student,teacher,admin,counselor'
+            ])['role'];
 
-        if ($user->roles->isNotEmpty()) {
+            // 1) ذخیره slug در users
+            $user->selected_role = $roleSlug;
+            $user->save();
+
+            // 2) پیدا کردن role واقعی از جدول roles با slug
+            $role = Role::where('slug', $roleSlug)->first();
+            if (!$role) {
+                return response()->json([
+                    'message' => 'نقش معتبر نیست یا در جدول roles وجود ندارد.'
+                ], 422);
+            }
+
+            // 3) سینک pivot با ID واقعی نقش
+            $user->roles()->sync([$role->id]);  // ✅ role_id صحیح
+
             return response()->json([
-                "status"  => "error",
-                "message" => "نقش قبلاً انتخاب شده و فقط از پروفایل قابل تغییر است.",
-            ], 403);
+                'status' => 'ok',
+                'message' => 'نقش ذخیره شد.',
+                'redirect' => match ($roleSlug) {
+                    'admin' => route('admin.dashboard'),
+                    'teacher' => route('teacher.index'),
+                    'student' => route('student.index'),
+                    'counselor' => route('counselor.index'),
+                    default => route('landing'),
+                }
+            ]);
         }
 
-        // ✅ اگر جدول roles خالی بود، نقش را همینجا بساز
-        $role = Role::firstOrCreate(
-            ["slug" => $request->role],
-            [
-                "id"        => (string) Str::uuid(),
-                "name"      => $request->role === "teacher" ? "معلم" : "دانش‌آموز",
-                "is_active" => true,
-            ]
-        );
-
-        // ✅ چون تک‌نقشی هستیم، بهتره sync کنیم نه attach
-        $user->roles()->sync([$role->id]);
-
-        $redirect = match ($request->role) {
-            "student" => route("student.exams.index"),
-            "teacher" => route("teacher.index"),
-            default   => route("landing"),
-        };
-
-        return response()->json([
-            "status"   => "ok",
-            "message"  => "نقش ذخیره شد.",
-            "role"     => $request->role,
-            "redirect" => $redirect,
-        ]);
-    }
 
     /**
      * Change role from profile only

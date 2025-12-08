@@ -2,11 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Middleware\VerifyCsrfToken;  // ✅ حتماً همین
 
 Route::prefix('auth')->name('auth.')->group(function () {
 
-    // ✅ گرفتن CSRF برای fetch (بدون auth)
     Route::get('/csrf', function () {
         return response()->json(['csrf' => csrf_token()]);
     })->name('csrf');
@@ -19,7 +17,6 @@ Route::prefix('auth')->name('auth.')->group(function () {
         ->middleware(['throttle:10,1'])
         ->name('verifyOtp');
 
-    // ✅ انتخاب نقش فقط بعد از لاگین
     Route::post('/set-role', [AuthController::class, 'setRole'])
         ->middleware('auth')
         ->name('setRole');

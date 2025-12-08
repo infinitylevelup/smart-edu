@@ -1395,579 +1395,346 @@
 
 @push('scripts')
     <script>
-        // داده‌های دروس برای هر پایه و رشته
-        const subjectsData = {
-            elementary: {
-                1: ['ریاضی اول', 'فارسی اول', 'علوم اول', 'قرآن اول'],
-                2: ['ریاضی دوم', 'فارسی دوم', 'علوم دوم', 'قرآن دوم'],
-                3: ['ریاضی سوم', 'فارسی سوم', 'علوم سوم', 'قرآن سوم', 'هدیه‌های آسمانی'],
-                4: ['ریاضی چهارم', 'فارسی چهارم', 'علوم چهارم', 'قرآن چهارم', 'هدیه‌های آسمانی', 'اجتماعی چهارم'],
-                5: ['ریاضی پنجم', 'فارسی پنجم', 'علوم پنجم', 'قرآن پنجم', 'هدیه‌های آسمانی', 'اجتماعی پنجم'],
-                6: ['ریاضی ششم', 'فارسی ششم', 'علوم ششم', 'قرآن ششم', 'هدیه‌های آسمانی', 'اجتماعی ششم', 'تفکر و پژوهش']
-            },
-            middle_school: {
-                7: ['ریاضی هفتم', 'فارسی هفتم', 'علوم هفتم', 'قرآن هفتم', 'عربی هفتم', 'انگلیسی هفتم',
-                    'مطالعات اجتماعی', 'تفکر و سبک زندگی'
-                ],
-                8: ['ریاضی هشتم', 'فارسی هشتم', 'علوم هشتم', 'قرآن هشتم', 'عربی هشتم', 'انگلیسی هشتم',
-                    'مطالعات اجتماعی', 'تفکر و سبک زندگی'
-                ],
-                9: ['ریاضی نهم', 'فارسی نهم', 'علوم نهم', 'قرآن نهم', 'عربی نهم', 'انگلیسی نهم', 'مطالعات اجتماعی',
-                    'آمادگی دفاعی', 'کار و فناوری'
-                ]
-            },
-            high_school: {
-                math: {
-                    10: ['ریاضی ۱', 'فیزیک ۱', 'شیمی ۱', 'ادبیات فارسی ۱', 'زبان انگلیسی ۱', 'عربی ۱', 'دین و زندگی ۱',
-                        'سلامت و بهداشت'
-                    ],
-                    11: ['ریاضی ۲', 'فیزیک ۲', 'شیمی ۲', 'ادبیات فارسی ۲', 'زبان انگلیسی ۲', 'عربی ۲', 'دین و زندگی ۲',
-                        'هندسه ۱'
-                    ],
-                    12: ['ریاضی ۳', 'فیزیک ۳', 'شیمی ۳', 'ادبیات فارسی ۳', 'زبان انگلیسی ۳', 'عربی ۳', 'دین و زندگی ۳',
-                        'هندسه ۲'
-                    ]
-                },
-                science: {
-                    10: ['ریاضی ۱', 'فیزیک ۱', 'شیمی ۱', 'زیست‌شناسی ۱', 'ادبیات فارسی ۱', 'زبان انگلیسی ۱', 'عربی ۱',
-                        'دین و زندگی ۱'
-                    ],
-                    11: ['ریاضی ۲', 'فیزیک ۲', 'شیمی ۲', 'زیست‌شناسی ۲', 'ادبیات فارسی ۲', 'زبان انگلیسی ۲', 'عربی ۲',
-                        'دین و زندگی ۲'
-                    ],
-                    12: ['ریاضی ۳', 'فیزیک ۳', 'شیمی ۳', 'زیست‌شناسی ۳', 'ادبیات فارسی ۳', 'زبان انگلیسی ۳', 'عربی ۳',
-                        'دین و زندگی ۳'
-                    ]
-                },
-                humanities: {
-                    10: ['ریاضی و آمار ۱', 'علوم و فنون ادبی ۱', 'تاریخ ۱', 'جغرافیا ۱', 'جامعه‌شناسی ۱',
-                        'ادبیات فارسی ۱', 'زبان انگلیسی ۱', 'عربی ۱'
-                    ],
-                    11: ['ریاضی و آمار ۲', 'علوم و فنون ادبی ۲', 'تاریخ ۲', 'جغرافیا ۲', 'جامعه‌شناسی ۲',
-                        'ادبیات فارسی ۲', 'زبان انگلیسی ۲', 'عربی ۲'
-                    ],
-                    12: ['ریاضی و آمار ۳', 'علوم و فنون ادبی ۳', 'تاریخ ۳', 'جغرافیا ۳', 'جامعه‌شناسی ۳',
-                        'ادبیات فارسی ۳', 'زبان انگلیسی ۳', 'عربی ۳'
-                    ]
-                },
-                technical: {
-                    10: ['فیزیک ۱', 'شیمی ۱', 'ریاضی ۱', 'ادبیات فارسی ۱', 'زبان انگلیسی ۱', 'دین و زندگی ۱',
-                        'درس فنی ۱'
-                    ],
-                    11: ['فیزیک ۲', 'شیمی ۲', 'ریاضی ۲', 'ادبیات فارسی ۲', 'زبان انگلیسی ۲', 'دین و زندگی ۲',
-                        'درس فنی ۲'
-                    ],
-                    12: ['فیزیک ۳', 'شیمی ۳', 'ریاضی ۳', 'ادبیات فارسی ۳', 'زبان انگلیسی ۳', 'دین و زندگی ۳',
-                        'درس فنی ۳'
-                    ]
-                },
-                vocational: {
-                    10: ['ریاضی ۱', 'فیزیک ۱', 'ادبیات فارسی ۱', 'زبان انگلیسی ۱', 'دین و زندگی ۱', 'درس مهارتی ۱'],
-                    11: ['ریاضی ۲', 'فیزیک ۲', 'ادبیات فارسی ۲', 'زبان انگلیسی ۲', 'دین و زندگی ２', 'درس مهارتی ۲'],
-                    12: ['ریاضی ３', 'فیزیک ３', 'ادبیات فارسی ３', 'زبان انگلیسی ３', 'دین و زندگی ３', 'درس مهارتی ３']
-                }
-            }
-        };
+        async function createNewClassroom() {
 
-        // داده‌های پیش‌فرض
-        let currentStep = 1;
-        let formData = {
-            examType: 'public',
-            educationLevel: '',
-            grade: '',
-            field: '',
-            subjectType: 'single',
-            subjectId: '',
-            selectedSubjects: []
-        };
+            const endpoints = {
+                sections: "/dashboard/teacher/exams/data/sections",
+                grades: "/dashboard/teacher/exams/data/grades",
+                branches: "/dashboard/teacher/exams/data/branches",
+                fields: "/dashboard/teacher/exams/data/fields",
+                subfields: "/dashboard/teacher/exams/data/subfields",
+                subjectTypes: "/dashboard/teacher/exams/data/subject-types",
+                subjects: "/dashboard/teacher/exams/data/subjects",
+            };
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // مقداردهی اولیه
-            selectExamType('public');
-            updateProgress();
-            updateNavigationButtons();
-
-            // ویبره برای موبایل
-            if (navigator.vibrate) {
-                const clickableItems = document.querySelectorAll(
-                    '.type-card, .level-tab, .grade-card, .field-card, .subject-card, .btn-nav');
-                clickableItems.forEach(item => {
-                    item.addEventListener('click', function() {
-                        navigator.vibrate(20);
-                    });
+            const getJSON = async (url) => {
+                const res = await fetch(url, {
+                    headers: {
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
                 });
-            }
+                if (!res.ok) throw new Error("network");
+                return res.json();
+            };
 
-            // انیمیشن ورود
-            setTimeout(() => {
-                const steps = document.querySelectorAll('.step-item');
-                steps.forEach((step, i) => {
-                    step.style.animationDelay = `${i * 0.1}s`;
-                    step.style.animation = 'fadeIn 0.5s ease-out forwards';
-                    step.style.opacity = '0';
+            const opt = (items, placeholder = "-- انتخاب کنید --", labelKey = "name_fa") => {
+                let html = `<option value="">${placeholder}</option>`;
+                items.forEach(i => {
+                    html += `<option value="${i.id}"
+                                data-name="${i[labelKey] || i.title_fa || ''}">
+                                ${i[labelKey] || i.title_fa}
+                            </option>`;
                 });
-            }, 300);
-        });
+                return html;
+            };
 
-        // ========== FUNCTIONS FOR EXAM TYPE ==========
-        function selectExamType(type) {
-            // حذف انتخاب قبلی
-            document.querySelectorAll('.type-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // انتخاب جدید
-            document.querySelector(`.type-card[data-type="${type}"]`).classList.add('selected');
-
-            // ذخیره داده
-            formData.examType = type;
-            document.getElementById('examType').value = type;
-
-            // نمایش تغییرات در پیش‌نمایش
-            updatePreview();
-
-            // بررسی نوع آزمون برای نمایش/مخفی کردن مراحل
-            handleExamTypeChange();
-        }
-
-        function handleExamTypeChange() {
-            const examType = formData.examType;
-
-            if (examType === 'public') {
-                // آزمون عمومی: مخفی کردن مراحل کلاس و رشته
-                document.getElementById('step4').style.display = 'none';
-                document.getElementById('step5').style.display = 'block';
-            } else {
-                // آزمون کلاسی: نمایش همه مراحل
-                document.getElementById('step4').style.display = 'block';
-                document.getElementById('step5').style.display = 'block';
-            }
-        }
-
-        // ========== FUNCTIONS FOR EDUCATION LEVEL ==========
-        function selectEducationLevel(level) {
-            // حذف انتخاب قبلی
-            document.querySelectorAll('.level-tab').forEach(tab => {
-                tab.classList.remove('selected');
-            });
-
-            // انتخاب جدید
-            document.querySelector(`.level-tab.${level.replace('_', '-')}`).classList.add('selected');
-
-            // ذخیره داده
-            formData.educationLevel = level;
-            document.getElementById('educationLevel').value = level;
-
-            // نمایش گرید پایه مناسب
-            showGradeGrid(level);
-
-            // ریست کردن پایه انتخابی
-            formData.grade = '';
-            document.getElementById('grade').value = '';
-            document.querySelectorAll('.grade-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // نمایش تغییرات در پیش‌نمایش
-            updatePreview();
-
-            // بررسی نمایش مرحله رشته
-            if (level === 'high_school') {
-                document.getElementById('step4').style.display = 'block';
-            } else {
-                formData.field = '';
-                document.getElementById('field').value = '';
-                document.querySelectorAll('.field-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-            }
-        }
-
-        function showGradeGrid(level) {
-            // مخفی کردن همه گریدها
-            document.getElementById('elementaryGrades').style.display = 'none';
-            document.getElementById('middleSchoolGrades').style.display = 'none';
-            document.getElementById('highSchoolGrades').style.display = 'none';
-
-            // نمایش گرید مناسب
-            switch (level) {
-                case 'elementary':
-                    document.getElementById('elementaryGrades').style.display = 'grid';
-                    document.getElementById('gradeDescription').textContent = 'پایه ابتدایی مورد نظر را انتخاب کنید.';
-                    break;
-                case 'middle_school':
-                    document.getElementById('middleSchoolGrades').style.display = 'grid';
-                    document.getElementById('gradeDescription').textContent = 'پایه متوسطه اول مورد نظر را انتخاب کنید.';
-                    break;
-                case 'high_school':
-                    document.getElementById('highSchoolGrades').style.display = 'grid';
-                    document.getElementById('gradeDescription').textContent = 'پایه متوسطه دوم مورد نظر را انتخاب کنید.';
-                    break;
-            }
-        }
-
-        // ========== FUNCTIONS FOR GRADE SELECTION ==========
-        function selectGrade(grade) {
-            // حذف انتخاب قبلی
-            document.querySelectorAll('.grade-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // انتخاب جدید
-            document.querySelectorAll('.grade-card').forEach(card => {
-                if (card.textContent.trim() === `پایه ${grade}`) {
-                    card.classList.add('selected');
-                }
-            });
-
-            // ذخیره داده
-            formData.grade = grade;
-            document.getElementById('grade').value = grade;
-
-            // نمایش تغییرات در پیش‌نمایش
-            updatePreview();
-
-            // بارگذاری دروس برای این پایه
-            loadSubjectsForGrade();
-        }
-
-        // ========== FUNCTIONS FOR FIELD SELECTION ==========
-        function selectField(field) {
-            // حذف انتخاب قبلی
-            document.querySelectorAll('.field-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // انتخاب جدید
-            document.querySelector(`.field-card[data-field="${field}"]`).classList.add('selected');
-
-            // ذخیره داده
-            formData.field = field;
-            document.getElementById('field').value = field;
-
-            // نمایش تغییرات در پیش‌نمایش
-            updatePreview();
-
-            // بارگذاری دروس برای این رشته
-            loadSubjectsForGrade();
-        }
-
-        // ========== FUNCTIONS FOR SUBJECTS ==========
-        function loadSubjectsForGrade() {
-            if (!formData.educationLevel || !formData.grade) return;
-
-            let subjects = [];
-
-            if (formData.educationLevel === 'high_school' && formData.field) {
-                // متوسطه دوم با رشته
-                subjects = subjectsData.high_school[formData.field][formData.grade] || [];
-            } else if (formData.educationLevel === 'middle_school') {
-                // متوسطه اول
-                subjects = subjectsData.middle_school[formData.grade] || [];
-            } else if (formData.educationLevel === 'elementary') {
-                // ابتدایی
-                subjects = subjectsData.elementary[formData.grade] || [];
+            // قدم اول: لود مقطع
+            let sections = [];
+            try {
+                const s = await getJSON(endpoints.sections);
+                sections = s.sections || [];
+            } catch (e) {
+                Swal.fire("خطا", "دریافت مقاطع ممکن نیست", "error");
+                return;
             }
 
-            // نمایش دروس
-            renderSubjects(subjects);
-        }
+            Swal.fire({
+                title: 'ایجاد کلاس جدید',
+                html: `
+                <div style="text-align:right">
 
-        function renderSubjects(subjects) {
-            const singleSubjectGrid = document.getElementById('singleSubjectGrid');
-            const comprehensiveSubjectList = document.getElementById('comprehensiveSubjectList');
+                    <label class="mb-2 fw-bold d-block">🎓 مقطع</label>
+                    <select id="cc_section" class="swal2-input">${opt(sections, "مقطع را انتخاب کنید")}</select>
 
-            // پاک کردن محتوای قبلی
-            singleSubjectGrid.innerHTML = '';
-            comprehensiveSubjectList.innerHTML = '';
+                    <label class="mb-2 fw-bold d-block mt-3">📊 پایه</label>
+                    <select id="cc_grade" class="swal2-input" disabled>
+                        <option value="">ابتدا مقطع را انتخاب کنید</option>
+                    </select>
 
-            // ایجاد کارت برای هر درس
-            subjects.forEach((subject, index) => {
-                // کارت برای انتخاب تک درس
-                const subjectCard = document.createElement('div');
-                subjectCard.className = 'subject-card';
-                subjectCard.setAttribute('data-subject-id', index);
-                subjectCard.setAttribute('onclick', `selectSingleSubject(${index}, '${subject}')`);
-                subjectCard.innerHTML = `
-            <div class="subject-name">${subject}</div>
-            <div class="subject-code">${generateSubjectCode(subject)}</div>
-            <div class="subject-hours">۲ ساعت</div>
-        `;
-                singleSubjectGrid.appendChild(subjectCard);
+                    <label class="mb-2 fw-bold d-block mt-3">🧩 شاخه / رشته</label>
+                    <select id="cc_branch" class="swal2-input" disabled>
+                        <option value="">ابتدا پایه را انتخاب کنید</option>
+                    </select>
 
-                // تگ برای لیست جامع
-                const subjectTag = document.createElement('div');
-                subjectTag.className = 'subject-tag';
-                subjectTag.innerHTML = `
-            <i class="fas fa-book"></i>
-            ${subject}
-        `;
-                comprehensiveSubjectList.appendChild(subjectTag);
-            });
-        }
+                    <label class="mb-2 fw-bold d-block mt-3">🏭 زمینه آموزشی</label>
+                    <select id="cc_field" class="swal2-input" disabled>
+                        <option value="">ابتدا شاخه را انتخاب کنید</option>
+                    </select>
 
-        function generateSubjectCode(subjectName) {
-            // تولید کد ساده برای درس
-            const words = subjectName.split(' ');
-            if (words.length > 1) {
-                return words.map(word => word[0]).join('').toUpperCase();
-            }
-            return subjectName.substring(0, 3).toUpperCase();
-        }
+                    <label class="mb-2 fw-bold d-block mt-3">🔬 زیررشته</label>
+                    <select id="cc_subfield" class="swal2-input" disabled>
+                        <option value="">ابتدا زمینه را انتخاب کنید</option>
+                    </select>
 
-        function selectSubjectType(type) {
-            formData.subjectType = type;
-            document.getElementById('subjectType').value = type;
+                    <label class="mb-2 fw-bold d-block mt-3">📚 دسته درسی</label>
+                    <select id="cc_subject_type" class="swal2-input" disabled>
+                        <option value="">ابتدا زیررشته را انتخاب کنید</option>
+                    </select>
 
-            // نمایش المان مناسب
-            if (type === 'single') {
-                document.getElementById('singleSubjectGrid').style.display = 'grid';
-                document.getElementById('comprehensiveSubjects').style.display = 'none';
-            } else {
-                document.getElementById('singleSubjectGrid').style.display = 'none';
-                document.getElementById('comprehensiveSubjects').style.display = 'block';
-            }
+                    <label class="mb-2 fw-bold d-block mt-3">📖 درس</label>
+                    <select id="cc_subject" class="swal2-input" disabled>
+                        <option value="">ابتدا دسته درسی را انتخاب کنید</option>
+                    </select>
 
-            // به‌روزرسانی پیش‌نمایش
-            updatePreview();
-        }
+                    <label class="mb-2 fw-bold d-block mt-3">🏷️ نام کلاس</label>
+                    <input type="text" id="cc_title" class="swal2-input" placeholder="مثال: کلاس یازدهم شبکه - پایگاه داده">
 
-        function selectSingleSubject(id, subjectName) {
-            // حذف انتخاب قبلی
-            document.querySelectorAll('.subject-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+                </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: "ایجاد کلاس",
+                cancelButtonText: "انصراف",
+                reverseButtons: true,
+                width: 650,
+                didOpen: () => {
 
-            // انتخاب جدید
-            document.querySelector(`.subject-card[data-subject-id="${id}"]`).classList.add('selected');
+                    const elSection = document.getElementById("cc_section");
+                    const elGrade = document.getElementById("cc_grade");
+                    const elBranch = document.getElementById("cc_branch");
+                    const elField = document.getElementById("cc_field");
+                    const elSubfield = document.getElementById("cc_subfield");
+                    const elSubjectType = document.getElementById("cc_subject_type");
+                    const elSubject = document.getElementById("cc_subject");
 
-            // ذخیره داده
-            formData.subjectId = id;
-            formData.selectedSubjects = [subjectName];
-            document.getElementById('subjectId').value = id;
+                    const resetBelow = (from) => {
+                        const map = {
+                            section: [elGrade, elBranch, elField, elSubfield, elSubjectType, elSubject],
+                            grade:   [elBranch, elField, elSubfield, elSubjectType, elSubject],
+                            branch:  [elField, elSubfield, elSubjectType, elSubject],
+                            field:   [elSubfield, elSubjectType, elSubject],
+                            subfield:[elSubjectType, elSubject],
+                            subjectType:[elSubject],
+                        };
+                        (map[from] || []).forEach(el => {
+                            el.innerHTML = `<option value="">ابتدا مرحله قبل را انتخاب کنید</option>`;
+                            el.disabled = true;
+                        });
+                    };
 
-            // به‌روزرسانی پیش‌نمایش
-            updatePreview();
-        }
+                    // ====== مقطع → پایه‌ها ======
+                    elSection.addEventListener("change", async () => {
+                        const sectionId = elSection.value;
+                        resetBelow('section');
 
-        // ========== STEP NAVIGATION ==========
-        function nextStep() {
-            if (validateCurrentStep()) {
-                if (currentStep < 6) {
-                    // رفتن به مرحله بعد
-                    document.getElementById(`step${currentStep}`).classList.remove('active');
-                    currentStep++;
-                    document.getElementById(`step${currentStep}`).classList.add('active');
+                        if (!sectionId) return;
 
-                    // به‌روزرسانی پیشرفت
-                    updateProgress();
-                    updateNavigationButtons();
-
-                    // اسکرول به بالا
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
+                        elGrade.innerHTML = `<option>در حال بارگذاری...</option>`;
+                        const g = await getJSON(`${endpoints.grades}?section_id=${sectionId}`);
+                        elGrade.innerHTML = opt(g.grades || [], "پایه را انتخاب کنید");
+                        elGrade.disabled = false;
                     });
 
-                    // ویبره
-                    if (navigator.vibrate) navigator.vibrate(30);
+                    // ====== پایه → شاخه‌ها ======
+                    elGrade.addEventListener("change", async () => {
+                        const sectionId = elSection.value;
+                        const gradeId = elGrade.value;
+                        resetBelow('grade');
+
+                        if (!sectionId || !gradeId) return;
+
+                        elBranch.innerHTML = `<option>در حال بارگذاری...</option>`;
+                        const b = await getJSON(
+                            `${endpoints.branches}?section_id=${sectionId}&grade_id=${gradeId}`
+                        );
+                        elBranch.innerHTML = opt(b.branches || [], "شاخه/رشته را انتخاب کنید");
+                        elBranch.disabled = false;
+                    });
+
+                    // ====== شاخه → زمینه‌ها ======
+                    elBranch.addEventListener("change", async () => {
+                        const branchId = elBranch.value;
+                        resetBelow('branch');
+
+                        if (!branchId) return;
+
+                        elField.innerHTML = `<option>در حال بارگذاری...</option>`;
+                        const f = await getJSON(`${endpoints.fields}?branch_id=${branchId}`);
+                        elField.innerHTML = opt(f.fields || [], "زمینه را انتخاب کنید");
+                        elField.disabled = false;
+                    });
+
+                    // ====== زمینه → زیررشته ======
+                    elField.addEventListener("change", async () => {
+                        const fieldId = elField.value;
+                        resetBelow('field');
+
+                        if (!fieldId) return;
+
+                        elSubfield.innerHTML = `<option>در حال بارگذاری...</option>`;
+                        const sf = await getJSON(`${endpoints.subfields}?field_id=${fieldId}`);
+                        elSubfield.innerHTML = opt(sf.subfields || [], "زیررشته را انتخاب کنید");
+                        elSubfield.disabled = false;
+                    });
+
+                    // ====== زیررشته → دسته‌های درسی ======
+                    elSubfield.addEventListener("change", async () => {
+                        const sectionId = elSection.value;
+                        const gradeId   = elGrade.value;
+                        const branchId  = elBranch.value;
+                        const fieldId   = elField.value;
+                        const subfieldId= elSubfield.value;
+                        resetBelow('subfield');
+
+                        if (!subfieldId) return;
+
+                        elSubjectType.innerHTML = `<option>در حال بارگذاری...</option>`;
+
+                        const params = new URLSearchParams();
+                        if (sectionId) params.append("section_id", sectionId);
+                        if (gradeId) params.append("grade_id", gradeId);
+                        if (branchId) params.append("branch_id", branchId);
+                        if (fieldId) params.append("field_id", fieldId);
+                        if (subfieldId) params.append("subfield_id", subfieldId);
+
+                        const st = await getJSON(`${endpoints.subjectTypes}?${params.toString()}`);
+                        elSubjectType.innerHTML = opt(st.subjectTypes || [], "دسته درسی را انتخاب کنید");
+                        elSubjectType.disabled = false;
+                    });
+
+                    // ====== دسته درسی → دروس ======
+                    elSubjectType.addEventListener("change", async () => {
+                        const sectionId = elSection.value;
+                        const gradeId   = elGrade.value;
+                        const branchId  = elBranch.value;
+                        const fieldId   = elField.value;
+                        const subfieldId= elSubfield.value;
+                        const subjectTypeId = elSubjectType.value;
+                        resetBelow('subjectType');
+
+                        if (!subjectTypeId) return;
+
+                        elSubject.innerHTML = `<option>در حال بارگذاری...</option>`;
+
+                        const params = new URLSearchParams();
+                        if (sectionId) params.append("section_id", sectionId);
+                        if (gradeId) params.append("grade_id", gradeId);
+                        if (branchId) params.append("branch_id", branchId);
+                        if (fieldId) params.append("field_id", fieldId);
+                        if (subfieldId) params.append("subfield_id", subfieldId);
+                        if (subjectTypeId) params.append("subject_type_id", subjectTypeId);
+
+                        const sub = await getJSON(`${endpoints.subjects}?${params.toString()}`);
+                        elSubject.innerHTML = opt(sub.subjects || [], "درس را انتخاب کنید", "title_fa");
+                        elSubject.disabled = false;
+                    });
+
+                },
+                preConfirm: () => {
+                    const sectionId = document.getElementById("cc_section").value;
+                    const gradeId = document.getElementById("cc_grade").value;
+                    const branchId = document.getElementById("cc_branch").value;
+                    const fieldId = document.getElementById("cc_field").value;
+                    const subfieldId = document.getElementById("cc_subfield").value;
+                    const subjectTypeId = document.getElementById("cc_subject_type").value;
+                    const subjectId = document.getElementById("cc_subject").value;
+                    const title = document.getElementById("cc_title").value.trim();
+
+                    if (!sectionId || !gradeId || !branchId || !fieldId || !subfieldId || !subjectId) {
+                        Swal.showValidationMessage("لطفاً همه موارد آموزشی را انتخاب کنید.");
+                        return false;
+                    }
+                    if (!title) {
+                        Swal.showValidationMessage("نام کلاس الزامی است.");
+                        return false;
+                    }
+
+                    const getName = (selectId) => {
+                        const el = document.getElementById(selectId);
+                        return el.options[el.selectedIndex]?.dataset?.name || el.options[el.selectedIndex]?.text || "";
+                    };
+
+                    return {
+                        section_id: sectionId,
+                        grade_id: gradeId,
+                        branch_id: branchId,
+                        field_id: fieldId,
+                        subfield_id: subfieldId,
+                        subject_type_id: subjectTypeId || null,
+                        subject_id: subjectId,
+
+                        section_name: getName("cc_section"),
+                        grade_name: getName("cc_grade"),
+                        branch_name: getName("cc_branch"),
+                        field_name: getName("cc_field"),
+                        subfield_name: getName("cc_subfield"),
+                        subject_type_name: getName("cc_subject_type"),
+                        subject_name: getName("cc_subject"),
+
+                        title
+                    };
                 }
-            }
-        }
+            }).then(async (result) => {
+                if (!result.isConfirmed) return;
 
-        function prevStep() {
-            if (currentStep > 1) {
-                // رفتن به مرحله قبل
-                document.getElementById(`step${currentStep}`).classList.remove('active');
-                currentStep--;
-                document.getElementById(`step${currentStep}`).classList.add('active');
+                const data = result.value;
 
-                // به‌روزرسانی پیشرفت
-                updateProgress();
-                updateNavigationButtons();
-
-                // اسکرول به بالا
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
+                Swal.fire({
+                    title: "در حال ایجاد کلاس...",
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
                 });
 
-                // ویبره
-                if (navigator.vibrate) navigator.vibrate(20);
-            }
-        }
+                try {
+                    const fd = new FormData();
+                    fd.append("title", data.title);
+                    fd.append("section_id", data.section_id);
+                    fd.append("grade_id", data.grade_id);
+                    fd.append("branch_id", data.branch_id);
+                    fd.append("field_id", data.field_id);
+                    fd.append("subfield_id", data.subfield_id);
+                    fd.append("subject_id", data.subject_id);
+                    if (data.subject_type_id) fd.append("subject_type_id", data.subject_type_id);
+                    fd.append("is_active", 1);
 
-        function updateProgress() {
-            // به‌روزرسانی progress bar
-            const progress = (currentStep / 6) * 100;
-            document.getElementById('progressFill').style.width = `${progress}%`;
+                    fd.append("metadata", JSON.stringify({
+                        section_name: data.section_name,
+                        grade_name: data.grade_name,
+                        branch_name: data.branch_name,
+                        field_name: data.field_name,
+                        subfield_name: data.subfield_name,
+                        subject_type_name: data.subject_type_name,
+                        subject_name: data.subject_name
+                    }));
 
-            // به‌روزرسانی مراحل
-            document.querySelectorAll('.step-item').forEach((item, index) => {
-                item.classList.remove('active', 'completed');
-                if (index + 1 < currentStep) {
-                    item.classList.add('completed');
-                } else if (index + 1 === currentStep) {
-                    item.classList.add('active');
+                    const res = await fetch("{{ route('teacher.classes.store') }}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Accept": "application/json"
+                        },
+                        body: fd
+                    });
+
+                    const responseData = await res.json();
+                    Swal.close();
+
+                    if (responseData.success) {
+                        Swal.fire("✅ موفقیت", "کلاس ایجاد شد", "success").then(() => {
+                            loadExistingClassrooms();
+
+                            if (responseData.classroom) {
+                                setTimeout(() => {
+                                    selectClassroom(
+                                        { target: document.querySelector(`[data-classroom-id="${responseData.classroom.id}"]`) },
+                                        responseData.classroom.id,
+                                        responseData.classroom.title
+                                    );
+                                }, 300);
+                            }
+                        });
+                    } else {
+                        Swal.fire("❌ خطا", responseData.message || "خطا در ایجاد کلاس", "error");
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                    Swal.close();
+                    Swal.fire("❌ خطای شبکه", "ارتباط با سرور مشکل دارد.", "error");
                 }
             });
         }
-
-        function updateNavigationButtons() {
-            const prevBtn = document.querySelector('.btn-prev');
-            const nextBtn = document.querySelector('.btn-next');
-            const submitBtn = document.querySelector('.btn-submit');
-
-            if (currentStep === 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'flex';
-                submitBtn.style.display = 'none';
-            } else if (currentStep === 6) {
-                prevBtn.style.display = 'flex';
-                nextBtn.style.display = 'none';
-                submitBtn.style.display = 'flex';
-            } else {
-                prevBtn.style.display = 'flex';
-                nextBtn.style.display = 'flex';
-                submitBtn.style.display = 'none';
-            }
-        }
-
-        function validateCurrentStep() {
-            switch (currentStep) {
-                case 1:
-                    if (!formData.examType) {
-                        showToast('لطفاً نوع آزمون را انتخاب کنید.', 'error');
-                        return false;
-                    }
-                    break;
-                case 2:
-                    if (!formData.educationLevel) {
-                        showToast('لطفاً سطح آموزشی را انتخاب کنید.', 'error');
-                        return false;
-                    }
-                    break;
-                case 3:
-                    if (!formData.grade) {
-                        showToast('لطفاً پایه تحصیلی را انتخاب کنید.', 'error');
-                        return false;
-                    }
-
-                    // اگر متوسطه دوم است، بررسی می‌کنیم که مرحله رشته را باید نشان دهیم
-                    if (formData.educationLevel === 'high_school') {
-                        document.getElementById('step4').style.display = 'block';
-                    }
-                    break;
-                case 4:
-                    if (formData.educationLevel === 'high_school' && !formData.field) {
-                        showToast('لطفاً رشته تحصیلی را انتخاب کنید.', 'error');
-                        return false;
-                    }
-                    break;
-                case 5:
-                    if (formData.examType === 'class_single' && !formData.subjectId) {
-                        showToast('لطفاً درس مورد نظر را انتخاب کنید.', 'error');
-                        return false;
-                    }
-                    break;
-            }
-            return true;
-        }
-
-        // ========== PREVIEW UPDATES ==========
-        function updatePreview() {
-            // نوع آزمون
-            const examTypeMap = {
-                'public': 'آزمون عمومی',
-                'class_single': 'کلاسی تک درس',
-                'class_comprehensive': 'کلاسی جامع'
-            };
-            document.getElementById('previewExamType').textContent = examTypeMap[formData.examType] || '--';
-
-            // سطح آموزشی
-            const levelMap = {
-                'elementary': 'ابتدایی',
-                'middle_school': 'متوسطه اول',
-                'high_school': 'متوسطه دوم'
-            };
-            document.getElementById('previewEducationLevel').textContent = levelMap[formData.educationLevel] || '--';
-
-            // پایه
-            document.getElementById('previewGrade').textContent = formData.grade ? `پایه ${formData.grade}` : '--';
-
-            // رشته
-            const fieldMap = {
-                'math': 'ریاضی و فیزیک',
-                'science': 'علوم تجربی',
-                'humanities': 'علوم انسانی',
-                'technical': 'فنی و حرفه‌ای',
-                'vocational': 'کاردانش'
-            };
-            document.getElementById('previewField').textContent = fieldMap[formData.field] || '--';
-
-            // دروس
-            if (formData.examType === 'class_comprehensive') {
-                document.getElementById('previewSubjects').textContent = 'تمام دروس پایه';
-            } else if (formData.selectedSubjects.length > 0) {
-                document.getElementById('previewSubjects').textContent = formData.selectedSubjects[0];
-            } else {
-                document.getElementById('previewSubjects').textContent = '--';
-            }
-        }
-
-        // ========== TOAST NOTIFICATION ==========
-        function showToast(message, type) {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        background: ${type === 'error' ? 'var(--warning)' : 'var(--success)'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-lg);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 700;
-        animation: slideInLeft 0.3s ease;
-        max-width: 350px;
-    `;
-
-            toast.innerHTML = `
-        <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i>
-        <span>${message}</span>
-    `;
-
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-
-            // ویبره برای خطا
-            if (type === 'error' && navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
-            }
-        }
-
-        // اضافه کردن استایل‌های انیمیشن
-        const style = document.createElement('style');
-        style.textContent = `
-    @keyframes fadeOut {
-        from {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(-30px);
-        }
-    }
-`;
-        document.head.appendChild(style);
     </script>
+
 @endpush

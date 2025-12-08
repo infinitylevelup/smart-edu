@@ -14,17 +14,23 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\FieldController;
 use App\Http\Controllers\Admin\SubfieldController;
 use App\Http\Controllers\Admin\SubjectTypeController;
+use App\Http\Controllers\Admin\ExamController; // ✅ اضافه شود      
+use App\Http\Controllers\Admin\SubjectTaxonomyController; // ✅ اضافه شود
+
 
 /*
 |--------------------------------------------------------------------------
 | Admin Auth Routes (OTP Login) - PUBLIC (no auth middleware)
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('/send-otp', [AdminAuthController::class, 'sendOtp'])->name('send-otp');
     Route::post('/verify-otp', [AdminAuthController::class, 'verifyOtp'])->name('verify-otp');
 });
+
+
 
 
 /*
@@ -58,6 +64,20 @@ Route::prefix('dashboard/admin')
         Route::resource('subject-types', SubjectTypeController::class);
         Route::resource('subjects', SubjectController::class);
 
+        // ✅ API قبلی خودت (بدون تغییر)
         Route::get('api/subjects/by-grade/{grade}', [SubjectController::class, 'byGrade'])
             ->name('api.subjects.by-grade');
+
+        // ✅ NEW APIs برای dropdown هوشمند
+        Route::get('api/grades/by-section/{section}', [SubjectTaxonomyController::class, 'gradesBySection'])
+            ->name('api.grades.by-section');
+
+        Route::get('api/branches/by-section/{section}', [SubjectTaxonomyController::class, 'branchesBySection'])
+            ->name('api.branches.by-section');
+
+        Route::get('api/fields/by-branch/{branch}', [SubjectTaxonomyController::class, 'fieldsByBranch'])
+            ->name('api.fields.by-branch');
+
+        Route::get('api/subfields/by-field/{field}', [SubjectTaxonomyController::class, 'subfieldsByField'])
+            ->name('api.subfields.by-field');
     });

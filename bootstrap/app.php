@@ -4,8 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-use App\Http\Middleware\RoleSelectedMiddleware;
-use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\EnsureRoleSelected;
+use App\Http\Middleware\EnsureUserRole;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,23 +15,23 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
-        // ✅ مهم: مقصد مهمان‌ها (guest) وقتی auth رد می‌شود
+        // مقصد مهمان‌ها
         $middleware->redirectGuestsTo('/admin/login');
 
-        // ✅ OTP بدون CSRF
+        // OTP بدون CSRF
         $middleware->validateCsrfTokens(except: [
             'auth/send-otp',
             'auth/verify-otp',
-            // اگر ادمین OTP هم آدرس جدا دارد:
             'admin/send-otp',
             'admin/verify-otp',
         ]);
 
-        // middleware alias های نقش
+        // ✅ alias های نقش (هم‌راستا با فایل‌های موجودت)
         $middleware->alias([
-            'role.selected' => RoleSelectedMiddleware::class,
-            'role'          => RoleMiddleware::class,
+            'role.selected' => \App\Http\Middleware\EnsureRoleSelected::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
