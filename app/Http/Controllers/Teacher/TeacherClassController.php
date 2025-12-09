@@ -66,50 +66,60 @@ class TeacherClassController extends Controller
         return view('dashboard.teacher.classes.create');
     }
 
-public function store(Request $request)
-{
-    $teacherId = Auth::id();
+    public function store(Request $request)
+    {
+        $teacherId = Auth::id();
 
-    $data = $request->validate([
-        'title'       => 'required|string|max:255',
-        'section_id'  => 'required|uuid|exists:sections,id',
-        'grade_id'    => 'required|uuid|exists:grades,id',
-        'branch_id'   => 'required|uuid|exists:branches,id',
-        'field_id'    => 'required|uuid|exists:fields,id',
-        'subfield_id' => 'required|uuid|exists:subfields,id',
-        'subject_id'  => 'required|uuid|exists:subjects,id',
-        'is_active'   => 'nullable|boolean',
-        'metadata'    => 'nullable|string',
-    ]);
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
 
-    $classroom = Classroom::create([
-        'id'          => (string) Str::uuid(),
-        'teacher_id'  => $teacherId,
-        'title'       => $data['title'],
-        'section_id'  => $data['section_id'],
-        'grade_id'    => $data['grade_id'],
-        'branch_id'   => $data['branch_id'],
-        'field_id'    => $data['field_id'],
-        'subfield_id' => $data['subfield_id'],
-        'subject_id'  => $data['subject_id'],
-        'is_active'   => (bool)($data['is_active'] ?? true),
-        'metadata'    => $data['metadata'] ?? null,
-    ]);
+            // taxonomy (UUID)
+            'section_id'  => 'required|uuid|exists:sections,id',
+            'grade_id'    => 'required|uuid|exists:grades,id',
+            'branch_id'   => 'required|uuid|exists:branches,id',
+            'field_id'    => 'required|uuid|exists:fields,id',
+            'subfield_id' => 'required|uuid|exists:subfields,id',
+            'subject_id'  => 'required|uuid|exists:subjects,id',
 
-    if ($request->ajax()) {
-        return response()->json([
-            'success' => true,
-            'classroom' => [
-                'id' => $classroom->id,
-                'title' => $classroom->title,
-            ]
+            'is_active'   => 'nullable|boolean',
+            'metadata'    => 'nullable|string',
         ]);
-    }
 
-    return redirect()
-        ->route('teacher.classes.index')
-        ->with('success', 'کلاس با موفقیت ایجاد شد.');
-}
+        $classroom = Classroom::create([
+            'id'          => (string) Str::uuid(),
+            'teacher_id'  => $teacherId,
+            'title'       => $data['title'],
+
+            // ✅ taxonomy
+            'section_id'  => $data['section_id'],
+            'grade_id'    => $data['grade_id'],
+            'branch_id'   => $data['branch_id'],
+            'field_id'    => $data['field_id'],
+            'subfield_id' => $data['subfield_id'],
+            'subject_id'  => $data['subject_id'],
+
+            // ✅ join_code واقعی
+            'join_code'   => $this->generateJoinCode(),
+
+            'is_active'   => (bool) ($data['is_active'] ?? true),
+            'metadata'    => $data['metadata'] ?? null,
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success'   => true,
+                'classroom' => [
+                    'id'        => $classroom->id,
+                    'title'     => $classroom->title,
+                    'join_code' => $classroom->join_code,
+                ],
+            ]);
+        }
+
+        return redirect()
+            ->route('teacher.classes.index')
+            ->with('success', 'کلاس با موفقیت ایجاد شد.');
+    }
 
     // 🔥 تابع تولید کد عضویت
     private function generateJoinCode()
@@ -142,18 +152,35 @@ public function store(Request $request)
         $this->authorizeTeacher($class);
 
         $data = $request->validate([
-            'title' => ['required','string','max:255'],
-            'subject' => ['nullable','string','max:255'],
-            'grade' => ['nullable','string','max:50'],
+            'title'       => ['required','string','max:255'],
+
+            // ✅ حالت جدید taxonomy (برای edit هوشمند)
+            'section_id'  => ['nullable','uuid','exists:sections,id'],
+            'grade_id'    => ['nullable','uuid','exists:grades,id'],
+            'branch_id'   => ['nullable','uuid','exists:branches,id'],
+            'field_id'    => ['nullable','uuid','exists:fields,id'],
+            'subfield_id' => ['nullable','uuid','exists:subfields,id'],
+            'subject_id'  => ['nullable','uuid','exists:subjects,id'],
+
+            // ✅ حالت قدیم (اگر هنوز فرم ساده داری)
+            'subject'     => ['nullable','string','max:255'],
+            'grade'       => ['nullable','string','max:50'],
+
             'description' => ['nullable','string'],
-            'is_active' => ['nullable','boolean'],
+            'is_active'   => ['nullable','boolean'],
+            'metadata'    => ['nullable','string'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active', true);
 
         $class->update($data);
 
-        return redirect()->route('teacher.classes.index')
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()
+            ->route('teacher.classes.index')
             ->with('success', 'کلاس آپدیت شد.');
     }
     // حذف کلاس

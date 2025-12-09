@@ -11,7 +11,7 @@
                     @csrf
                     @method('PUT')
 
-                    @include('dashboard.admin.taxonomy.partials.form', ['item' => $item])
+                    @include('dashboard.admin.taxonomies.partials.form', ['item' => $item])
 
                     <button class="btn btn-primary">بروزرسانی</button>
                     <a href="{{ route($routeName . '.index') }}" class="btn btn-secondary">بازگشت</a>

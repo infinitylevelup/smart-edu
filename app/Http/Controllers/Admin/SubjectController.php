@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 class SubjectController extends BaseTaxonomyController
 {
     protected string $modelClass = Subject::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.subjects';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.subjects';
     protected string $routeName  = 'admin.subjects';
     protected ?string $title     = 'دروس';
 

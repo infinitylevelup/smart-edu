@@ -8,7 +8,7 @@ use App\Models\Section;
 class GradeController extends BaseTaxonomyController
 {
     protected string $modelClass = Grade::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.grades';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.grades';
     protected string $routeName  = 'admin.grades';
     protected ?string $title     = 'پایه‌ها';
 

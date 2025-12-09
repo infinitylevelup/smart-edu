@@ -721,7 +721,7 @@
                     <label class="form-label">فیلتر بر اساس کلاس</label>
                     <select name="classroom_id" class="form-select-custom">
                         <option value="">همه کلاس‌ها</option>
-                        @foreach ($classrooms as $c)
+@foreach (($classrooms ?? []) as $c)
                             <option value="{{ $c->id }}" @selected(request('classroom_id') == $c->id)>
                                 {{ $c->title ?? $c->name }}
                             </option>

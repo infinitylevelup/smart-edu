@@ -11,7 +11,7 @@ abstract class BaseTaxonomyController extends Controller
 {
     // ✅ با کنترلرهای جدیدت هماهنگ شد
     protected string $modelClass;   // Model::class
-    protected string $viewPath;     // e.g. "dashboard.admin.taxonomy.sections"
+    protected string $viewPath;     // e.g. "dashboard.admin.taxonomies.sections"
     protected string $routeName;    // e.g. "admin.sections"
     protected array  $validation;   // rules
 

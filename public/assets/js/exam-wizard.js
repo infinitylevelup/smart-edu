@@ -1,6 +1,7 @@
 /* ===========================================================
  * exam-wizard.js (UUID + AJAX Real Data)
  * سازگار با routes/teacher.php و TeacherExamController
+ * نسخه نهایی مرحله 2 (منطق 3 حالته + پرش)
  * =========================================================== */
 
 let currentStep = 1;
@@ -108,6 +109,13 @@ document.addEventListener("DOMContentLoaded", () => {
   updateProgress();
   updateNavigationButtons();
   loadFromLocalStorage();
+
+  // ✅ اگر classroom_id از Blade/URL آمده و قبلاً انتخاب نشده
+  const preClassId = qs("#classroomId")?.value;
+  if (!formData.classroomId && preClassId) {
+    formData.classroomId = preClassId;
+    setHidden("#classroomId", preClassId);
+  }
 
   // اگر از قبل examType انتخاب شده بود و کلاسی بود کلاس‌ها رو لود کن
   if (formData.examType && formData.examType !== "public") {
@@ -262,13 +270,26 @@ window.selectClassroom = async function (e, classroomId, classroomName) {
       setHidden("#subfieldId", meta.subfield_id);
     }
 
-    // اگر جامع کلاسی بود subjectType=all
+    // ✅ اگر آزمون تک‌درس بود، همان درس کلاس را ست کن
+    if (formData.examType === "class_single" && meta.subject_id) {
+      formData.selectedSubjects = [meta.subject_id];
+      setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+    }
+
+    // اگر جامع کلاسی بود subjectType=all و همه دروس auto
     if (formData.examType === "class_comprehensive") {
       formData.subjectTypeSlug = "all";
       formData.subjectTypeName = subjectTypeFallbackNames.all;
       formData.subjectTypeId = "";
       setHidden("#subjectTypeId", "");
       calculateCoefficients("all");
+
+      // ✅ برای جامع: همه درس‌ها را اتومات بگیر و در hidden ذخیره کن
+      try {
+        await loadSubjectsForAllAndSave();
+      } catch (e) {
+        console.error("auto all subjects error", e);
+      }
     }
   } catch (err) {
     console.error("class meta error", err);
@@ -277,22 +298,22 @@ window.selectClassroom = async function (e, classroomId, classroomName) {
   enableNext(true);
   updatePreview();
   saveToLocalStorage();
-  nextStep();
+
+  // ✅ منطق پرش:
+  // - تک‌درس و جامع: مستقیم Step8
+  // - عمومی: مسیر مرحله‌ای
+  if (
+    formData.examType === "class_single" ||
+    formData.examType === "class_comprehensive"
+  ) {
+    jumpToStep(8);
+  } else {
+    nextStep();
+  }
 };
 
-/* ===================== step 2 sections/grades ===================== */
+/* ===================== step 2 grades ===================== */
 
-async function loadSectionsIfNeeded() {
-  // اگر در بلید step0/step2 ندارید می‌تونید حذفش کنید
-  // فعلا فقط اگر hidden وجود داشت ست می‌کنیم
-  try {
-    const data = await getJSON(endpoint.sections);
-    // اینجا UI نداره، فقط نگه میداریم برای فیلتر grade/branch
-    formData.sectionsList = data.sections || [];
-  } catch (e) {}
-}
-
-/* -------- load grades -------- */
 async function loadGrades() {
   const container = qs("#gradesGrid");
   if (!container) return;
@@ -308,6 +329,7 @@ async function loadGrades() {
   (data.grades || []).forEach((g) => {
     const card = document.createElement("div");
     card.className = "selection-card";
+    card.dataset.id = g.id; // ✅
     card.innerHTML = `
       <div class="selection-icon">📘</div>
       <div class="selection-name">${g.name_fa}</div>
@@ -317,11 +339,11 @@ async function loadGrades() {
     container.appendChild(card);
   });
 
-  // restore
+  // restore by id
   if (formData.gradeId) {
-    container.querySelectorAll(".selection-card").forEach((c) => {
-      if (c.textContent.includes(formData.gradeName)) c.classList.add("selected");
-    });
+    container
+      .querySelector(`[data-id="${formData.gradeId}"]`)
+      ?.classList.add("selected");
   }
 }
 
@@ -334,6 +356,27 @@ window.selectGrade = function (e, gradeId, gradeName) {
   formData.gradeId = gradeId;
   formData.gradeName = gradeName;
   setHidden("#gradeId", gradeId);
+
+  // ✅ reset پایین‌دستی‌ها
+  formData.branchId = "";
+  formData.branchName = "";
+  setHidden("#branchId", "");
+
+  formData.fieldId = "";
+  formData.fieldName = "";
+  setHidden("#fieldId", "");
+
+  formData.subfieldId = "";
+  formData.subfieldName = "";
+  setHidden("#subfieldId", "");
+
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
 
   updatePreview();
   saveToLocalStorage();
@@ -356,6 +399,7 @@ async function loadBranches() {
   (data.branches || []).forEach((b) => {
     const card = document.createElement("div");
     card.className = "selection-card";
+    card.dataset.id = b.id; // ✅
     card.innerHTML = `
       <div class="selection-icon">🎓</div>
       <div class="selection-name">${b.name_fa}</div>
@@ -364,6 +408,12 @@ async function loadBranches() {
     card.onclick = (e) => selectBranch(e, b.id, b.name_fa);
     container.appendChild(card);
   });
+
+  if (formData.branchId) {
+    container
+      .querySelector(`[data-id="${formData.branchId}"]`)
+      ?.classList.add("selected");
+  }
 }
 
 window.selectBranch = function (e, branchId, branchName) {
@@ -380,9 +430,19 @@ window.selectBranch = function (e, branchId, branchName) {
   formData.fieldId = "";
   formData.fieldName = "";
   setHidden("#fieldId", "");
+
   formData.subfieldId = "";
   formData.subfieldName = "";
   setHidden("#subfieldId", "");
+
+  // ✅ reset subjectType و subjects
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
 
   updatePreview();
   saveToLocalStorage();
@@ -405,6 +465,7 @@ async function loadFields() {
   (data.fields || []).forEach((f) => {
     const card = document.createElement("div");
     card.className = "selection-card";
+    card.dataset.id = f.id; // ✅
     card.innerHTML = `
       <div class="selection-icon">🏭</div>
       <div class="selection-name">${f.name_fa}</div>
@@ -413,6 +474,12 @@ async function loadFields() {
     card.onclick = (e) => selectField(e, f.id, f.name_fa);
     container.appendChild(card);
   });
+
+  if (formData.fieldId) {
+    container
+      .querySelector(`[data-id="${formData.fieldId}"]`)
+      ?.classList.add("selected");
+  }
 }
 
 window.selectField = function (e, fieldId, fieldName) {
@@ -429,6 +496,15 @@ window.selectField = function (e, fieldId, fieldName) {
   formData.subfieldId = "";
   formData.subfieldName = "";
   setHidden("#subfieldId", "");
+
+  // ✅ reset subjectType و subjects
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
 
   updatePreview();
   saveToLocalStorage();
@@ -451,6 +527,7 @@ async function loadSubfields() {
   (data.subfields || []).forEach((s) => {
     const card = document.createElement("div");
     card.className = "selection-card";
+    card.dataset.id = s.id; // ✅
     card.innerHTML = `
       <div class="selection-icon">🔬</div>
       <div class="selection-name">${s.name_fa}</div>
@@ -459,6 +536,12 @@ async function loadSubfields() {
     card.onclick = (e) => selectSubfield(e, s.id, s.name_fa);
     container.appendChild(card);
   });
+
+  if (formData.subfieldId) {
+    container
+      .querySelector(`[data-id="${formData.subfieldId}"]`)
+      ?.classList.add("selected");
+  }
 }
 
 window.selectSubfield = function (e, subfieldId, subfieldName) {
@@ -486,7 +569,11 @@ async function loadSubjectTypes() {
   const data = await getJSON(endpoint.subjectTypes);
 
   container.innerHTML = "";
-  (data.subject_types || []).forEach((st) => {
+
+  // ✅ سازگاری با هر دو نوع response
+  const list = data.subject_types || data.subjectTypes || [];
+
+  list.forEach((st) => {
     const card = document.createElement("div");
     card.className = "selection-card";
     card.dataset.slug = st.slug;
@@ -508,6 +595,7 @@ async function loadSubjectTypes() {
   }
 }
 
+
 window.selectSubjectType = function (e, id, slug, name) {
   qsa("#subjectTypesGrid .selection-card").forEach((c) =>
     c.classList.remove("selected")
@@ -525,10 +613,8 @@ window.selectSubjectType = function (e, id, slug, name) {
   saveToLocalStorage();
 };
 
-/* ---------- coefficient section (simple, your previous UI can stay) ---------- */
+/* ---------- coefficient section ---------- */
 function calculateCoefficients(slug) {
-  // اینجا فقط totalQuestions رو نگه میداریم؛
-  // اگر UI ضرایب داری همون قبلی می‌تونه بماند.
   if (slug === "all") formData.totalQuestions = 115;
   else if (slug === "technical_competency") formData.totalQuestions = 60;
   else if (slug === "base_competency") formData.totalQuestions = 35;
@@ -549,7 +635,6 @@ async function loadSubjects() {
   container.innerHTML =
     '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری دروس...</div>';
 
-  // فیلترها
   const params = new URLSearchParams();
   if (formData.gradeId) params.append("grade_id", formData.gradeId);
   if (formData.branchId) params.append("branch_id", formData.branchId);
@@ -582,13 +667,19 @@ function displaySubjects(subjects) {
   const container = qs("#subjectsContainer");
   container.innerHTML = "";
 
+  const singleSelect =
+    formData.examType === "public" || formData.examType === "class_single";
+
   subjects.forEach((subject) => {
     const item = document.createElement("div");
     item.className = "subject-item";
     item.innerHTML = `
       <div class="subject-checkbox">
-        <input type="checkbox" id="subject_${subject.id}"
-               value="${subject.id}" onchange="updateSelectedSubjects()">
+        <input type="checkbox"
+               id="subject_${subject.id}"
+               value="${subject.id}"
+               data-single="${singleSelect ? 1 : 0}"
+               onchange="updateSelectedSubjects(this)">
       </div>
       <div class="subject-info">
         <div class="subject-name">${subject.title_fa}</div>
@@ -598,37 +689,54 @@ function displaySubjects(subjects) {
         </div>
       </div>
     `;
-
     container.appendChild(item);
   });
 
-  // در حالت all همه انتخاب شوند
-  if (formData.subjectTypeSlug === "all") {
+  // ✅ حالت جامع: همه انتخاب شوند
+  if (formData.subjectTypeSlug === "all" || formData.examType === "class_comprehensive") {
     setTimeout(() => {
       qsa(".subject-checkbox input").forEach((cb) => (cb.checked = true));
       updateSelectedSubjects();
     }, 50);
+    return;
   }
 
-  // restore subject selections
+  // restore selections
   if (formData.selectedSubjects.length) {
     setTimeout(() => {
       formData.selectedSubjects.forEach((id) => {
-        qs(`#subject_${id}`) && (qs(`#subject_${id}`).checked = true);
+        const el = qs(`#subject_${id}`);
+        if (el) el.checked = true;
       });
       updateSelectedSubjects();
     }, 50);
   }
 }
 
-window.updateSelectedSubjects = function () {
-  const checked = qsa(".subject-checkbox input:checked");
+
+window.updateSelectedSubjects = function (changedEl = null) {
+  const all = qsa(".subject-checkbox input");
+  const singleSelect =
+    formData.examType === "public" || formData.examType === "class_single";
+
+  // ✅ اگر single-select بود و یکی تازه چک شد → بقیه آنچک شوند
+  if (singleSelect && changedEl && changedEl.checked) {
+    all.forEach((cb) => {
+      if (cb !== changedEl) cb.checked = false;
+    });
+  }
+
+  const checked = all.filter((cb) => cb.checked);
   formData.selectedSubjects = checked.map((cb) => cb.value);
 
-  setHidden("#subjectsInput", formData.selectedSubjects.join(","));
+  setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
 
   const countEl = qs("#previewSubjectsCount");
-  if (countEl) countEl.textContent = formData.selectedSubjects.length + " درس";
+  if (countEl) {
+    countEl.textContent = formData.selectedSubjects.length
+      ? formData.selectedSubjects.length + " درس"
+      : "--";
+  }
 
   saveToLocalStorage();
 };
@@ -865,7 +973,7 @@ function loadFromLocalStorage() {
     setHidden("#fieldId", formData.fieldId);
     setHidden("#subfieldId", formData.subfieldId);
     setHidden("#subjectTypeId", formData.subjectTypeId);
-    setHidden("#subjectsInput", formData.selectedSubjects.join(","));
+    setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
 
     // restore UI selections for step1 quickly
     if (formData.examType) {
@@ -892,3 +1000,64 @@ qs("#examForm")?.addEventListener("submit", () => {
   localStorage.removeItem("examFormData");
   localStorage.removeItem("examCurrentStep");
 });
+
+/* ===================== extras: jump + auto all subjects ===================== */
+
+// ✅ پرش مستقیم به یک مرحلهٔ خاص
+function jumpToStep(stepNumber) {
+  qs(`#step${currentStep}`)?.classList.remove("active");
+
+  currentStep = stepNumber;
+
+  qsa(".form-section").forEach((s) => s.classList.remove("active"));
+  qs(`#step${currentStep}`)?.classList.add("active");
+
+  handleStepChange();
+  updateProgress();
+  updateNavigationButtons();
+  updatePreview();
+  saveToLocalStorage();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ✅ برای آزمون جامع: همه درس‌ها را بگیر و در hidden ذخیره کن
+async function loadSubjectsForAllAndSave() {
+  const params = new URLSearchParams();
+  if (formData.gradeId) params.append("grade_id", formData.gradeId);
+  if (formData.branchId) params.append("branch_id", formData.branchId);
+  if (formData.fieldId) params.append("field_id", formData.fieldId);
+  if (formData.subfieldId) params.append("subfield_id", formData.subfieldId);
+
+  const data = await getJSON(`${endpoint.subjects}?${params.toString()}`);
+  const subjects = data.subjects || [];
+
+  formData.selectedSubjects = subjects.map((s) => s.id);
+
+  setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+
+  const countEl = qs("#previewSubjectsCount");
+  if (countEl) countEl.textContent = formData.selectedSubjects.length + " درس";
+
+  saveToLocalStorage();
+}
+function updateExamTypeIndicator() {
+  const wrap = qs("#examTypeIndicator");
+  const text = qs("#examTypeIndicatorText");
+  if (!wrap || !text) return;
+
+  if (!formData.examType) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  wrap.style.display = "block";
+  text.textContent = examTypeNames[formData.examType] || formData.examType;
+
+  // رنگ‌بندی ساده
+  text.className = "badge";
+  if (formData.examType === "public") text.classList.add("bg-primary");
+  if (formData.examType === "class_single") text.classList.add("bg-success");
+  if (formData.examType === "class_comprehensive") text.classList.add("bg-warning");
+}
+

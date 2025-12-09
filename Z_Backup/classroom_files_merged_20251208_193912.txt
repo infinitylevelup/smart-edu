@@ -1,0 +1,182 @@
+📦 LARAVEL
+📋 Merged from list file: classroom_files.txt
+👤 User: darso2.ir
+🖥️  System: Windows NT 10.0
+📅 Generated: 2025/12/08 - 19:39:12
+✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨
+
+❌ MISSING FILE
+📍 Pattern: app/Http/Controllers/Teacher/TeacherDashboardController.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: app/Http/Controllers/Teacher/TeacherQuestionController.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/exams/partials/
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/exams/partials/step1.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/exams/partials/step2.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/exams/partials/step3.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/exams/partials/step4.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/classrooms/
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/classrooms/create.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/classrooms/edit.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/dashboard/teacher/classrooms/partials/
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/partials/sidebar-teacher.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: resources/views/partials/navbar.blade.php
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: public/assets/js/teacher-exam-wizard.js
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: public/assets/js/teacher-classroom.js
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+❌ MISSING FILE
+📍 Pattern: public/assets/css/theme.css
+📁 Section: General
+⚠️  Status: File does not exist
+────────────────────────────────────────────────────────────
+This file was listed but could not be found in the system.
+Please check if the file exists or the path is correct.
+────────────────────────────────────────────────────────────
+
+
+======================================================================
+📊 FINAL SUMMARY
+----------------------------------------------------------------------
+✅ Files processed: 0 of 16
+❌ Missing files: 16
+📈 Success rate: 0%
+⏱️  Completion time: 19:39:12
+📋 List file: classroom_files.txt
+
+⚠️  MISSING FILES (16):
+  1. app/Http/Controllers/Teacher/TeacherDashboardController.php
+  2. app/Http/Controllers/Teacher/TeacherQuestionController.php
+  3. resources/views/dashboard/teacher/exams/partials/
+  4. resources/views/dashboard/teacher/exams/partials/step1.blade.php
+  5. resources/views/dashboard/teacher/exams/partials/step2.blade.php
+  6. resources/views/dashboard/teacher/exams/partials/step3.blade.php
+  7. resources/views/dashboard/teacher/exams/partials/step4.blade.php
+  8. resources/views/dashboard/teacher/classrooms/
+  9. resources/views/dashboard/teacher/classrooms/create.blade.php
+  10. resources/views/dashboard/teacher/classrooms/edit.blade.php
+  11. resources/views/dashboard/teacher/classrooms/partials/
+  12. resources/views/partials/sidebar-teacher.blade.php
+  13. resources/views/partials/navbar.blade.php
+  14. public/assets/js/teacher-exam-wizard.js
+  15. public/assets/js/teacher-classroom.js
+  16. public/assets/css/theme.css
+
+⚠️  Some files were missing but operation completed.
+======================================================================
+🏁 End of report - 2025/12/08

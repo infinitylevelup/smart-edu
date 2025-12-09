@@ -8,7 +8,7 @@ use App\Models\Field;
 class SubfieldController extends BaseTaxonomyController
 {
     protected string $modelClass = Subfield::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.subfields';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.subfields';
     protected string $routeName  = 'admin.subfields';
     protected ?string $title     = 'زیررشته‌ها';
 

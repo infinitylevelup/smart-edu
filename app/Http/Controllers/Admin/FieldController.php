@@ -8,7 +8,7 @@ use App\Models\Branch;
 class FieldController extends BaseTaxonomyController
 {
     protected string $modelClass = Field::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.fields';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.fields';
     protected string $routeName  = 'admin.fields';
     protected ?string $title     = 'زمینه‌ها';
 

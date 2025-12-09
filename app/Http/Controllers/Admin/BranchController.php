@@ -8,7 +8,7 @@ use App\Models\Section;
 class BranchController extends BaseTaxonomyController
 {
     protected string $modelClass = Branch::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.branches';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.branches';
     protected string $routeName  = 'admin.branches';
     protected ?string $title     = 'شاخه‌ها';
 

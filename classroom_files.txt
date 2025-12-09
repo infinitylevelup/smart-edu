@@ -1,3 +1,0 @@
-resources/views/shared/auth-modal.blade.php
-public/assets/js/auth.js
-public/assets/js/admin-auth.js

@@ -7,7 +7,7 @@ use App\Models\SubjectType;
 class SubjectTypeController extends BaseTaxonomyController
 {
     protected string $modelClass = SubjectType::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.subject-types';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.subject-types';
     protected string $routeName  = 'admin.subject-types';
     protected ?string $title     = 'نوع درس‌ها';
 

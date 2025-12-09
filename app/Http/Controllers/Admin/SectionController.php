@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 class SectionController extends BaseTaxonomyController
 {
     protected string $modelClass = Section::class;
-    protected string $viewPath   = 'dashboard.admin.taxonomy.sections';
+    protected string $viewPath   = 'dashboard.admin.taxonomies.sections';
     protected string $routeName  = 'admin.sections';
     protected ?string $title     = 'مقطع‌ها';
 

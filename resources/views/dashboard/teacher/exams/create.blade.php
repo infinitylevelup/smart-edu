@@ -16,12 +16,11 @@
                         <span
                             style="background: linear-gradient(120deg, var(--primary) 0%, var(--secondary) 100%);
                         -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                            ساخت آزمون جدید - فنی و حرفه‌ای
+                            ساخت آزمون جدید 
                         </span> 🔧
                     </h1>
-                    <p class="header-subtitle">
-                        آزمون خود را برای هنرجویان فنی و حرفه‌ای به صورت مرحله‌ای ایجاد کنید.
-                    </p>
+<p class="page-subtitle">آزمون خود را برای هنرجویان به صورت مرحله‌ای ایجاد کنید.</p>
+
                 </div>
                 <a href="{{ route('teacher.exams.index') }}" class="btn-back">
                     <i class="fas fa-arrow-right"></i>
@@ -86,13 +85,13 @@
                     </div>
 
                     <div class="exam-type-grid">
-                        <div class="type-card" data-type="public" onclick="selectExamType('public')">
-                            <div class="type-icon">🌐</div>
-                            <div class="type-title">آزمون عمومی</div>
-                            <p class="type-description">برای تمام دانش‌آموزان قابل دسترسی است. نیازی به عضویت در کلاس ندارد.
-                            </p>
-                            <div class="type-badge">عمومی</div>
-                        </div>
+<div class="type-card" data-type="public" onclick="selectExamType('public')">
+    <span class="type-badge type-badge--public">آزمون</span>
+    <div class="type-icon">🌐</div>
+    <h4>آزمون</h4>
+    <p>آزمونی آزاد برای عموم دانش‌آموزان؛ بدون وابستگی به کلاس.</p>
+</div>
+
 
                         <div class="type-card" data-type="class_single" onclick="selectExamType('class_single')">
                             <div class="type-icon">📚</div>
