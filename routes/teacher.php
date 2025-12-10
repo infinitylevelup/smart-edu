@@ -14,6 +14,15 @@ use App\Http\Controllers\Teacher\TeacherStudentController;
 use App\Http\Controllers\Teacher\SubjectController;
 use App\Http\Controllers\Teacher\QuestionController;
 
+/*
+|--------------------------------------------------------------------------
+| Teacher Panel Routes
+|--------------------------------------------------------------------------
+| ساختار اصلی قبلی حفظ شده:
+| /dashboard/teacher/...
+| middleware: auth + role.selected + role:teacher
+|--------------------------------------------------------------------------
+*/
 Route::prefix('dashboard')
     ->middleware(['auth', 'role.selected'])
     ->group(function () {
@@ -29,15 +38,18 @@ Route::prefix('dashboard')
                 Route::get('/', [DashboardController::class, 'index'])->name('index');
 
                 // ==========================================================
-                // Classes
+                // Classes (CRUD اصلی)
                 // ==========================================================
+                // لیست کلاس‌ها (index) جداست چون resource بجز index تعریف شده
                 Route::get('/classes', [TeacherClassController::class, 'index'])
                     ->name('classes.index');
 
+                // resource کامل برای create/store/show/edit/update/destroy
                 Route::resource('classes', TeacherClassController::class)
                     ->parameters(['classes' => 'class'])
                     ->except(['index']);
 
+                // Students of a class
                 Route::get('classes/{class}/students', [TeacherClassController::class, 'students'])
                     ->name('classes.students');
 
@@ -47,14 +59,40 @@ Route::prefix('dashboard')
                 Route::delete('classes/{class}/students/{student}', [TeacherClassController::class, 'removeStudent'])
                     ->name('classes.students.remove');
 
+
                 // ==========================================================
-                // Exams (create/store برگشت به resource کامل)
+                // ✅ Classes AJAX Data (برای پر کردن دراپ‌داون‌های تاکسونومی)
+                // ----------------------------------------------------------
+                // این بخش جدید اضافه شد و هیچ تداخلی با resource ندارد،
+                // چون مسیرها زیر /classes/data/... هستند.
+                //
+                // وابستگی‌ها:
+                // sections -> grades -> branches -> fields -> subfields
+                // fields -> subject-types -> subjects
+                //
+                // خروجی JSON است و فقط برای فرم ساخت/ادیت کلاس استفاده می‌شود.
+                // ==========================================================
+                Route::prefix('classes/data')
+                    ->name('classes.data.')
+                    ->group(function () {
+                        Route::get('/sections', [TeacherClassController::class, 'sections'])->name('sections');
+                        Route::get('/grades/{section}', [TeacherClassController::class, 'grades'])->name('grades');
+                        Route::get('/branches/{grade}', [TeacherClassController::class, 'branches'])->name('branches');
+                        Route::get('/fields/{branch}', [TeacherClassController::class, 'fields'])->name('fields');
+                        Route::get('/subfields/{field}', [TeacherClassController::class, 'subfields'])->name('subfields');
+                        Route::get('/subject-types/{field}', [TeacherClassController::class, 'subjectTypes'])->name('subject-types');
+                        Route::get('/subjects/{subjectType}', [TeacherClassController::class, 'subjects'])->name('subjects');
+                    });
+
+
+
+                // ==========================================================
+                // Exams (resource کامل)
                 // ==========================================================
                 Route::resource('exams', TeacherExamController::class);
 
                 // ==========================================================
-                // Exams AJAX Data (برای وصل کردن UUID واقعی به فرانت)
-                // این route ها را در TeacherExamController می‌سازیم
+                // Exams AJAX Data (قبلی شما بدون تغییر)
                 // ==========================================================
                 Route::prefix('exams/data')
                     ->name('exams.data.')
@@ -75,7 +113,6 @@ Route::prefix('dashboard')
                         Route::get('/subfields', [TeacherExamController::class, 'subfields'])
                             ->name('subfields');
 
-                        // ✅ FIX: باید دقیقاً subject-types باشد تا Blade خطا ندهد
                         Route::get('/subject-types', [TeacherExamController::class, 'subjectTypes'])
                             ->name('subject-types');
 
@@ -84,7 +121,7 @@ Route::prefix('dashboard')
                     });
 
                 // ==========================================================
-                // Questions
+                // Questions (قبلی شما بدون تغییر)
                 // ==========================================================
                 Route::get('/exams/{exam}/questions', [QuestionController::class, 'index'])
                     ->name('exams.questions.index');
@@ -100,7 +137,7 @@ Route::prefix('dashboard')
                     ->name('exams.questions.destroy');
 
                 // ==========================================================
-                // Students
+                // Students (قبلی شما بدون تغییر)
                 // ==========================================================
                 Route::get('/students', [TeacherStudentController::class, 'index'])
                     ->name('students.index');
@@ -109,14 +146,13 @@ Route::prefix('dashboard')
                 Route::get('/students/{student}/attempts', [TeacherStudentController::class, 'attempts'])
                     ->name('students.attempts');
 
-                // Attempts
                 Route::get('/attempts/{attempt}', [TeacherStudentController::class, 'attemptShow'])
                     ->name('attempts.show');
                 Route::post('/attempts/{attempt}/answers/{answer}/grade', [TeacherStudentController::class, 'gradeEssayAnswer'])
                     ->name('attempts.answers.grade');
 
                 // ==========================================================
-                // Subjects
+                // Subjects (قبلی شما بدون تغییر)
                 // ==========================================================
                 Route::get('/subjects', [SubjectController::class, 'index'])
                     ->name('subjects.index');

@@ -11,21 +11,16 @@ return new class extends Migration
         Schema::create('fields', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            // ✅ FK به branches (UUID)
-            $table->uuid('branch_id');
-            $table->foreign('branch_id')
-                ->references('id')->on('branches')
+            $table->foreignId('branch_id')
+                ->constrained('branches')
                 ->cascadeOnDelete();
 
             $table->string('slug', 100)->unique();
             $table->string('name_fa', 150);
-
-            // ✅ sort_order عددی
             $table->unsignedInteger('sort_order')->default(0);
-
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();

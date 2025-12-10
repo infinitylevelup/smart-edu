@@ -9,9 +9,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exam_subject', function (Blueprint $table) {
-            $table->string('exam_id');
-            $table->string('subject_id');
-            $table->string('question_count')->nullable();
+            $table->engine = 'InnoDB';
+
+            $table->foreignId('exam_id')
+                ->constrained('exams')
+                ->cascadeOnDelete();
+
+            $table->foreignId('subject_id')
+                ->constrained('subjects')
+                ->cascadeOnDelete();
+
+            $table->unsignedSmallInteger('question_count')->nullable();
+
+            $table->primary(['exam_id', 'subject_id']);
         });
     }
 

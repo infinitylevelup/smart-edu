@@ -1,0 +1,17 @@
+public/assets/js/admin-auth.js
+public/assets/js/auth.js
+public/assets/js/exam-wizard.js
+public/assets/js/landing.js
+public/assets/js/teacher-classes.js
+resources/views/landing/index.blade.php
+resources/views/landing/partials/cat.blade.php
+resources/views/landing/partials/demo.blade.php
+resources/views/landing/partials/faq.blade.php
+resources/views/landing/partials/features.blade.php
+resources/views/landing/partials/footer.blade.php
+resources/views/landing/partials/hero.blade.php
+resources/views/landing/partials/levels.blade.php
+resources/views/landing/partials/pricing.blade.php
+resources/views/landing/partials/samples.blade.php
+resources/views/landing/partials/screenshots.blade.php
+resources/views/landing/partials/testimonials.blade.php

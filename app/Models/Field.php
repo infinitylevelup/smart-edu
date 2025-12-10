@@ -11,11 +11,13 @@ class Field extends Model
     use HasFactory;
 
     protected $table = 'fields';
-    public $incrementing = false;
-    protected $keyType = 'string';
+
+    // ✅ id اتواینکریمنت است => اینها نباید باشند
+    // public $incrementing = false;
+    // protected $keyType = 'string';
 
     protected $fillable = [
-        'id',
+        'uuid',
         'branch_id',
         'slug',
         'name_fa',
@@ -23,18 +25,35 @@ class Field extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'branch_id'  => 'integer',
+        'sort_order' => 'integer',
+        'is_active'  => 'boolean',
+    ];
+
     protected static function booted()
     {
         static::creating(function ($m) {
-            if (empty($m->id)) {
-                $m->id = (string) Str::uuid();
+            // ✅ فقط uuid بساز، نه id
+            if (empty($m->uuid)) {
+                $m->uuid = (string) Str::uuid();
             }
         });
     }
 
     // روابط
-    public function branch(){ return $this->belongsTo(\App\Models\Branch::class); }
-    public function subfields(){ return $this->hasMany(\App\Models\Subfield::class); }
-    public function subjects(){ return $this->hasMany(\App\Models\Subject::class); }
+    public function branch()
+    {
+        return $this->belongsTo(\App\Models\Branch::class);
+    }
 
+    public function subfields()
+    {
+        return $this->hasMany(\App\Models\Subfield::class);
+    }
+
+    public function subjects()
+    {
+        return $this->hasMany(\App\Models\Subject::class);
+    }
 }

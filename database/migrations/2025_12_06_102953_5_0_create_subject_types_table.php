@@ -11,20 +11,16 @@ return new class extends Migration
         Schema::create('subject_types', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            // ✅ ستون‌های لازم مطابق مدل SubjectType
             $table->string('slug', 100)->unique();
             $table->string('name_fa', 150);
-
             $table->decimal('coefficient', 5, 2)->nullable();
             $table->unsignedTinyInteger('weight_percent')->nullable();
             $table->unsignedSmallInteger('default_question_count')->nullable();
-
             $table->string('color')->nullable();
             $table->string('icon')->nullable();
-
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
 

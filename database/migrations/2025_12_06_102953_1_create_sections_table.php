@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('sections', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            $table->string('slug', 100)->unique();  // مثل "middle", "high"
+            $table->string('slug', 100)->unique();
             $table->string('name_fa', 150);
 
             $table->unsignedInteger('sort_order')->default(0);

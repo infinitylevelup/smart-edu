@@ -9,13 +9,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('teacher_profiles', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete()
+                ->unique();
+
             $table->text('bio')->nullable();
-            $table->string('main_section_id')->nullable();
-            $table->string('main_branch_id')->nullable();
-            $table->string('main_field_id')->nullable();
-            $table->string('main_subfield_id')->nullable();
+
+            $table->foreignId('main_section_id')->nullable()
+                ->constrained('sections')->nullOnDelete();
+
+            $table->foreignId('main_branch_id')->nullable()
+                ->constrained('branches')->nullOnDelete();
+
+            $table->foreignId('main_field_id')->nullable()
+                ->constrained('fields')->nullOnDelete();
+
+            $table->foreignId('main_subfield_id')->nullable()
+                ->constrained('subfields')->nullOnDelete();
+
             $table->timestamps();
         });
     }

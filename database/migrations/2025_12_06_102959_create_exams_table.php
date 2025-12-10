@@ -9,38 +9,54 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exams', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
 
-            // ✅ کلید اصلی UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            // اگر user_id لازم داری نگهش دار
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
 
-            // این‌ها هم بهتره uuid/string هماهنگ باشن
-            $table->string('teacher_id');
-            $table->string('classroom_id')->nullable();
+            $table->foreignId('teacher_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
 
-            $table->enum('exam_type', ['public','class_single','class_comprehensive']);
+            $table->foreignId('classroom_id')->nullable()
+                ->constrained('classrooms')
+                ->nullOnDelete();
+
+            $table->enum('exam_type', ['public','class_single','class_comprehensive'])
+                ->default('public');
+
             $table->string('title', 250);
             $table->text('description')->nullable();
-            $table->string('duration_minutes');
-            $table->string('section_id');
-            $table->string('grade_id');
-            $table->string('branch_id');
-            $table->string('field_id');
-            $table->string('subfield_id');
-            $table->string('subject_type_id');
-            $table->string('total_questions')->nullable();
+
+            $table->unsignedSmallInteger('duration_minutes');
+
+            $table->foreignId('section_id')->constrained('sections')->restrictOnDelete();
+            $table->foreignId('grade_id')->constrained('grades')->restrictOnDelete();
+            $table->foreignId('branch_id')->constrained('branches')->restrictOnDelete();
+            $table->foreignId('field_id')->constrained('fields')->restrictOnDelete();
+            $table->foreignId('subfield_id')->nullable()->constrained('subfields')->nullOnDelete();
+            $table->foreignId('subject_type_id')->nullable()->constrained('subject_types')->nullOnDelete();
+
+            $table->unsignedSmallInteger('total_questions')->nullable();
             $table->longText('coefficients')->nullable();
+
             $table->dateTime('start_at')->nullable();
             $table->dateTime('end_at')->nullable();
-            $table->boolean('shuffle_questions');
-            $table->boolean('shuffle_options');
-            $table->boolean('ai_assisted');
-            $table->string('ai_session_id')->nullable();
-            $table->boolean('is_active');
-            $table->boolean('is_published');
+
+            $table->boolean('shuffle_questions')->default(false);
+            $table->boolean('shuffle_options')->default(false);
+            $table->boolean('ai_assisted')->default(false);
+
+            // FK بعداً در add_ نهایی
+            $table->unsignedBigInteger('ai_session_id')->nullable();
+
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_published')->default(false);
+
             $table->timestamps();
         });
     }

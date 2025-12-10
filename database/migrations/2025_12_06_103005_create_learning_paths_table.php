@@ -9,17 +9,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('learning_paths', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('student_id');
-            $table->enum('path_type', ['academic','counseling','mixed']);
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('student_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->enum('path_type', ['academic','counseling','mixed'])->default('academic');
             $table->string('title', 250);
+
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->enum('status', ['active','completed','archived']);
-            $table->enum('generated_by', ['ai','counselor','teacher','system']);
-            $table->longText('metadata')->nullable();
-            $table->timestamp('created_at')->nullable();
+
+            $table->enum('status', ['active','completed','archived'])->default('active');
+            $table->enum('generated_by', ['ai','counselor','teacher','system'])->default('system');
+
+            $table->json('metadata')->nullable();
+
+            $table->timestamps();
         });
     }
 

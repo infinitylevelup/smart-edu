@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,          // اول نقش‌ها
             TechUsageExamsSeeder::class,// بعد دیتاهای وابسته
+            TaxonomySeeder::class,     // سپس داده‌های طبقه‌بندی
             // بقیه seeders اگر داری
         ]);
     }

@@ -11,16 +11,13 @@ return new class extends Migration
         Schema::create('subfields', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            // ✅ FK به fields (UUID)
-            $table->uuid('field_id');
-            $table->foreign('field_id')
-                ->references('id')->on('fields')
+            $table->foreignId('field_id')
+                ->constrained('fields')
                 ->cascadeOnDelete();
 
-            // ✅ فیلدهای لازم
             $table->string('slug', 100)->unique();
             $table->string('name_fa', 150);
             $table->string('icon')->nullable();

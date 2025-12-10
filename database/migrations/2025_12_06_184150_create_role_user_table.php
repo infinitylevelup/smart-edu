@@ -8,11 +8,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create("role_user", function (Blueprint $table) {
-            $table->uuid("user_id");
-            $table->uuid("role_id");
+            $table->engine = 'InnoDB';
 
-            $table->foreign("user_id")->references("id")->on("users")->cascadeOnDelete();
-            $table->foreign("role_id")->references("id")->on("roles")->cascadeOnDelete();
+            $table->foreignId("user_id")->constrained("users")->cascadeOnDelete();
+            $table->foreignId("role_id")->constrained("roles")->cascadeOnDelete();
 
             $table->primary(["user_id","role_id"]);
         });

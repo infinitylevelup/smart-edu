@@ -11,42 +11,28 @@ return new class extends Migration
         Schema::create('classrooms', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->string('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            $table->string('teacher_id');
-            $table->foreign('teacher_id')
-                ->references('id')->on('users')
-                ->cascadeOnDelete();
+            $table->foreignId('teacher_id')->constrained('users')->cascadeOnDelete();
 
             $table->string('title', 200);
             $table->text('description')->nullable();
 
-            // این‌ها هم باید با نوع id جدول‌های مقصد یکی باشند.
-            // چون در پروژه‌ات قبلاً string بوده، اینجا هم string می‌گذاریم:
-            $table->string('section_id');
-            $table->string('grade_id');
-            $table->string('branch_id');
-            $table->string('field_id');
-            $table->string('subfield_id')->nullable();
-            $table->string('subject_type_id')->nullable();
+            $table->foreignId('section_id')->constrained('sections')->restrictOnDelete();
+            $table->foreignId('grade_id')->constrained('grades')->restrictOnDelete();
+            $table->foreignId('branch_id')->constrained('branches')->restrictOnDelete();
+            $table->foreignId('field_id')->constrained('fields')->restrictOnDelete();
+            $table->foreignId('subfield_id')->nullable()->constrained('subfields')->nullOnDelete();
+            $table->foreignId('subject_type_id')->nullable()->constrained('subject_types')->nullOnDelete();
+            $table->foreignId('subject_id')->nullable()->constrained('subjects')->nullOnDelete(); // منتقل از add_
 
             $table->enum('classroom_type', ['single', 'comprehensive']);
-
             $table->string('join_code', 20)->unique();
             $table->boolean('is_active')->default(true);
-
             $table->json('metadata')->nullable();
 
             $table->timestamps();
-
-            // FKهای ساختاری (اگر جداول مقصد id=string دارند، درست کار می‌کند)
-            $table->foreign('section_id')->references('id')->on('sections')->restrictOnDelete();
-            $table->foreign('grade_id')->references('id')->on('grades')->restrictOnDelete();
-            $table->foreign('branch_id')->references('id')->on('branches')->restrictOnDelete();
-            $table->foreign('field_id')->references('id')->on('fields')->restrictOnDelete();
-
-            $table->foreign('subfield_id')->references('id')->on('subfields')->nullOnDelete();
-            $table->foreign('subject_type_id')->references('id')->on('subject_types')->nullOnDelete();
         });
     }
 

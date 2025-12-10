@@ -9,11 +9,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('counselor_profiles', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete()
+                ->unique();
+
             $table->longText('focus_area')->nullable();
-            $table->string('main_section_id')->nullable();
-            $table->string('main_branch_id')->nullable();
+
+            $table->foreignId('main_section_id')->nullable()
+                ->constrained('sections')->nullOnDelete();
+
+            $table->foreignId('main_branch_id')->nullable()
+                ->constrained('branches')->nullOnDelete();
+
             $table->timestamps();
         });
     }

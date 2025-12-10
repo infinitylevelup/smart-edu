@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;   // ✅ اضافه شد
+use Illuminate\Validation\Rule;   // ✅ برای unique ignore
 
 abstract class BaseTaxonomyController extends Controller
 {
@@ -15,14 +15,14 @@ abstract class BaseTaxonomyController extends Controller
     protected string $routeName;    // e.g. "admin.sections"
     protected array  $validation;   // rules
 
+    // ستون‌های قابل نمایش/فرم (در فرزند override می‌کنی اگر لازم شد)
     protected array  $listColumns = ['name_fa','slug','sort_order','is_active'];
     protected array  $formColumns = ['name_fa','slug','sort_order','is_active'];
 
-    // ستون‌های قابل مرتب‌سازی (در فرزند override می‌کنی)
+    // ستون‌های قابل مرتب‌سازی
     protected array $sortable = ['name_fa','slug','sort_order','is_active','value'];
     protected string $defaultSort = 'sort_order';
     protected string $defaultDir  = 'asc';
-
 
     // اگر خواستی عنوان سفارشی بدی، تو کنترلر فرزند ست کن
     protected ?string $title = null;
@@ -42,43 +42,68 @@ abstract class BaseTaxonomyController extends Controller
         $sort = request('sort', $this->defaultSort);
         $dir  = request('dir',  $this->defaultDir);
 
-        // امنیت: فقط روی ستون‌های whitelist اجازه بده
         if (!in_array($sort, $this->sortable)) {
             $sort = $this->defaultSort;
         }
 
         $dir = strtolower($dir) === 'desc' ? 'desc' : 'asc';
 
-        $items = $model::orderBy($sort, $dir)->paginate(20)->withQueryString();
+        $items = $model::orderBy($sort, $dir)
+            ->paginate(20)
+            ->withQueryString();
 
         return view($this->viewPath . '.index', [
             'items'       => $items,
             'listColumns' => $this->listColumns,
             'routeName'   => $this->routeName,
             'title'       => $this->title(),
-            'sort'        => $sort,   // ✅ بفرست به ویو
+            'sort'        => $sort,
             'dir'         => $dir,
         ]);
     }
 
+public function create()
+{
+    $model = $this->modelClass;
 
+    // همان منطق سورت index
+    $sort = request('sort', $this->defaultSort);
+    $dir  = request('dir',  $this->defaultDir);
 
-    public function create()
-    {
-        return view($this->viewPath . '.create', array_merge([
-            'routeName'   => $this->routeName,
-            'formColumns' => $this->formColumns,
-            'title'       => $this->title(),
-        ], $this->parentData()));
+    if (!in_array($sort, $this->sortable)) {
+        $sort = $this->defaultSort;
     }
+
+    $dir = strtolower($dir) === 'desc' ? 'desc' : 'asc';
+
+    $items = $model::orderBy($sort, $dir)
+        ->paginate(20)
+        ->withQueryString();
+
+    return view($this->viewPath . '.create', array_merge([
+        'items'       => $items,              // ✅ اضافه شد
+        'listColumns' => $this->listColumns,  // ✅
+        'routeName'   => $this->routeName,
+        'formColumns' => $this->formColumns,
+        'title'       => $this->title(),
+        'sort'        => $sort,               // ✅ اگر ویو لینک سورت دارد
+        'dir'         => $dir,
+    ], $this->parentData()));
+}
 
     public function store(Request $request)
     {
+
+
         $data = $request->validate($this->validation);
 
-        // UUID
-        if (empty($data['id'])) {
-            $data['id'] = (string) Str::uuid();
+        /**
+         * ✅ دیتابیس جدید:
+         * id اتواینکریمنت است ⇒ نباید دستی ست شود
+         * uuid جداست ⇒ اگر نبود بساز
+         */
+        if (!isset($data['uuid'])) {
+            $data['uuid'] = (string) Str::uuid();
         }
 
         $model = $this->modelClass;
@@ -89,7 +114,7 @@ abstract class BaseTaxonomyController extends Controller
             ->with('success', 'آیتم با موفقیت ایجاد شد.');
     }
 
-    public function edit(string $id)
+    public function edit(int $id)
     {
         $model = $this->modelClass;
         $item  = $model::findOrFail($id);
@@ -102,7 +127,7 @@ abstract class BaseTaxonomyController extends Controller
         ], $this->parentData()));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, int $id)
     {
         $model = $this->modelClass;
         $item  = $model::findOrFail($id);
@@ -111,29 +136,23 @@ abstract class BaseTaxonomyController extends Controller
 
         foreach ($this->validation as $field => $rule) {
 
-            // اگر rule به صورت string بود و unique داشت
             if (is_string($rule) && str_contains($rule, 'unique:')) {
 
-                // example: unique:grades,slug
-                // table=grades , column=slug
                 preg_match('/unique:([^,]+),([^,|]+)/', $rule, $m);
                 $table  = $m[1] ?? null;
                 $column = $m[2] ?? $field;
 
-                // بقیه rule ها (غیر از unique)
                 $otherRules = collect(explode('|', $rule))
                     ->reject(fn($r) => str_starts_with($r, 'unique:'))
                     ->values()
                     ->all();
 
-                // unique با ignore
                 $rules[$field] = array_merge(
                     $otherRules,
-                    [ \Illuminate\Validation\Rule::unique($table, $column)->ignore($id) ]
+                    [ Rule::unique($table, $column)->ignore($id) ]
                 );
 
             } else {
-                // بقیه rule ها مثل قبل
                 $rules[$field] = $rule;
             }
         }
@@ -147,8 +166,7 @@ abstract class BaseTaxonomyController extends Controller
             ->with('success', 'آیتم بروزرسانی شد.');
     }
 
-
-    public function destroy(string $id)
+    public function destroy(int $id)
     {
         $model = $this->modelClass;
         $item  = $model::findOrFail($id);

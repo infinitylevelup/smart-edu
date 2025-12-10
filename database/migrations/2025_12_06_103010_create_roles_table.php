@@ -9,13 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->string('id')->primary();
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
             $table->string('name', 100);
             $table->string('slug', 100)->unique();
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
-
     }
 
     public function down(): void

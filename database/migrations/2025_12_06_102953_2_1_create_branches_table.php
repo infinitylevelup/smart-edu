@@ -11,18 +11,15 @@ return new class extends Migration
         Schema::create('branches', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-            // ✅ FK به sections (UUID)
-            $table->uuid('section_id');
-            $table->foreign('section_id')
-                ->references('id')->on('sections')
+            $table->foreignId('section_id')
+                ->constrained('sections')
                 ->cascadeOnDelete();
 
-            // ✅ فیلدهای لازم برای لیست و انتخاب
-            $table->string('slug', 100)->unique();   // مثلاً "math" یا "tajrobi"
-            $table->string('name_fa', 150);          // نام فارسی
+            $table->string('slug', 100)->unique();
+            $table->string('name_fa', 150);
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
 

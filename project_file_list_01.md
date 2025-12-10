@@ -1,9 +1,0 @@
-app/Http/Controllers/Teacher/TeacherExamController.php
-app/Http/Controllers/Teacher/TeacherClassController.php
-resources/views/dashboard/teacher/exams/create.blade.php
-resources/views/dashboard/teacher/classes/create.blade.php
-resources/views/dashboard/teacher/exams/edit.blade.php
-resources/views/dashboard/admin/taxonomies/edit.blade.php
-public/assets/js/exam-wizard.js
-public/assets/js/teacher-classroom.js
-routes/teacher.php

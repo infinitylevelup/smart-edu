@@ -9,14 +9,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_profiles', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('section_id');
-            $table->string('grade_id');
-            $table->string('branch_id');
-            $table->string('field_id');
-            $table->string('subfield_id');
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete()
+                ->unique();
+
+            $table->foreignId('section_id')->constrained('sections')->restrictOnDelete();
+            $table->foreignId('grade_id')->constrained('grades')->restrictOnDelete();
+            $table->foreignId('branch_id')->constrained('branches')->restrictOnDelete();
+            $table->foreignId('field_id')->constrained('fields')->restrictOnDelete();
+            $table->foreignId('subfield_id')->nullable()->constrained('subfields')->nullOnDelete();
+
             $table->string('national_code', 20)->nullable();
+
             $table->timestamps();
         });
     }

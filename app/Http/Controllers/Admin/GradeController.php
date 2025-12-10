@@ -13,7 +13,8 @@ class GradeController extends BaseTaxonomyController
     protected ?string $title     = 'پایه‌ها';
 
     protected array $validation = [
-        'section_id' => 'required|uuid|exists:sections,id',
+        // ✅ section_id الان عددی است نه UUID
+        'section_id' => 'required|integer|exists:sections,id',
         'value'      => 'required|integer|min:1',
         'slug'       => 'required|string|max:100|unique:grades,slug',
         'name_fa'    => 'required|string|max:200',

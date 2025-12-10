@@ -13,7 +13,8 @@ class FieldController extends BaseTaxonomyController
     protected ?string $title     = 'زمینه‌ها';
 
     protected array $validation = [
-        'branch_id'  => 'required|uuid|exists:branches,id',
+        // ✅ branch_id الان عددی است نه UUID
+        'branch_id'  => 'required|integer|exists:branches,id',
         'slug'       => 'required|string|max:100|unique:fields,slug',
         'name_fa'    => 'required|string|max:200',
         'sort_order' => 'nullable|integer|min:0',

@@ -9,15 +9,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('student_learning_profiles', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('student_id');
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('student_id')
+                ->constrained('users')
+                ->cascadeOnDelete()
+                ->unique();
+
             $table->longText('preferred_style')->nullable();
-            $table->unsignedTinyInteger('pace_level');
+            $table->unsignedTinyInteger('pace_level')->default(1);
             $table->string('study_time_per_day')->nullable();
-            $table->longText('goals_json')->nullable();
+
+            $table->json('goals_json')->nullable();
             $table->text('counselor_notes')->nullable();
             $table->text('ai_summary')->nullable();
+
+            $table->timestamps();
         });
     }
 

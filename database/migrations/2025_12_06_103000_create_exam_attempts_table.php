@@ -9,14 +9,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('exam_attempts', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('exam_id');
-            $table->string('student_id');
+            $table->engine = 'InnoDB';
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('exam_id')
+                ->constrained('exams')
+                ->cascadeOnDelete();
+
+            $table->foreignId('student_id')->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->dateTime('started_at');
             $table->dateTime('finished_at')->nullable();
-            $table->enum('status', ['in_progress','submitted','graded']);
+
+            $table->enum('status', ['in_progress','submitted','graded'])
+                ->default('in_progress');
+
             $table->decimal('total_score', 6, 2)->nullable();
+
             $table->timestamps();
         });
     }

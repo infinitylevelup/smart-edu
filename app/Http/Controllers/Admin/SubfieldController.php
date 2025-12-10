@@ -13,7 +13,8 @@ class SubfieldController extends BaseTaxonomyController
     protected ?string $title     = 'زیررشته‌ها';
 
     protected array $validation = [
-        'field_id'   => 'required|uuid|exists:fields,id',
+        // ✅ field_id الان عددی است نه UUID
+        'field_id'   => 'required|integer|exists:fields,id',
         'slug'       => 'required|string|max:100|unique:subfields,slug',
         'name_fa'    => 'required|string|max:200',
         'sort_order' => 'nullable|integer|min:0',

@@ -1,12 +1,23 @@
 <?php
 
 namespace App\Http\Controllers\Teacher;
-use App\Models\User;
+
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Classroom;
+
+use App\Models\Section;
+use App\Models\Grade;
+use App\Models\Branch;
+use App\Models\Field;
+use App\Models\Subfield;
+use App\Models\SubjectType;
+use App\Models\Subject;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
 class TeacherClassController extends Controller
 {
     public function index(Request $request)
@@ -23,11 +34,12 @@ class TeacherClassController extends Controller
             ->when($q, function($query) use ($q){
                 $query->where(function($qq) use ($q){
                     $qq->where('title', 'like', "%$q%")
-                       ->orWhere('subject', 'like', "%$q%")
                        ->orWhere('join_code', 'like', "%$q%");
                 });
             })
-            ->when($grade && $grade !== 'all', fn($query)=>$query->where('grade', $grade))
+            // اگر هنوز برای فیلتر از grade متنی استفاده می‌کنی،
+            // این خط را با grade_id یا relation جایگزین کن.
+            ->when($grade && $grade !== 'all', fn($query)=>$query->where('grade_id', $grade))
             ->when($status && $status !== 'all', function($query) use ($status){
                 $query->where('is_active', $status === 'active');
             })
@@ -40,24 +52,23 @@ class TeacherClassController extends Controller
             ->when($sort === 'latest', fn($query)=>$query->latest())
             ->paginate(9)
             ->withQueryString();
- // اگر درخواست AJAX است
-    if ($request->ajax() || $request->filled('ajax')) {
-        return response()->json([
-            'success' => true,
-            'classrooms' => $classes->map(function($class) {
-                return [
-                    'id' => $class->id,
-                    'title' => $class->title,
-                    'subject' => $class->subject,
-                    'grade' => $class->grade,
-                    'students_count' => $class->students_count,
-                    'exams_count' => $class->exams_count,
-                    'is_active' => $class->is_active
-                ];
-            })
-        ]);
-    }
-// کد قبلی شما برای نمایش view...
+
+        if ($request->ajax() || $request->filled('ajax')) {
+            return response()->json([
+                'success' => true,
+                'classrooms' => $classes->map(function($class) {
+                    return [
+                        'id' => $class->id,
+                        'uuid' => $class->uuid,
+                        'title' => $class->title,
+                        'students_count' => $class->students_count,
+                        'exams_count' => $class->exams_count,
+                        'is_active' => $class->is_active
+                    ];
+                })
+            ]);
+        }
+
         return view('dashboard.teacher.classes.index', compact('classes'));
     }
 
@@ -66,67 +77,72 @@ class TeacherClassController extends Controller
         return view('dashboard.teacher.classes.create');
     }
 
+    // ذخیره کلاس جدید مطابق migration جدید
     public function store(Request $request)
     {
         $teacherId = Auth::id();
 
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
+            "title" => ["required","string","max:200"],
+            "description" => ["nullable","string"],
 
-            // taxonomy (UUID)
-            'section_id'  => 'required|uuid|exists:sections,id',
-            'grade_id'    => 'required|uuid|exists:grades,id',
-            'branch_id'   => 'required|uuid|exists:branches,id',
-            'field_id'    => 'required|uuid|exists:fields,id',
-            'subfield_id' => 'required|uuid|exists:subfields,id',
-            'subject_id'  => 'required|uuid|exists:subjects,id',
+            "section_id" => ["required","integer","exists:\"sections\",\"id\""],
+            "grade_id"   => ["required","integer","exists:\"grades\",\"id\""],
+            "branch_id"  => ["required","integer","exists:\"branches\",\"id\""],
+            "field_id"   => ["required","integer","exists:\"fields\",\"id\""],
 
-            'is_active'   => 'nullable|boolean',
-            'metadata'    => 'nullable|string',
+            "subfield_id"      => ["nullable","integer","exists:\"subfields\",\"id\""],
+            "subject_type_id"  => ["nullable","integer","exists:\"subject_types\",\"id\""],
+            "subject_id"       => ["nullable","integer","exists:\"subjects\",\"id\""],
+
+            "classroom_type" => ["required","in:single,comprehensive"],
+
+            "is_active" => ["nullable","boolean"],
+            "metadata"  => ["nullable","array"],
         ]);
 
         $classroom = Classroom::create([
-            'id'          => (string) Str::uuid(),
-            'teacher_id'  => $teacherId,
-            'title'       => $data['title'],
+            "teacher_id" => $teacherId,
+            "title" => $data["title"],
+            "description" => $data["description"] ?? null,
 
-            // ✅ taxonomy
-            'section_id'  => $data['section_id'],
-            'grade_id'    => $data['grade_id'],
-            'branch_id'   => $data['branch_id'],
-            'field_id'    => $data['field_id'],
-            'subfield_id' => $data['subfield_id'],
-            'subject_id'  => $data['subject_id'],
+            "section_id" => $data["section_id"],
+            "grade_id"   => $data["grade_id"],
+            "branch_id"  => $data["branch_id"],
+            "field_id"   => $data["field_id"],
+            "subfield_id"     => $data["subfield_id"] ?? null,
+            "subject_type_id" => $data["subject_type_id"] ?? null,
+            "subject_id"      => $data["subject_id"] ?? null,
 
-            // ✅ join_code واقعی
-            'join_code'   => $this->generateJoinCode(),
+            "classroom_type" => $data["classroom_type"],
 
-            'is_active'   => (bool) ($data['is_active'] ?? true),
-            'metadata'    => $data['metadata'] ?? null,
+            "join_code" => $this->generateJoinCode(),
+            "is_active" => (bool)($data["is_active"] ?? true),
+            "metadata"  => $data["metadata"] ?? null,
         ]);
 
         if ($request->ajax()) {
             return response()->json([
-                'success'   => true,
-                'classroom' => [
-                    'id'        => $classroom->id,
-                    'title'     => $classroom->title,
-                    'join_code' => $classroom->join_code,
+                "success" => true,
+                "classroom" => [
+                    "id" => $classroom->id,
+                    "uuid" => $classroom->uuid,
+                    "title" => $classroom->title,
+                    "join_code" => $classroom->join_code,
                 ],
             ]);
         }
 
         return redirect()
-            ->route('teacher.classes.index')
-            ->with('success', 'کلاس با موفقیت ایجاد شد.');
+            ->route("teacher.classes.index")
+            ->with("success", "کلاس با موفقیت ایجاد شد.");
     }
 
-    // 🔥 تابع تولید کد عضویت
     private function generateJoinCode()
     {
         do {
             $code = strtoupper(substr(md5(uniqid()), 0, 8));
-        } while (Classroom::where('join_code', $code)->exists());
+        } while (Classroom::where("join_code", $code)->exists());
 
         return $code;
     }
@@ -134,7 +150,6 @@ class TeacherClassController extends Controller
     public function show(Classroom $class)
     {
         $this->authorizeTeacher($class);
-
         $class->load('students');
 
         return view('dashboard.teacher.classes.show', compact('class'));
@@ -143,7 +158,6 @@ class TeacherClassController extends Controller
     public function edit(Classroom $class)
     {
         $this->authorizeTeacher($class);
-
         return view('dashboard.teacher.classes.edit', compact('class'));
     }
 
@@ -152,91 +166,161 @@ class TeacherClassController extends Controller
         $this->authorizeTeacher($class);
 
         $data = $request->validate([
-            'title'       => ['required','string','max:255'],
+            "title" => ["required","string","max:200"],
+            "description" => ["nullable","string"],
 
-            // ✅ حالت جدید taxonomy (برای edit هوشمند)
-            'section_id'  => ['nullable','uuid','exists:sections,id'],
-            'grade_id'    => ['nullable','uuid','exists:grades,id'],
-            'branch_id'   => ['nullable','uuid','exists:branches,id'],
-            'field_id'    => ['nullable','uuid','exists:fields,id'],
-            'subfield_id' => ['nullable','uuid','exists:subfields,id'],
-            'subject_id'  => ['nullable','uuid','exists:subjects,id'],
+            "section_id" => ["required","integer","exists:\"sections\",\"id\""],
+            "grade_id"   => ["required","integer","exists:\"grades\",\"id\""],
+            "branch_id"  => ["required","integer","exists:\"branches\",\"id\""],
+            "field_id"   => ["required","integer","exists:\"fields\",\"id\""],
 
-            // ✅ حالت قدیم (اگر هنوز فرم ساده داری)
-            'subject'     => ['nullable','string','max:255'],
-            'grade'       => ['nullable','string','max:50'],
+            "subfield_id"      => ["nullable","integer","exists:\"subfields\",\"id\""],
+            "subject_type_id"  => ["nullable","integer","exists:\"subject_types\",\"id\""],
+            "subject_id"       => ["nullable","integer","exists:\"subjects\",\"id\""],
 
-            'description' => ['nullable','string'],
-            'is_active'   => ['nullable','boolean'],
-            'metadata'    => ['nullable','string'],
+            "classroom_type" => ["required","in:single,comprehensive"],
+
+            "is_active" => ["nullable","boolean"],
+            "metadata"  => ["nullable","array"],
         ]);
 
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data["is_active"] = $request->boolean("is_active", true);
 
         $class->update($data);
 
         if ($request->ajax()) {
-            return response()->json(['success' => true]);
+            return response()->json(["success" => true]);
         }
 
         return redirect()
-            ->route('teacher.classes.index')
-            ->with('success', 'کلاس آپدیت شد.');
+            ->route("teacher.classes.index")
+            ->with("success", "کلاس آپدیت شد.");
     }
-    // حذف کلاس
+
     public function destroy(Classroom $class)
     {
         $this->authorizeTeacher($class);
-
         $class->delete();
 
-        return back()->with('success', 'کلاس حذف شد.');
+        return back()->with("success", "کلاس حذف شد.");
     }
-    // نمایش دانش‌آموزان کلاس
+
     public function students(Classroom $class)
     {
         $this->authorizeTeacher($class);
-        $class->load('students');
+        $class->load("students");
 
-        return view('dashboard.teacher.classes.students', compact('class'));
+        return view("dashboard.teacher.classes.students", compact("class"));
     }
-    // بررسی اینکه معلم مالک کلاس است
+
     public function addStudent(Request $request, Classroom $class)
     {
         $this->authorizeTeacher($class);
 
         $request->validate([
-            'student' => ['required','string']
+            "student" => ["required","string"]
         ]);
 
         $key = $request->student;
 
         $student = User::query()
-            ->where('email', $key)
-            ->orWhere('username', $key)
-            ->orWhere('phone', $key)
+            ->where("email", $key)
+            ->orWhere("username", $key)
+            ->orWhere("phone", $key)
             ->first();
 
         if(!$student){
-            return back()->with('error', 'دانش‌آموز پیدا نشد.');
+            return back()->with("error", "دانش‌آموز پیدا نشد.");
         }
 
         $class->students()->syncWithoutDetaching([$student->id]);
 
-        return back()->with('success', 'دانش‌آموز به کلاس اضافه شد.');
+        return back()->with("success", "دانش‌آموز به کلاس اضافه شد.");
     }
-    // حذف دانش‌آموز از کلاس
+
     public function removeStudent(Classroom $class, User $student)
     {
         $this->authorizeTeacher($class);
-
         $class->students()->detach($student->id);
 
-        return back()->with('success', 'دانش‌آموز از کلاس حذف شد.');
+        return back()->with("success", "دانش‌آموز از کلاس حذف شد.");
     }
-    // بررسی اینکه معلم مالک کلاس است
+
     private function authorizeTeacher(Classroom $class)
     {
-        abort_unless($class->teacher_id ===Auth::id(), 403);
+        abort_unless($class->teacher_id === Auth::id(), 403);
+    }
+
+    // ==========================================================
+    // AJAX Taxonomy endpoints
+    // ==========================================================
+
+    public function sections()
+    {
+        return response()->json(
+            Section::select("id","name")->orderBy("name")->get()
+        );
+    }
+
+    public function grades(Section $section)
+    {
+        return response()->json(
+            Grade::where("section_id", $section->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
+    }
+
+    public function branches(Grade $grade)
+    {
+        return response()->json(
+            Branch::where("grade_id", $grade->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
+    }
+
+    public function fields(Branch $branch)
+    {
+        return response()->json(
+            Field::where("branch_id", $branch->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
+    }
+
+    public function subfields(Field $field)
+    {
+        return response()->json(
+            Subfield::where("field_id", $field->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
+    }
+
+    // اگر FK شما برای subject_types چیز دیگری است، فقط همین where را عوض کن
+    public function subjectTypes(Field $field)
+    {
+        return response()->json(
+            SubjectType::where("field_id", $field->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
+    }
+
+    // اگر FK شما برای subjects چیز دیگری است، فقط همین where را عوض کن
+    public function subjects(SubjectType $subjectType)
+    {
+        return response()->json(
+            Subject::where("subject_type_id", $subjectType->id)
+                ->select("id","name")
+                ->orderBy("name")
+                ->get()
+        );
     }
 }

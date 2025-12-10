@@ -11,31 +11,23 @@ return new class extends Migration
         Schema::create('subjects', function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            // ✅ PK UUID
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
 
             $table->string('title_fa', 200);
+            $table->string('slug', 255)->unique(); // منتقل از add_
             $table->string('code', 50)->nullable();
-
-            // اگر ساعات ممکنه بیشتر از 255 بشه، unsignedSmallInteger بهتره
             $table->unsignedSmallInteger('hours')->nullable();
-
-            // ✅ همه FKها UUID
-            $table->uuid('grade_id');
-            $table->uuid('branch_id');
-            $table->uuid('field_id');
-            $table->uuid('subfield_id')->nullable();
-            $table->uuid('subject_type_id')->nullable();
-
-            $table->text('description')->nullable();
+            $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
 
-            // ✅ FKهای UUID
-            $table->foreign('grade_id')->references('id')->on('grades')->restrictOnDelete();
-            $table->foreign('branch_id')->references('id')->on('branches')->restrictOnDelete();
-            $table->foreign('field_id')->references('id')->on('fields')->restrictOnDelete();
-            $table->foreign('subfield_id')->references('id')->on('subfields')->nullOnDelete();
-            $table->foreign('subject_type_id')->references('id')->on('subject_types')->nullOnDelete();
+            $table->foreignId('grade_id')->constrained('grades')->restrictOnDelete();
+            $table->foreignId('branch_id')->constrained('branches')->restrictOnDelete();
+            $table->foreignId('field_id')->constrained('fields')->restrictOnDelete();
+            $table->foreignId('subfield_id')->nullable()->constrained('subfields')->nullOnDelete();
+            $table->foreignId('subject_type_id')->nullable()->constrained('subject_types')->nullOnDelete();
+
+            $table->text('description')->nullable();
 
             $table->timestamps();
         });

@@ -1,0 +1,2195 @@
+============================================================
+📦 فایل یکپارچه‌سازی شده
+============================================================
+📅 تاریخ ایجاد: 1404/09/19 09:41:42
+📋 تعداد فایل‌های درخواستی: 17
+✅ فایل‌های یافت شده: 6
+❌ فایل‌های یافت نشده: 11
+============================================================
+
+📁 لیست فایل‌ها:
+  ✅ 1. public/assets/js/admin-auth.js
+  ✅ 2. public/assets/js/auth.js
+  ✅ 3. public/assets/js/exam-wizard.js
+  ✅ 4. public/assets/js/landing.js
+  ✅ 5. public/assets/js/teacher-classes.js
+  ✅ 6. resources/views/landing/index.blade.php
+  ❌ 7. resources/views/landing/partials/cat.blade.php
+  ❌ 8. resources/views/landing/partials/demo.blade.php
+  ❌ 9. resources/views/landing/partials/faq.blade.php
+  ❌ 10. resources/views/landing/partials/features.blade.php
+  ❌ 11. resources/views/landing/partials/footer.blade.php
+  ❌ 12. resources/views/landing/partials/hero.blade.php
+  ❌ 13. resources/views/landing/partials/levels.blade.php
+  ❌ 14. resources/views/landing/partials/pricing.blade.php
+  ❌ 15. resources/views/landing/partials/samples.blade.php
+  ❌ 16. resources/views/landing/partials/screenshots.blade.php
+  ❌ 17. resources/views/landing/partials/testimonials.blade.php
+============================================================
+
+
+📁 فایل: public/assets/js/admin-auth.js
+📏 حجم: 6.91 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+let currentStep = 1;
+let countdownInterval = null;
+
+const phoneForm  = document.getElementById('phoneForm');
+const verifyForm = document.getElementById('verificationForm');
+const resendBtn  = document.getElementById('resendCodeBtn');
+
+const phoneInput = document.getElementById('phone');
+const codeInput  = document.getElementById('verificationCode');
+const phoneDisplay = document.getElementById('phoneNumberDisplay');
+const modalEl = document.getElementById('authModal');
+
+// ✅ مسیرهای مخصوص ادمین
+const SEND_URL   = modalEl?.dataset.sendUrl   || '/admin/send-otp';
+const VERIFY_URL = modalEl?.dataset.verifyUrl || '/admin/verify-otp';
+
+// state
+let currentPhone = '';
+let isSending = false;
+let isVerifying = false;
+let isResending = false;
+
+const csrf = () =>
+  document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+// -------------------- Toast --------------------
+function showToast(message, type = 'info') {
+  if (!message) return;
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; bottom: 20px; left: 20px;
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#198754' : '#0d6efd'};
+    color: white; padding: 14px 18px; border-radius: 12px;
+    box-shadow: 0 5px 18px rgba(0,0,0,0.2);
+    z-index: 9999; display: flex; gap: 10px; font-weight: 700;
+    font-size: 0.95rem; max-width: 90vw; line-height: 1.6;
+  `;
+  toast.innerHTML = `<span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+  }, 2500);
+
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// -------------------- fetch helper --------------------
+async function postJSON(url, payload){
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': csrf(),
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  });
+
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e){
+    throw new Error(`پاسخ سرور معتبر نبود. Status: ${res.status}`);
+  }
+
+  if(!res.ok){
+    throw new Error(data.message || `خطای سرور. Status: ${res.status}`);
+  }
+  return data;
+}
+
+// -------------------- steps --------------------
+function showStep(step){
+  currentStep = step;
+  const steps = document.querySelectorAll('.auth-step');
+  steps.forEach((el, idx) => {
+    el.style.display = (idx + 1 === step) ? 'block' : 'none';
+  });
+}
+
+function startCountdown(){
+  let count = 60;
+  const el = document.getElementById('countdown');
+  if (!el) return;
+
+  resendBtn.disabled = true;
+  el.textContent = `(${count})`;
+
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    count--;
+    el.textContent = `(${count})`;
+    if(count <= 0){
+      clearInterval(countdownInterval);
+      resendBtn.disabled = false;
+      el.textContent = '';
+    }
+  }, 1000);
+}
+
+// -------------------- Step 1: send OTP --------------------
+phoneForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (isSending) return;
+  isSending = true;
+
+  const phone = phoneInput.value.trim();
+
+  if (!phone || phone.length !== 10 || !/^9\d{9}$/.test(phone)) {
+    showToast('لطفاً شماره همراه معتبر وارد کنید.', 'error');
+    isSending = false;
+    return;
+  }
+
+  const submitBtn = phoneForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ms-2"></i> در حال ارسال...';
+
+  try {
+    const data = await postJSON(SEND_URL, { phone });
+
+    showToast(data.message || 'کد تایید ارسال شد.', 'success');
+
+    currentPhone = phone;
+    if (phoneDisplay) phoneDisplay.textContent = `+98 ${phone}`;
+
+    showStep(2);
+    startCountdown();
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+    isSending = false;
+  }
+});
+
+// -------------------- Step 2: verify OTP --------------------
+verifyForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (isVerifying) return;
+  isVerifying = true;
+
+  const code = codeInput.value.trim();
+
+  if (!currentPhone) {
+    showToast('ابتدا شماره را وارد کنید.', 'error');
+    isVerifying = false;
+    return;
+  }
+
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+    showToast('کد ۶ رقمی معتبر نیست.', 'error');
+    isVerifying = false;
+    return;
+  }
+
+  const controls = verifyForm.querySelectorAll('input, button');
+  controls.forEach(el => el.disabled = true);
+
+  const submitBtn = verifyForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ms-2"></i> در حال تأیید...';
+
+  try {
+    const data = await postJSON(VERIFY_URL, {
+      phone: currentPhone,
+      code
+    });
+
+    if (data.status === 'ok') {
+      showToast(data.message || 'ورود ادمین موفق.', 'success');
+      clearInterval(countdownInterval);
+
+      // ✅ UPDATE CSRF after login
+      if (data.csrf) {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.setAttribute('content', data.csrf);
+      }
+
+      // ✅ مستقیم برو داشبورد ادمین
+      if (data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
+
+      window.location.reload();
+      return;
+    }
+
+    showToast(data.message || 'مشکل در تایید کد.', 'error');
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+  } finally {
+    isVerifying = false;
+    controls.forEach(el => el.disabled = false);
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+});
+
+// -------------------- resend OTP --------------------
+resendBtn?.addEventListener('click', async () => {
+  if (resendBtn.disabled) return;
+  if (isResending) return;
+  isResending = true;
+
+  try {
+    if (!currentPhone) {
+      showToast('شماره همراه مشخص نیست.', 'error');
+      isResending = false;
+      return;
+    }
+
+    const data = await postJSON(SEND_URL, { phone: currentPhone });
+
+    showToast(data.message || 'کد تایید ارسال شد.', 'success');
+    startCountdown();
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+  } finally {
+    isResending = false;
+  }
+});
+
+// -------------------- reset modal --------------------
+modalEl?.addEventListener('hidden.bs.modal', function(){
+  showStep(1);
+  phoneForm?.reset();
+  verifyForm?.reset();
+  clearInterval(countdownInterval);
+
+  currentPhone = '';
+  isSending = false;
+  isVerifying = false;
+  isResending = false;
+
+  resendBtn.disabled = false;
+});
+
+
+------------------------------------------------------------
+
+📁 فایل: public/assets/js/auth.js
+📏 حجم: 7.6 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+let currentStep = 1;
+let countdownInterval = null;
+
+const phoneForm  = document.getElementById('phoneForm');
+const verifyForm = document.getElementById('verificationForm');
+const resendBtn  = document.getElementById('resendCodeBtn');
+
+const phoneInput = document.getElementById('phone');
+const codeInput  = document.getElementById('verificationCode');
+const phoneDisplay = document.getElementById('phoneNumberDisplay');
+const modalEl = document.getElementById('authModal');
+
+// URL ها از data-attribute (اگر نبود fallback)
+const SEND_URL   = modalEl?.dataset.sendUrl   || '/auth/send-otp';
+const VERIFY_URL = modalEl?.dataset.verifyUrl || '/auth/verify-otp';
+const ROLE_URL   = modalEl?.dataset.roleUrl   || '/auth/set-role';
+
+// state
+let currentPhone = '';
+let isSending = false;
+let isVerifying = false;
+let isResending = false;
+
+const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+// -------------------- Toast --------------------
+function showToast(message, type = 'info') {
+  if (!message) return;
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; bottom: 20px; left: 20px;
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#198754' : '#0d6efd'};
+    color: white; padding: 14px 18px; border-radius: 12px;
+    box-shadow: 0 5px 18px rgba(0,0,0,0.2);
+    z-index: 9999; display: flex; gap: 10px; font-weight: 700;
+    font-size: 0.95rem; max-width: 90vw; line-height: 1.6;
+  `;
+  toast.innerHTML = `<span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+  }, 2500);
+
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// -------------------- fetch helper --------------------
+async function postJSON(url, payload){
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': csrf(),
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  });
+
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e){
+    throw new Error(`پاسخ سرور معتبر نبود. Status: ${res.status}`);
+  }
+
+  if(!res.ok){
+    throw new Error(data.message || `خطای سرور. Status: ${res.status}`);
+  }
+  return data;
+}
+
+// -------------------- steps --------------------
+function showStep(step){
+  currentStep = step;
+  const steps = document.querySelectorAll('.auth-step');
+  steps.forEach((el, idx) => {
+    el.style.display = (idx + 1 === step) ? 'block' : 'none';
+  });
+}
+
+function startCountdown(){
+  let count = 60;
+  const el = document.getElementById('countdown');
+  resendBtn.disabled = true;
+  el.textContent = `(${count})`;
+
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    count--;
+    el.textContent = `(${count})`;
+    if(count <= 0){
+      clearInterval(countdownInterval);
+      resendBtn.disabled = false;
+      el.textContent = '';
+    }
+  }, 1000);
+}
+
+// -------------------- Step 1: send OTP --------------------
+phoneForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (isSending) return;
+  isSending = true;
+
+  const phone = phoneInput.value.trim();
+
+  if (!phone || phone.length !== 10 || !/^9\d{9}$/.test(phone)) {
+    showToast('لطفاً شماره همراه معتبر وارد کنید.', 'error');
+    isSending = false;
+    return;
+  }
+
+  const submitBtn = phoneForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ms-2"></i> در حال ارسال...';
+
+  try {
+    const data = await postJSON(SEND_URL, { phone });
+
+    showToast(data.message || 'کد تایید ارسال شد.', 'success');
+
+    currentPhone = phone;
+    phoneDisplay.textContent = `+98 ${phone}`;
+
+    showStep(2);
+    startCountdown();
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+    isSending = false;
+  }
+});
+
+
+// -------------------- Step 2: verify OTP --------------------
+verifyForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (isVerifying) return;
+  isVerifying = true;
+
+  const code = codeInput.value.trim();
+
+  if (!currentPhone) {
+    showToast('ابتدا شماره را وارد کنید.', 'error');
+    isVerifying = false;
+    return;
+  }
+
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+    showToast('کد ۶ رقمی معتبر نیست.', 'error');
+    isVerifying = false;
+    return;
+  }
+
+  const controls = verifyForm.querySelectorAll('input, button');
+  controls.forEach(el => el.disabled = true);
+
+  const submitBtn = verifyForm.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ms-2"></i> در حال تأیید...';
+
+  try {
+    const data = await postJSON(VERIFY_URL, {
+      phone: currentPhone,
+      code
+    });
+
+    if (data.status === 'ok') {
+      showToast(data.message || 'ورود موفق.', 'success');
+      clearInterval(countdownInterval);
+
+      // ✅ UPDATE CSRF after login
+      if (data.csrf) {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.setAttribute('content', data.csrf);
+      }
+
+      if (data.need_role) {
+        showStep(3);
+
+        isVerifying = false;
+        controls.forEach(el => el.disabled = false);
+        submitBtn.innerHTML = originalText;
+        return;
+      }
+
+      if (data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
+
+      window.location.reload();
+      return;
+    }
+
+    showToast(data.message || 'مشکل در تایید کد.', 'error');
+    isVerifying = false;
+    controls.forEach(el => el.disabled = false);
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+    isVerifying = false;
+    controls.forEach(el => el.disabled = false);
+
+  } finally {
+    if (!isVerifying) {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }
+  }
+});
+
+
+// -------------------- resend OTP --------------------
+resendBtn?.addEventListener('click', async () => {
+  if (resendBtn.disabled) return;
+  if (isResending) return;
+  isResending = true;
+
+  try {
+    if (!currentPhone) {
+      showToast('شماره همراه مشخص نیست.', 'error');
+      isResending = false;
+      return;
+    }
+
+    const data = await postJSON(SEND_URL, { phone: currentPhone });
+
+    showToast(data.message || 'کد تایید ارسال شد.', 'success');
+    startCountdown();
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+
+  } finally {
+    isResending = false;
+  }
+});
+
+
+// -------------------- Step 3: select role --------------------
+window.selectRole = async function(role){
+  try {
+    const data = await postJSON(ROLE_URL, { role });
+
+    showToast(data.message || 'نقش ذخیره شد.', 'success');
+
+    if (data.redirect) {
+      window.location.href = data.redirect;
+      return;
+    }
+
+  } catch (err){
+    showToast(err.message, 'error');
+    console.error(err);
+  }
+};
+
+
+// -------------------- reset modal --------------------
+modalEl?.addEventListener('hidden.bs.modal', function(){
+  showStep(1);
+  phoneForm?.reset();
+  verifyForm?.reset();
+  clearInterval(countdownInterval);
+
+  currentPhone = '';
+  isSending = false;
+  isVerifying = false;
+  isResending = false;
+
+  resendBtn.disabled = false;
+});
+
+
+------------------------------------------------------------
+
+📁 فایل: public/assets/js/exam-wizard.js
+📏 حجم: 30.6 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+/* ===========================================================
+ * exam-wizard.js (UUID + AJAX Real Data)
+ * سازگار با routes/teacher.php و TeacherExamController
+ * نسخه نهایی مرحله 2 (منطق 3 حالته + پرش)
+ * =========================================================== */
+
+let currentStep = 1;
+
+const endpoint = {
+  sections: "/dashboard/teacher/exams/data/sections",
+  grades: "/dashboard/teacher/exams/data/grades",
+  branches: "/dashboard/teacher/exams/data/branches",
+  fields: "/dashboard/teacher/exams/data/fields",
+  subfields: "/dashboard/teacher/exams/data/subfields",
+  subjectTypes: "/dashboard/teacher/exams/data/subject-types",
+  subjects: "/dashboard/teacher/exams/data/subjects",
+  classMeta: (id) => `/dashboard/teacher/classes/${id}/meta`,
+  classesAjax: "/dashboard/teacher/classes?ajax=1"
+};
+
+// UI Names (preview)
+const examTypeNames = {
+  public: "آزمون عمومی",
+  class_single: "کلاسی تک درس",
+  class_comprehensive: "کلاسی جامع"
+};
+
+const subjectTypeFallbackNames = {
+  base_competency: "شایستگی پایه",
+  non_technical_competency: "شایستگی غیرفنی",
+  technical_competency: "شایستگی فنی",
+  general: "دروس عمومی",
+  all: "همه دروس",
+  specialized_competency: "شایستگی‌های تخصصی"
+};
+
+// state
+let formData = {
+  examType: "",
+  classroomId: null,
+  classroomName: "",
+
+  sectionId: "",
+  sectionName: "",
+
+  gradeId: "",
+  gradeName: "",
+
+  branchId: "",
+  branchName: "",
+
+  fieldId: "",
+  fieldName: "",
+
+  subfieldId: "",
+  subfieldName: "",
+
+  subjectTypeId: "",
+  subjectTypeSlug: "",
+  subjectTypeName: "",
+
+  selectedSubjects: [], // UUID[]
+  totalQuestions: 0
+};
+
+/* ===================== helpers ===================== */
+
+const qs = (sel) => document.querySelector(sel);
+const qsa = (sel) => Array.from(document.querySelectorAll(sel));
+
+const csrf = () =>
+  document.querySelector('meta[name="csrf-token"]')?.content || "";
+
+function setHidden(id, val) {
+  const el = qs(id);
+  if (el) el.value = val ?? "";
+}
+
+function showToast(message, icon = "error") {
+  if (typeof Swal === "undefined") {
+    alert(message);
+    return;
+  }
+  Swal.fire({
+    toast: true,
+    position: "top-start",
+    icon,
+    title: message,
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true
+  });
+}
+
+async function getJSON(url) {
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest"
+    }
+  });
+  if (!res.ok) throw new Error("Network error");
+  return res.json();
+}
+
+/* ===================== init ===================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateProgress();
+  updateNavigationButtons();
+  loadFromLocalStorage();
+
+  // ✅ اگر classroom_id از Blade/URL آمده و قبلاً انتخاب نشده
+  const preClassId = qs("#classroomId")?.value;
+  if (!formData.classroomId && preClassId) {
+    formData.classroomId = preClassId;
+    setHidden("#classroomId", preClassId);
+  }
+
+  // اگر از قبل examType انتخاب شده بود و کلاسی بود کلاس‌ها رو لود کن
+  if (formData.examType && formData.examType !== "public") {
+    showClassroomSection(true);
+    loadExistingClassrooms();
+  }
+});
+
+/* ===================== step 1 exam type ===================== */
+
+window.selectExamType = function (type) {
+  qsa(".type-card").forEach((c) => c.classList.remove("selected"));
+  qs(`.type-card[data-type="${type}"]`)?.classList.add("selected");
+
+  formData.examType = type;
+  setHidden("#examType", type);
+
+  if (type === "public") {
+    showClassroomSection(false);
+    formData.classroomId = null;
+    formData.classroomName = "";
+    setHidden("#classroomId", "");
+    enableNext(true);
+  } else {
+    showClassroomSection(true);
+    loadExistingClassrooms();
+    enableNext(false);
+  }
+
+  updatePreview();
+  saveToLocalStorage();
+};
+
+function showClassroomSection(show) {
+  const sec = qs("#classroomSelectionSection");
+  if (!sec) return;
+  sec.style.display = show ? "block" : "none";
+}
+
+function enableNext(enable) {
+  const btn = qs(".btn-next");
+  if (!btn) return;
+  btn.disabled = !enable;
+  btn.classList.toggle("disabled", !enable);
+}
+
+/* -------- load classrooms (UUID) -------- */
+
+window.loadExistingClassrooms = async function () {
+  const container = qs("#existingClassroomsContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="loading-spinner" style="grid-column: 1 / -1; text-align:center; padding:20px;">
+      <i class="fas fa-spinner fa-spin"></i>
+      در حال بارگذاری کلاس‌ها...
+    </div>
+  `;
+
+  try {
+    const data = await getJSON(endpoint.classesAjax);
+
+    container.innerHTML = "";
+
+    const classes = data.classrooms || [];
+    if (classes.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding:20px; color:#777;">
+          کلاسی یافت نشد. لطفاً کلاس جدید بسازید.
+        </div>
+      `;
+      return;
+    }
+
+    classes.forEach((classroom) => {
+      const card = document.createElement("div");
+      card.className = "selection-card";
+      card.dataset.classroomId = classroom.id;
+      card.innerHTML = `
+        <div class="selection-icon">🏫</div>
+        <div class="selection-name">${classroom.title}</div>
+        <p class="selection-description">
+          <small>${classroom.grade || "بدون پایه"} - ${classroom.subject || "بدون موضوع"}</small>
+          <br><strong>${classroom.students_count || 0} هنرجو</strong>
+        </p>
+      `;
+      card.onclick = (e) =>
+        selectClassroom(e, classroom.id, classroom.title);
+      container.appendChild(card);
+    });
+
+    // اگر قبلاً انتخاب داشته
+    if (formData.classroomId) {
+      container
+        .querySelector(
+          `[data-classroom-id="${formData.classroomId}"]`
+        )
+        ?.classList.add("selected");
+      enableNext(true);
+    }
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align:center; padding:20px; color:#e67;">
+        خطا در دریافت کلاس‌ها
+        <br>
+        <button type="button" onclick="loadExistingClassrooms()" class="btn-nav" style="padding:10px 20px; margin-top:15px;">تلاش مجدد</button>
+      </div>
+    `;
+  }
+};
+
+/* -------- select classroom + auto-fill meta -------- */
+
+window.selectClassroom = async function (e, classroomId, classroomName) {
+  qsa("#existingClassroomsContainer .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.classroomId = classroomId;
+  formData.classroomName = classroomName;
+  setHidden("#classroomId", classroomId);
+
+  // meta
+  try {
+    const metaData = await getJSON(endpoint.classMeta(classroomId));
+    const meta = metaData.classroom || {};
+
+    if (meta.section_id) {
+      formData.sectionId = meta.section_id;
+      setHidden("#sectionId", meta.section_id);
+    }
+
+    if (meta.grade_id) {
+      formData.gradeId = meta.grade_id;
+      setHidden("#gradeId", meta.grade_id);
+    }
+
+    if (meta.branch_id) {
+      formData.branchId = meta.branch_id;
+      setHidden("#branchId", meta.branch_id);
+    }
+
+    if (meta.field_id) {
+      formData.fieldId = meta.field_id;
+      setHidden("#fieldId", meta.field_id);
+    }
+
+    if (meta.subfield_id) {
+      formData.subfieldId = meta.subfield_id;
+      setHidden("#subfieldId", meta.subfield_id);
+    }
+
+    // ✅ اگر آزمون تک‌درس بود، همان درس کلاس را ست کن
+    if (formData.examType === "class_single" && meta.subject_id) {
+      formData.selectedSubjects = [meta.subject_id];
+      setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+    }
+
+    // اگر جامع کلاسی بود subjectType=all و همه دروس auto
+    if (formData.examType === "class_comprehensive") {
+      formData.subjectTypeSlug = "all";
+      formData.subjectTypeName = subjectTypeFallbackNames.all;
+      formData.subjectTypeId = "";
+      setHidden("#subjectTypeId", "");
+      calculateCoefficients("all");
+
+      // ✅ برای جامع: همه درس‌ها را اتومات بگیر و در hidden ذخیره کن
+      try {
+        await loadSubjectsForAllAndSave();
+      } catch (e) {
+        console.error("auto all subjects error", e);
+      }
+    }
+  } catch (err) {
+    console.error("class meta error", err);
+  }
+
+  enableNext(true);
+  updatePreview();
+  saveToLocalStorage();
+
+  // ✅ منطق پرش:
+  // - تک‌درس و جامع: مستقیم Step8
+  // - عمومی: مسیر مرحله‌ای
+  if (
+    formData.examType === "class_single" ||
+    formData.examType === "class_comprehensive"
+  ) {
+    jumpToStep(8);
+  } else {
+    nextStep();
+  }
+};
+
+/* ===================== step 2 grades ===================== */
+
+async function loadGrades() {
+  const container = qs("#gradesGrid");
+  if (!container) return;
+
+  container.innerHTML = `<div class="loading-spinner" style="grid-column:1/-1;text-align:center;">در حال بارگذاری...</div>`;
+
+  const params = new URLSearchParams();
+  if (formData.sectionId) params.append("section_id", formData.sectionId);
+
+  const data = await getJSON(`${endpoint.grades}?${params.toString()}`);
+
+  container.innerHTML = "";
+  (data.grades || []).forEach((g) => {
+    const card = document.createElement("div");
+    card.className = "selection-card";
+    card.dataset.id = g.id; // ✅
+    card.innerHTML = `
+      <div class="selection-icon">📘</div>
+      <div class="selection-name">${g.name_fa}</div>
+      <p class="selection-description">${g.slug || ""}</p>
+    `;
+    card.onclick = (e) => selectGrade(e, g.id, g.name_fa);
+    container.appendChild(card);
+  });
+
+  // restore by id
+  if (formData.gradeId) {
+    container
+      .querySelector(`[data-id="${formData.gradeId}"]`)
+      ?.classList.add("selected");
+  }
+}
+
+window.selectGrade = function (e, gradeId, gradeName) {
+  qsa("#gradesGrid .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.gradeId = gradeId;
+  formData.gradeName = gradeName;
+  setHidden("#gradeId", gradeId);
+
+  // ✅ reset پایین‌دستی‌ها
+  formData.branchId = "";
+  formData.branchName = "";
+  setHidden("#branchId", "");
+
+  formData.fieldId = "";
+  formData.fieldName = "";
+  setHidden("#fieldId", "");
+
+  formData.subfieldId = "";
+  formData.subfieldName = "";
+  setHidden("#subfieldId", "");
+
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
+
+  updatePreview();
+  saveToLocalStorage();
+};
+
+/* ===================== step 3 branches ===================== */
+
+async function loadBranches() {
+  const container = qs("#branchesGrid");
+  if (!container) return;
+
+  container.innerHTML = `<div class="loading-spinner" style="grid-column:1/-1;text-align:center;">در حال بارگذاری...</div>`;
+
+  const params = new URLSearchParams();
+  if (formData.sectionId) params.append("section_id", formData.sectionId);
+
+  const data = await getJSON(`${endpoint.branches}?${params.toString()}`);
+
+  container.innerHTML = "";
+  (data.branches || []).forEach((b) => {
+    const card = document.createElement("div");
+    card.className = "selection-card";
+    card.dataset.id = b.id; // ✅
+    card.innerHTML = `
+      <div class="selection-icon">🎓</div>
+      <div class="selection-name">${b.name_fa}</div>
+      <p class="selection-description">${b.slug || ""}</p>
+    `;
+    card.onclick = (e) => selectBranch(e, b.id, b.name_fa);
+    container.appendChild(card);
+  });
+
+  if (formData.branchId) {
+    container
+      .querySelector(`[data-id="${formData.branchId}"]`)
+      ?.classList.add("selected");
+  }
+}
+
+window.selectBranch = function (e, branchId, branchName) {
+  qsa("#branchesGrid .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.branchId = branchId;
+  formData.branchName = branchName;
+  setHidden("#branchId", branchId);
+
+  // با تغییر branch فیلدها و زیررشته‌ها ریست
+  formData.fieldId = "";
+  formData.fieldName = "";
+  setHidden("#fieldId", "");
+
+  formData.subfieldId = "";
+  formData.subfieldName = "";
+  setHidden("#subfieldId", "");
+
+  // ✅ reset subjectType و subjects
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
+
+  updatePreview();
+  saveToLocalStorage();
+};
+
+/* ===================== step 4 fields ===================== */
+
+async function loadFields() {
+  const container = qs("#fieldsGrid");
+  if (!container) return;
+
+  container.innerHTML = `<div class="loading-spinner" style="grid-column:1/-1;text-align:center;">در حال بارگذاری...</div>`;
+
+  const params = new URLSearchParams();
+  if (formData.branchId) params.append("branch_id", formData.branchId);
+
+  const data = await getJSON(`${endpoint.fields}?${params.toString()}`);
+
+  container.innerHTML = "";
+  (data.fields || []).forEach((f) => {
+    const card = document.createElement("div");
+    card.className = "selection-card";
+    card.dataset.id = f.id; // ✅
+    card.innerHTML = `
+      <div class="selection-icon">🏭</div>
+      <div class="selection-name">${f.name_fa}</div>
+      <p class="selection-description">${f.slug || ""}</p>
+    `;
+    card.onclick = (e) => selectField(e, f.id, f.name_fa);
+    container.appendChild(card);
+  });
+
+  if (formData.fieldId) {
+    container
+      .querySelector(`[data-id="${formData.fieldId}"]`)
+      ?.classList.add("selected");
+  }
+}
+
+window.selectField = function (e, fieldId, fieldName) {
+  qsa("#fieldsGrid .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.fieldId = fieldId;
+  formData.fieldName = fieldName;
+  setHidden("#fieldId", fieldId);
+
+  // ریست زیررشته
+  formData.subfieldId = "";
+  formData.subfieldName = "";
+  setHidden("#subfieldId", "");
+
+  // ✅ reset subjectType و subjects
+  formData.subjectTypeId = "";
+  formData.subjectTypeSlug = "";
+  formData.subjectTypeName = "";
+  setHidden("#subjectTypeId", "");
+
+  formData.selectedSubjects = [];
+  setHidden("#subjectsInput", JSON.stringify([]));
+
+  updatePreview();
+  saveToLocalStorage();
+};
+
+/* ===================== step 5 subfields ===================== */
+
+async function loadSubfields() {
+  const container = qs("#subfieldGrid");
+  if (!container) return;
+
+  container.innerHTML = `<div class="loading-spinner" style="grid-column:1/-1;text-align:center;">در حال بارگذاری...</div>`;
+
+  const params = new URLSearchParams();
+  if (formData.fieldId) params.append("field_id", formData.fieldId);
+
+  const data = await getJSON(`${endpoint.subfields}?${params.toString()}`);
+
+  container.innerHTML = "";
+  (data.subfields || []).forEach((s) => {
+    const card = document.createElement("div");
+    card.className = "selection-card";
+    card.dataset.id = s.id; // ✅
+    card.innerHTML = `
+      <div class="selection-icon">🔬</div>
+      <div class="selection-name">${s.name_fa}</div>
+      <p class="selection-description">${s.slug || ""}</p>
+    `;
+    card.onclick = (e) => selectSubfield(e, s.id, s.name_fa);
+    container.appendChild(card);
+  });
+
+  if (formData.subfieldId) {
+    container
+      .querySelector(`[data-id="${formData.subfieldId}"]`)
+      ?.classList.add("selected");
+  }
+}
+
+window.selectSubfield = function (e, subfieldId, subfieldName) {
+  qsa("#subfieldGrid .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.subfieldId = subfieldId;
+  formData.subfieldName = subfieldName;
+  setHidden("#subfieldId", subfieldId);
+
+  updatePreview();
+  saveToLocalStorage();
+};
+
+/* ===================== step 6 subject types ===================== */
+
+async function loadSubjectTypes() {
+  const container = qs("#subjectTypesGrid");
+  if (!container) return;
+
+  container.innerHTML = `<div class="loading-spinner" style="grid-column:1/-1;text-align:center;">در حال بارگذاری...</div>`;
+
+  const data = await getJSON(endpoint.subjectTypes);
+
+  container.innerHTML = "";
+
+  // ✅ سازگاری با هر دو نوع response
+  const list = data.subject_types || data.subjectTypes || [];
+
+  list.forEach((st) => {
+    const card = document.createElement("div");
+    card.className = "selection-card";
+    card.dataset.slug = st.slug;
+    card.innerHTML = `
+      <div class="selection-icon">📚</div>
+      <div class="selection-name">${st.name_fa}</div>
+      <p class="selection-description">${st.slug || ""}</p>
+    `;
+    card.onclick = (e) =>
+      selectSubjectType(e, st.id, st.slug, st.name_fa);
+    container.appendChild(card);
+  });
+
+  // restore
+  if (formData.subjectTypeId) {
+    container.querySelectorAll(".selection-card").forEach((c) => {
+      if (c.textContent.includes(formData.subjectTypeName)) c.classList.add("selected");
+    });
+  }
+}
+
+
+window.selectSubjectType = function (e, id, slug, name) {
+  qsa("#subjectTypesGrid .selection-card").forEach((c) =>
+    c.classList.remove("selected")
+  );
+  e?.target?.closest(".selection-card")?.classList.add("selected");
+
+  formData.subjectTypeId = id;
+  formData.subjectTypeSlug = slug;
+  formData.subjectTypeName = name;
+
+  setHidden("#subjectTypeId", id);
+
+  calculateCoefficients(slug);
+  updatePreview();
+  saveToLocalStorage();
+};
+
+/* ---------- coefficient section ---------- */
+function calculateCoefficients(slug) {
+  if (slug === "all") formData.totalQuestions = 115;
+  else if (slug === "technical_competency") formData.totalQuestions = 60;
+  else if (slug === "base_competency") formData.totalQuestions = 35;
+  else if (slug === "non_technical_competency") formData.totalQuestions = 20;
+  else formData.totalQuestions = 0;
+
+  qs("#previewTotalQuestions") &&
+    (qs("#previewTotalQuestions").textContent =
+      formData.totalQuestions + " سوال");
+}
+
+/* ===================== step 7 subjects ===================== */
+
+async function loadSubjects() {
+  const container = qs("#subjectsContainer");
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری دروس...</div>';
+
+  const params = new URLSearchParams();
+  if (formData.gradeId) params.append("grade_id", formData.gradeId);
+  if (formData.branchId) params.append("branch_id", formData.branchId);
+  if (formData.fieldId) params.append("field_id", formData.fieldId);
+  if (formData.subfieldId) params.append("subfield_id", formData.subfieldId);
+  if (formData.subjectTypeId && formData.subjectTypeSlug !== "all")
+    params.append("subject_type_id", formData.subjectTypeId);
+
+  try {
+    const data = await getJSON(
+      `${endpoint.subjects}?${params.toString()}`
+    );
+    const subjects = data.subjects || [];
+
+    if (subjects.length === 0) {
+      container.innerHTML =
+        '<div class="alert alert-info">هیچ درسی یافت نشد.</div>';
+      return;
+    }
+
+    displaySubjects(subjects);
+  } catch (e) {
+    console.error(e);
+    container.innerHTML =
+      '<div class="alert alert-danger">خطا در دریافت دروس.</div>';
+  }
+}
+
+function displaySubjects(subjects) {
+  const container = qs("#subjectsContainer");
+  container.innerHTML = "";
+
+  const singleSelect =
+    formData.examType === "public" || formData.examType === "class_single";
+
+  subjects.forEach((subject) => {
+    const item = document.createElement("div");
+    item.className = "subject-item";
+    item.innerHTML = `
+      <div class="subject-checkbox">
+        <input type="checkbox"
+               id="subject_${subject.id}"
+               value="${subject.id}"
+               data-single="${singleSelect ? 1 : 0}"
+               onchange="updateSelectedSubjects(this)">
+      </div>
+      <div class="subject-info">
+        <div class="subject-name">${subject.title_fa}</div>
+        <div class="subject-meta">
+          <span class="subject-code">${subject.code || "-"}</span>
+          <span>${subject.hours || 0} ساعت</span>
+        </div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+
+  // ✅ حالت جامع: همه انتخاب شوند
+  if (formData.subjectTypeSlug === "all" || formData.examType === "class_comprehensive") {
+    setTimeout(() => {
+      qsa(".subject-checkbox input").forEach((cb) => (cb.checked = true));
+      updateSelectedSubjects();
+    }, 50);
+    return;
+  }
+
+  // restore selections
+  if (formData.selectedSubjects.length) {
+    setTimeout(() => {
+      formData.selectedSubjects.forEach((id) => {
+        const el = qs(`#subject_${id}`);
+        if (el) el.checked = true;
+      });
+      updateSelectedSubjects();
+    }, 50);
+  }
+}
+
+
+window.updateSelectedSubjects = function (changedEl = null) {
+  const all = qsa(".subject-checkbox input");
+  const singleSelect =
+    formData.examType === "public" || formData.examType === "class_single";
+
+  // ✅ اگر single-select بود و یکی تازه چک شد → بقیه آنچک شوند
+  if (singleSelect && changedEl && changedEl.checked) {
+    all.forEach((cb) => {
+      if (cb !== changedEl) cb.checked = false;
+    });
+  }
+
+  const checked = all.filter((cb) => cb.checked);
+  formData.selectedSubjects = checked.map((cb) => cb.value);
+
+  setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+
+  const countEl = qs("#previewSubjectsCount");
+  if (countEl) {
+    countEl.textContent = formData.selectedSubjects.length
+      ? formData.selectedSubjects.length + " درس"
+      : "--";
+  }
+
+  saveToLocalStorage();
+};
+
+/* ===================== step 8 preview ===================== */
+
+function updatePreview() {
+  qs("#previewExamType") &&
+    (qs("#previewExamType").textContent =
+      examTypeNames[formData.examType] || "--");
+
+  qs("#previewGrade") &&
+    (qs("#previewGrade").textContent =
+      formData.gradeName || "--");
+
+  qs("#previewBranch") &&
+    (qs("#previewBranch").textContent =
+      formData.branchName || "--");
+
+  qs("#previewField") &&
+    (qs("#previewField").textContent =
+      formData.fieldName || "--");
+
+  qs("#previewSubfield") &&
+    (qs("#previewSubfield").textContent =
+      formData.subfieldName || "--");
+
+  qs("#previewSubjectType") &&
+    (qs("#previewSubjectType").textContent =
+      formData.subjectTypeName ||
+      subjectTypeFallbackNames[formData.subjectTypeSlug] ||
+      "--");
+
+  qs("#previewSubjectsCount") &&
+    (qs("#previewSubjectsCount").textContent =
+      formData.selectedSubjects.length
+        ? formData.selectedSubjects.length + " درس"
+        : "--");
+}
+
+/* ===================== navigation ===================== */
+
+window.nextStep = function () {
+  if (!validateCurrentStep()) return;
+
+  if (currentStep < 8) {
+    qs(`#step${currentStep}`)?.classList.remove("active");
+    currentStep++;
+    qs(`#step${currentStep}`)?.classList.add("active");
+
+    handleStepChange();
+    updateProgress();
+    updateNavigationButtons();
+    updatePreview();
+    saveToLocalStorage();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
+window.prevStep = function () {
+  if (currentStep > 1) {
+    qs(`#step${currentStep}`)?.classList.remove("active");
+    currentStep--;
+    qs(`#step${currentStep}`)?.classList.add("active");
+
+    updateProgress();
+    updateNavigationButtons();
+    updatePreview();
+    saveToLocalStorage();
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
+function handleStepChange() {
+  if (currentStep === 2) loadGrades();
+  if (currentStep === 3) loadBranches();
+  if (currentStep === 4) loadFields();
+  if (currentStep === 5) loadSubfields();
+  if (currentStep === 6) loadSubjectTypes();
+  if (currentStep === 7) loadSubjects();
+}
+
+/* ===================== validation ===================== */
+
+function validateCurrentStep() {
+  let ok = true;
+  let msg = "";
+
+  switch (currentStep) {
+    case 1:
+      if (!formData.examType) {
+        ok = false;
+        msg = "لطفاً نوع آزمون را انتخاب کنید.";
+      }
+      if (formData.examType !== "public" && !formData.classroomId) {
+        ok = false;
+        msg = "لطفاً یک کلاس انتخاب کنید.";
+      }
+      break;
+
+    case 2:
+      if (!formData.gradeId) {
+        ok = false;
+        msg = "لطفاً پایه تحصیلی را انتخاب کنید.";
+      }
+      break;
+
+    case 3:
+      if (!formData.branchId) {
+        ok = false;
+        msg = "لطفاً شاخه تحصیلی را انتخاب کنید.";
+      }
+      break;
+
+    case 4:
+      if (!formData.fieldId) {
+        ok = false;
+        msg = "لطفاً زمینه فنی را انتخاب کنید.";
+      }
+      break;
+
+    case 5:
+      if (!formData.subfieldId) {
+        ok = false;
+        msg = "لطفاً زیررشته را انتخاب کنید.";
+      }
+      break;
+
+    case 6:
+      if (!formData.subjectTypeSlug && !formData.subjectTypeId) {
+        ok = false;
+        msg = "لطفاً دسته درسی را انتخاب کنید.";
+      }
+      break;
+
+    case 7:
+      if (
+        formData.selectedSubjects.length === 0 &&
+        formData.subjectTypeSlug !== "all"
+      ) {
+        ok = false;
+        msg = "لطفاً حداقل یک درس انتخاب کنید.";
+      }
+      break;
+  }
+
+  if (!ok && msg) showToast(msg, "error");
+  return ok;
+}
+
+window.validateFinalStep = function () {
+  if (
+    !formData.examType ||
+    !formData.gradeId ||
+    !formData.branchId ||
+    !formData.fieldId ||
+    !formData.subfieldId ||
+    (!formData.subjectTypeSlug && !formData.subjectTypeId)
+  ) {
+    showToast("لطفاً تمام مراحل را تکمیل کنید.", "error");
+    return false;
+  }
+
+  if (
+    formData.selectedSubjects.length === 0 &&
+    formData.subjectTypeSlug !== "all"
+  ) {
+    showToast("لطفاً حداقل یک درس انتخاب کنید.", "error");
+    return false;
+  }
+
+  localStorage.removeItem("examFormData");
+  localStorage.removeItem("examCurrentStep");
+  return true;
+};
+
+/* ===================== progress ===================== */
+
+function updateProgress() {
+  const progress = (currentStep / 8) * 100;
+  qs("#progressFill") &&
+    (qs("#progressFill").style.width = `${progress}%`);
+
+  qsa(".step-item").forEach((item, index) => {
+    item.classList.remove("active", "completed");
+    if (index + 1 < currentStep) item.classList.add("completed");
+    else if (index + 1 === currentStep) item.classList.add("active");
+  });
+}
+
+function updateNavigationButtons() {
+  const prevBtn = qs(".btn-prev");
+  const nextBtn = qs(".btn-next");
+  const submitBtn = qs(".btn-submit");
+
+  if (currentStep === 1) {
+    prevBtn.style.display = "none";
+    nextBtn.style.display = "flex";
+    submitBtn.style.display = "none";
+  } else if (currentStep === 8) {
+    prevBtn.style.display = "flex";
+    nextBtn.style.display = "none";
+    submitBtn.style.display = "flex";
+  } else {
+    prevBtn.style.display = "flex";
+    nextBtn.style.display = "flex";
+    submitBtn.style.display = "none";
+  }
+}
+
+/* ===================== local storage ===================== */
+
+function saveToLocalStorage() {
+  localStorage.setItem("examFormData", JSON.stringify(formData));
+  localStorage.setItem("examCurrentStep", currentStep);
+}
+
+function loadFromLocalStorage() {
+  const savedData = localStorage.getItem("examFormData");
+  const savedStep = localStorage.getItem("examCurrentStep");
+
+  if (savedData) {
+    formData = { ...formData, ...JSON.parse(savedData) };
+    if (savedStep) currentStep = parseInt(savedStep);
+
+    // restore hidden values
+    setHidden("#examType", formData.examType);
+    setHidden("#classroomId", formData.classroomId);
+    setHidden("#sectionId", formData.sectionId);
+    setHidden("#gradeId", formData.gradeId);
+    setHidden("#branchId", formData.branchId);
+    setHidden("#fieldId", formData.fieldId);
+    setHidden("#subfieldId", formData.subfieldId);
+    setHidden("#subjectTypeId", formData.subjectTypeId);
+    setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+
+    // restore UI selections for step1 quickly
+    if (formData.examType) {
+      qs(`.type-card[data-type="${formData.examType}"]`)?.classList.add("selected");
+    }
+    if (formData.examType && formData.examType !== "public") {
+      showClassroomSection(true);
+      loadExistingClassrooms();
+    }
+
+    updatePreview();
+    updateProgress();
+    updateNavigationButtons();
+
+    // jump to saved step
+    qsa(".form-section").forEach(s => s.classList.remove("active"));
+    qs(`#step${currentStep}`)?.classList.add("active");
+    handleStepChange();
+  }
+}
+
+// پاکسازی بعد از submit
+qs("#examForm")?.addEventListener("submit", () => {
+  localStorage.removeItem("examFormData");
+  localStorage.removeItem("examCurrentStep");
+});
+
+/* ===================== extras: jump + auto all subjects ===================== */
+
+// ✅ پرش مستقیم به یک مرحلهٔ خاص
+function jumpToStep(stepNumber) {
+  qs(`#step${currentStep}`)?.classList.remove("active");
+
+  currentStep = stepNumber;
+
+  qsa(".form-section").forEach((s) => s.classList.remove("active"));
+  qs(`#step${currentStep}`)?.classList.add("active");
+
+  handleStepChange();
+  updateProgress();
+  updateNavigationButtons();
+  updatePreview();
+  saveToLocalStorage();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ✅ برای آزمون جامع: همه درس‌ها را بگیر و در hidden ذخیره کن
+async function loadSubjectsForAllAndSave() {
+  const params = new URLSearchParams();
+  if (formData.gradeId) params.append("grade_id", formData.gradeId);
+  if (formData.branchId) params.append("branch_id", formData.branchId);
+  if (formData.fieldId) params.append("field_id", formData.fieldId);
+  if (formData.subfieldId) params.append("subfield_id", formData.subfieldId);
+
+  const data = await getJSON(`${endpoint.subjects}?${params.toString()}`);
+  const subjects = data.subjects || [];
+
+  formData.selectedSubjects = subjects.map((s) => s.id);
+
+  setHidden("#subjectsInput", JSON.stringify(formData.selectedSubjects));
+
+  const countEl = qs("#previewSubjectsCount");
+  if (countEl) countEl.textContent = formData.selectedSubjects.length + " درس";
+
+  saveToLocalStorage();
+}
+function updateExamTypeIndicator() {
+  const wrap = qs("#examTypeIndicator");
+  const text = qs("#examTypeIndicatorText");
+  if (!wrap || !text) return;
+
+  if (!formData.examType) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  wrap.style.display = "block";
+  text.textContent = examTypeNames[formData.examType] || formData.examType;
+
+  // رنگ‌بندی ساده
+  text.className = "badge";
+  if (formData.examType === "public") text.classList.add("bg-primary");
+  if (formData.examType === "class_single") text.classList.add("bg-success");
+  if (formData.examType === "class_comprehensive") text.classList.add("bg-warning");
+}
+
+
+
+------------------------------------------------------------
+
+📁 فایل: public/assets/js/landing.js
+📏 حجم: 1.76 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+// smooth scroll
+window.scrollToSection = function(id){
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+};
+
+// -------------------------
+// Pricing cycles
+// -------------------------
+let currentCycle = "monthly";
+
+window.setCycle = function(cycle, btn){
+  currentCycle = cycle;
+
+  document.querySelectorAll(".cycle-selector .btn")
+    .forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+
+  document.querySelectorAll(".price-val").forEach(el=>{
+    const val = el.dataset[cycle];
+    el.textContent = Number(val).toLocaleString("fa-IR");
+
+    const label = el.closest(".pricing-card")
+      .querySelector(".price-label");
+
+    label.textContent =
+      (cycle==="monthly") ? "ماهانه" :
+      (cycle==="quarterly") ? "سه‌ماهه" : "سالیانه";
+  });
+};
+
+// -------------------------
+// Discount countdown (safe)
+// -------------------------
+const discountDeadline = new Date(Date.now() + 1000*60*60*24*3); // 3 days
+const countdownEl = document.getElementById("discountCountdown");
+const statusEl = document.getElementById("discountStatus");
+function updateCountdown(){
+  if(!countdownEl || !statusEl) return; // <<< guard
+
+  const now = new Date();
+  const diff = discountDeadline - now;
+
+  if(diff <= 0){
+    countdownEl.textContent = "00:00:00";
+    statusEl.textContent = "پایان یافت";
+    statusEl.className = "badge text-bg-secondary";
+    return;
+  }
+
+  const totalSeconds = Math.floor(diff/1000);
+  const hours = String(Math.floor(totalSeconds/3600)).padStart(2,"0");
+  const minutes = String(Math.floor((totalSeconds%3600)/60)).padStart(2,"0");
+  const seconds = String(totalSeconds%60).padStart(2,"0");
+  countdownEl.textContent = `${hours}:${minutes}:${seconds}`;
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+
+
+------------------------------------------------------------
+
+📁 فایل: public/assets/js/teacher-classes.js
+📏 حجم: 11.29 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+/* ===========================================================
+ * teacher-classroom.js (UUID + AJAX Real Data)
+ * برای صفحات کلاس‌های معلم:
+ * 1) create/edit classroom taxonomy chain
+ * 2) index classrooms ajax filters (?ajax=1)
+ * سازگار با TeacherClassController + TeacherExamController data endpoints
+ * =========================================================== */
+
+(function () {
+  /* -------------------- helpers -------------------- */
+  const qs = (sel, root = document) => root.querySelector(sel);
+  const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const csrf = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+
+  async function getJSON(url) {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    });
+    if (!res.ok) throw new Error("Network error");
+    return res.json();
+  }
+
+  function debounce(fn, delay = 350) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  function setOptions(selectEl, items, placeholder = "انتخاب کنید") {
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = placeholder;
+    selectEl.appendChild(opt0);
+
+    items.forEach((it) => {
+      const opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = it.name_fa || it.title_fa || it.name || it.title || it.slug;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function setValueIfExists(selectEl, val) {
+    if (!selectEl || !val) return;
+    const opt = selectEl.querySelector(`option[value="${val}"]`);
+    if (opt) selectEl.value = val;
+  }
+
+  /* -----------------------------------------------------------
+   * 1) CREATE / EDIT CLASSROOM TAXONOMY CHAIN (select inputs)
+   * ----------------------------------------------------------- */
+
+  const form =
+    qs("#teacherClassroomForm") ||
+    qs("#classroomCreateForm") ||
+    qs("form[data-classroom-taxonomy='1']");
+
+  if (form) {
+    // endpoints قابل تنظیم از Blade:
+    // <form ... data-sections-endpoint="..."
+    //             data-grades-endpoint="..."
+    //             ... />
+    const endpoint = {
+      sections:
+        form.dataset.sectionsEndpoint ||
+        "/dashboard/teacher/exams/data/sections",
+      grades:
+        form.dataset.gradesEndpoint ||
+        "/dashboard/teacher/exams/data/grades",
+      branches:
+        form.dataset.branchesEndpoint ||
+        "/dashboard/teacher/exams/data/branches",
+      fields:
+        form.dataset.fieldsEndpoint ||
+        "/dashboard/teacher/exams/data/fields",
+      subfields:
+        form.dataset.subfieldsEndpoint ||
+        "/dashboard/teacher/exams/data/subfields",
+      subjects:
+        form.dataset.subjectsEndpoint ||
+        "/dashboard/teacher/exams/data/subjects"
+    };
+
+    // select ها (نام‌ها رو با id های واقعی Blade هماهنگ کن)
+    const sectionSel = qs('select[name="section_id"]', form) || qs("#sectionId", form);
+    const gradeSel = qs('select[name="grade_id"]', form) || qs("#gradeId", form);
+    const branchSel = qs('select[name="branch_id"]', form) || qs("#branchId", form);
+    const fieldSel = qs('select[name="field_id"]', form) || qs("#fieldId", form);
+    const subfieldSel = qs('select[name="subfield_id"]', form) || qs("#subfieldId", form);
+    const subjectSel = qs('select[name="subject_id"]', form) || qs("#subjectId", form);
+
+    // مقادیر preload برای edit
+    const preload = {
+      section_id: sectionSel?.dataset?.selected || sectionSel?.value || "",
+      grade_id: gradeSel?.dataset?.selected || gradeSel?.value || "",
+      branch_id: branchSel?.dataset?.selected || branchSel?.value || "",
+      field_id: fieldSel?.dataset?.selected || fieldSel?.value || "",
+      subfield_id: subfieldSel?.dataset?.selected || subfieldSel?.value || "",
+      subject_id: subjectSel?.dataset?.selected || subjectSel?.value || ""
+    };
+
+    async function loadSections() {
+      const data = await getJSON(endpoint.sections);
+      setOptions(sectionSel, data.sections || [], "انتخاب مقطع");
+      setValueIfExists(sectionSel, preload.section_id);
+    }
+
+    async function loadGrades(sectionId) {
+      if (!sectionId) {
+        setOptions(gradeSel, [], "انتخاب پایه");
+        return;
+      }
+      const params = new URLSearchParams({ section_id: sectionId });
+      const data = await getJSON(`${endpoint.grades}?${params}`);
+      setOptions(gradeSel, data.grades || [], "انتخاب پایه");
+      setValueIfExists(gradeSel, preload.grade_id);
+    }
+
+    async function loadBranches(sectionId, gradeId) {
+      if (!sectionId || !gradeId) {
+        setOptions(branchSel, [], "انتخاب شاخه");
+        return;
+      }
+      const params = new URLSearchParams({
+        section_id: sectionId,
+        grade_id: gradeId
+      });
+      const data = await getJSON(`${endpoint.branches}?${params}`);
+      setOptions(branchSel, data.branches || [], "انتخاب شاخه");
+      setValueIfExists(branchSel, preload.branch_id);
+    }
+
+    async function loadFields(branchId) {
+      if (!branchId) {
+        setOptions(fieldSel, [], "انتخاب زمینه");
+        return;
+      }
+      const params = new URLSearchParams({ branch_id: branchId });
+      const data = await getJSON(`${endpoint.fields}?${params}`);
+      setOptions(fieldSel, data.fields || [], "انتخاب زمینه");
+      setValueIfExists(fieldSel, preload.field_id);
+    }
+
+    async function loadSubfields(fieldId) {
+      if (!fieldId) {
+        setOptions(subfieldSel, [], "انتخاب زیررشته");
+        return;
+      }
+      const params = new URLSearchParams({ field_id: fieldId });
+      const data = await getJSON(`${endpoint.subfields}?${params}`);
+      setOptions(subfieldSel, data.subfields || [], "انتخاب زیررشته");
+      setValueIfExists(subfieldSel, preload.subfield_id);
+    }
+
+    async function loadSubjects(filters) {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
+
+      const data = await getJSON(`${endpoint.subjects}?${params}`);
+      setOptions(subjectSel, data.subjects || [], "انتخاب درس");
+      setValueIfExists(subjectSel, preload.subject_id);
+    }
+
+    function resetDownstream(from) {
+      if (from <= 1) setOptions(gradeSel, [], "انتخاب پایه");
+      if (from <= 2) setOptions(branchSel, [], "انتخاب شاخه");
+      if (from <= 3) setOptions(fieldSel, [], "انتخاب زمینه");
+      if (from <= 4) setOptions(subfieldSel, [], "انتخاب زیررشته");
+      if (from <= 5) setOptions(subjectSel, [], "انتخاب درس");
+    }
+
+    // listeners
+    sectionSel?.addEventListener("change", async () => {
+      resetDownstream(1);
+      await loadGrades(sectionSel.value);
+    });
+
+    gradeSel?.addEventListener("change", async () => {
+      resetDownstream(2);
+      await loadBranches(sectionSel.value, gradeSel.value);
+    });
+
+    branchSel?.addEventListener("change", async () => {
+      resetDownstream(3);
+      await loadFields(branchSel.value);
+    });
+
+    fieldSel?.addEventListener("change", async () => {
+      resetDownstream(4);
+      await loadSubfields(fieldSel.value);
+    });
+
+    subfieldSel?.addEventListener("change", async () => {
+      resetDownstream(5);
+      await loadSubjects({
+        grade_id: gradeSel.value,
+        branch_id: branchSel.value,
+        field_id: fieldSel.value,
+        subfield_id: subfieldSel.value
+      });
+    });
+
+    // init chain (preload edit-safe)
+    (async function initTaxonomyChain() {
+      try {
+        await loadSections();
+
+        if (preload.section_id) {
+          await loadGrades(preload.section_id);
+        }
+        if (preload.section_id && preload.grade_id) {
+          await loadBranches(preload.section_id, preload.grade_id);
+        }
+        if (preload.branch_id) {
+          await loadFields(preload.branch_id);
+        }
+        if (preload.field_id) {
+          await loadSubfields(preload.field_id);
+        }
+        if (preload.subfield_id) {
+          await loadSubjects({
+            grade_id: preload.grade_id,
+            branch_id: preload.branch_id,
+            field_id: preload.field_id,
+            subfield_id: preload.subfield_id
+          });
+        }
+      } catch (e) {
+        console.error("taxonomy init error", e);
+      }
+    })();
+  }
+
+  /* -----------------------------------------------------------
+   * 2) INDEX CLASSROOMS AJAX FILTERS (?ajax=1)
+   * ----------------------------------------------------------- */
+
+  const listRoot =
+    qs("#classroomsList") ||
+    qs("[data-classrooms-list='1']");
+
+  if (listRoot) {
+    const ajaxEndpoint =
+      listRoot.dataset.ajaxEndpoint ||
+      "/dashboard/teacher/classes?ajax=1";
+
+    const searchInput =
+      qs("#classroomsSearch") ||
+      qs('input[name="q"]');
+
+    const gradeFilter =
+      qs("#filterGrade") ||
+      qs('select[name="grade_id"]');
+
+    const statusFilter =
+      qs("#filterStatus") ||
+      qs('select[name="status"]');
+
+    const sortFilter =
+      qs("#filterSort") ||
+      qs('select[name="sort"]');
+
+    async function fetchAndRender() {
+      try {
+        const params = new URLSearchParams();
+        if (searchInput?.value) params.append("q", searchInput.value.trim());
+        if (gradeFilter?.value) params.append("grade", gradeFilter.value);
+        if (statusFilter?.value) params.append("status", statusFilter.value);
+        if (sortFilter?.value) params.append("sort", sortFilter.value);
+
+        const data = await getJSON(`${ajaxEndpoint}&${params}`);
+
+        const items = data.classrooms || [];
+        renderClassrooms(items);
+      } catch (e) {
+        console.error("classrooms ajax error", e);
+        listRoot.innerHTML = `
+          <div class="alert alert-danger text-center">
+            خطا در دریافت کلاس‌ها
+          </div>
+        `;
+      }
+    }
+
+    function renderClassrooms(items) {
+      if (!items.length) {
+        listRoot.innerHTML = `
+          <div class="text-center p-4 text-muted">
+            کلاسی یافت نشد.
+          </div>
+        `;
+        return;
+      }
+
+      listRoot.innerHTML = "";
+      items.forEach((c) => {
+        const card = document.createElement("div");
+        card.className = "classroom-card";
+        card.innerHTML = `
+          <div class="classroom-card__title">${c.title}</div>
+          <div class="classroom-card__meta">
+            ${c.grade || "-"} / ${c.subject || "-"}
+          </div>
+          <div class="classroom-card__stats">
+            ${c.students_count || 0} هنرجو
+          </div>
+          <div class="classroom-card__actions">
+            <a href="/dashboard/teacher/classes/${c.id}/edit" class="btn btn-sm btn-outline-primary">ویرایش</a>
+            <a href="/dashboard/teacher/classes/${c.id}" class="btn btn-sm btn-outline-secondary">مشاهده</a>
+          </div>
+        `;
+        listRoot.appendChild(card);
+      });
+    }
+
+    const refresh = debounce(fetchAndRender, 300);
+
+    searchInput?.addEventListener("input", refresh);
+    gradeFilter?.addEventListener("change", fetchAndRender);
+    statusFilter?.addEventListener("change", fetchAndRender);
+    sortFilter?.addEventListener("change", fetchAndRender);
+
+    // init
+    fetchAndRender();
+  }
+})();
+
+
+------------------------------------------------------------
+
+📁 فایل: resources/views/landing/index.blade.php
+📏 حجم: 1.31 KB
+🕒 آخرین تغییر: 2025-12-09 14:43:41
+══════════════════════════════════════════════════
+@extends('layouts.guest')
+
+@section('title', 'سامانه هوشمند آموزش | آزمون‌های آنلاین تقویتی، کنکور و المپیاد')
+
+@section('content')
+    @include('shared.navigation')
+
+    @include('partials.landing.hero')
+    @include('partials.landing.features')
+    @include('partials.landing.levels')
+    @include('partials.landing.pricing')
+    @include('partials.landing.screenshots')
+    @include('partials.landing.samples')
+    @include('partials.landing.demo')
+    @include('partials.landing.testimonials')
+    @include('partials.landing.cta')
+    @include('partials.landing.faq')
+    @include('partials.landing.footer')
+
+    @include('shared.auth-modal')
+
+    {{-- فقط اگر سرور گفت نیاز به نقش هست، مودال را باز کن --}}
+    @if (session('need_role'))
+        @push('scripts')
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    const authModalEl = document.getElementById('authModal');
+                    if (!authModalEl || !window.bootstrap) return;
+
+                    const authModal = new bootstrap.Modal(authModalEl);
+                    authModal.show();
+
+                    if (window.showStep) showStep(3);
+                });
+            </script>
+        @endpush
+    @endif
+@endsection
+
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/cat.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/cat.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/demo.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/demo.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/faq.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/faq.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/features.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/features.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/footer.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/footer.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/hero.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/hero.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/levels.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/levels.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/pricing.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/pricing.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/samples.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/samples.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/screenshots.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/screenshots.blade.php]
+
+------------------------------------------------------------
+
+❌ فایل یافت نشد: resources/views/landing/partials/testimonials.blade.php
+══════════════════════════════════════════════════
+[FILE NOT FOUND: resources/views/landing/partials/testimonials.blade.php]
+
+============================================================
+📊 جمع‌بندی نهایی
+============================================================
+✅ فایل‌های یافت شده: 6
+📋 فایل‌های کل: 17
+📈 درصد موفقیت: 35.3%
+🏁 پایان فایل یکپارچه‌سازی
+============================================================

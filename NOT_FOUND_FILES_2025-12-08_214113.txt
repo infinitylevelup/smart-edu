@@ -1,8 +1,0 @@
-# Files Not Found Report
-Generated: 2025-12-08 21:41:13
-Total not found: 1
-
-File: teacher-classroom.js
-Path: public/assets/js/teacher-classroom.js
-Line #8: public/assets/js/teacher-classroom.js
---------------------------------------------------

@@ -200,15 +200,12 @@ class User extends Authenticatable
     // ==========================================================
     // Boot (auto-generate string id)
     // ==========================================================
+
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (empty($user->id)) {
-                // اگر می‌خوای id همون شماره موبایل باشه:
-                // $user->id = $user->phone;
-
-                // در غیر این صورت UUID:
-                $user->id = (string) Str::uuid();
+            if (empty($user->uuid)) {
+                $user->uuid = Str::uuid()->toString();
             }
         });
     }

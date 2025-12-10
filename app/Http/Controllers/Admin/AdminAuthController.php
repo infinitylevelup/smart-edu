@@ -43,7 +43,13 @@ class AdminAuthController extends Controller
         $phone = $this->normalizePhone($request->phone);
 
         $user = User::where('phone', $phone)->first();
-        if (!$user || ($user->status ?? null) !== 'admin') {
+
+        // ✅ نقش از selected_role و وضعیت active
+        if (
+            !$user ||
+            ($user->selected_role ?? null) !== 'admin' ||
+            ($user->status ?? null) !== 'active'
+        ) {
             return response()->json(['message' => 'این شماره ادمین نیست.'], 403);
         }
 
@@ -65,7 +71,13 @@ class AdminAuthController extends Controller
         $phone = $this->normalizePhone($request->phone);
 
         $user = User::where('phone', $phone)->first();
-        if (!$user || ($user->status ?? null) !== 'admin') {
+
+        // ✅ نقش از selected_role و وضعیت active
+        if (
+            !$user ||
+            ($user->selected_role ?? null) !== 'admin' ||
+            ($user->status ?? null) !== 'active'
+        ) {
             return response()->json(['message' => 'این شماره ادمین نیست.'], 403);
         }
 
@@ -77,12 +89,12 @@ class AdminAuthController extends Controller
         $request->session()->regenerate();
         $request->session()->regenerateToken();
 
-        // ✅ 1) نقش admin را بساز یا بگیر
+        // ✅ 1) نقش admin را بساز یا بگیر (بدون دست زدن به id)
         $adminRole = Role::firstOrCreate(
             ['slug' => 'admin'],
             [
-                'id'        => (string) Str::uuid(),
-                'name'      => 'ادمین',
+                'uuid'      => (string) Str::uuid(),
+                'name'      => 'مدیر',
                 'is_active' => true,
             ]
         );

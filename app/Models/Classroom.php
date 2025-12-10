@@ -13,34 +13,35 @@ class Classroom extends Model
 {
     use HasFactory;
 
-    protected $table = 'classrooms';
+    protected $table = "classrooms";
 
-    // ✅ چون PK جدول UUID است
-    public $incrementing = false;
-    protected $keyType = 'string';
+    // ✅ id اینکریمنت است → حالت پیش‌فرض لاراول
 
     protected $fillable = [
-        'id',
-        'teacher_id',
-        'title',
-        'section_id',
-        'grade_id',
-        'branch_id',
-        'field_id',
-        'subfield_id',
-        'subject_type_id',
-        'metadata',
-        'is_active',
-        'classroom_type',
-        'join_code',
-        'description',
+        "uuid",
+        "teacher_id",
+        "title",
+        "description",
+
+        "section_id",
+        "grade_id",
+        "branch_id",
+        "field_id",
+        "subfield_id",
+        "subject_type_id",
+        "subject_id",
+
+        "classroom_type",
+        "join_code",
+        "is_active",
+        "metadata",
     ];
 
     protected $casts = [
-        'is_active'  => 'boolean',
-        'metadata'   => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        "is_active" => "boolean",
+        "metadata"  => "array",
+        "created_at" => "datetime",
+        "updated_at" => "datetime",
     ];
 
     // ==========================================================
@@ -50,7 +51,7 @@ class Classroom extends Model
     /** Teacher who owns the classroom */
     public function teacher(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return $this->belongsTo(User::class, "teacher_id");
     }
 
     /**
@@ -61,16 +62,13 @@ class Classroom extends Model
     {
         return $this->belongsToMany(
             User::class,
-            'classroom_user',
-            'classroom_id',
-            'user_id'
+            "classroom_user",
+            "classroom_id",
+            "user_id"
         );
-        // ✅ no withTimestamps() -> pivot has no timestamps in DB
     }
 
-    /**
-     * Backward-compatible alias (some old code may call members())
-     */
+    /** Backward-compatible alias */
     public function members(): BelongsToMany
     {
         return $this->users();
@@ -78,28 +76,26 @@ class Classroom extends Model
 
     /**
      * Classroom students
-     * Since classroom_user has no role column,
-     * we filter user roles through role_user pivot.
+     * pivot classroom_user has no role column
+     * so we filter through roles relation on User.
      */
     public function students(): BelongsToMany
     {
         return $this->users()
-            ->whereHas('roles', fn ($q) => $q->where('slug', 'student'));
+            ->whereHas("roles", fn ($q) => $q->where("slug", "student"));
     }
 
-    /**
-     * Classroom teachers (future multi-teacher support)
-     */
+    /** Classroom teachers (future multi-teacher support) */
     public function teachers(): BelongsToMany
     {
         return $this->users()
-            ->whereHas('roles', fn ($q) => $q->where('slug', 'teacher'));
+            ->whereHas("roles", fn ($q) => $q->where("slug", "teacher"));
     }
 
     /** Exams belonging to this classroom */
     public function exams(): HasMany
     {
-        return $this->hasMany(Exam::class, 'classroom_id');
+        return $this->hasMany(Exam::class, "classroom_id");
     }
 
     /**
@@ -110,60 +106,74 @@ class Classroom extends Model
     {
         return $this->belongsToMany(
             Subject::class,
-            'classroom_subject',
-            'classroom_id',
-            'subject_id'
+            "classroom_subject",
+            "classroom_id",
+            "subject_id"
         );
-        // ✅ no withTimestamps() -> pivot has no timestamps
     }
 
     // --- Taxonomy relations ---
 
     public function section(): BelongsTo
     {
-        return $this->belongsTo(Section::class, 'section_id');
+        return $this->belongsTo(Section::class, "section_id");
     }
 
     public function grade(): BelongsTo
     {
-        return $this->belongsTo(Grade::class, 'grade_id');
+        return $this->belongsTo(Grade::class, "grade_id");
     }
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(Branch::class, 'branch_id');
+        return $this->belongsTo(Branch::class, "branch_id");
     }
 
     public function field(): BelongsTo
     {
-        return $this->belongsTo(Field::class, 'field_id');
+        return $this->belongsTo(Field::class, "field_id");
     }
 
     public function subfield(): BelongsTo
     {
-        return $this->belongsTo(Subfield::class, 'subfield_id');
+        return $this->belongsTo(Subfield::class, "subfield_id");
     }
 
     public function subjectType(): BelongsTo
     {
-        return $this->belongsTo(SubjectType::class, 'subject_type_id');
+        return $this->belongsTo(SubjectType::class, "subject_type_id");
+    }
+
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class, "subject_id");
     }
 
     // ==========================================================
     // Boot / Mutators
     // ==========================================================
+
     protected static function booted()
     {
         static::creating(function ($classroom) {
 
-            // ✅ ساخت خودکار UUID برای id
-            if (empty($classroom->id)) {
-                $classroom->id = (string) Str::uuid();
+            // ✅ uuid اجباری و unique
+            if (empty($classroom->uuid)) {
+                $classroom->uuid = (string) Str::uuid();
             }
 
+            // ✅ join_code unique
             if (empty($classroom->join_code)) {
-                // join_code is unique in DB
-                $classroom->join_code = strtoupper(str()->random(6));
+                do {
+                    $code = strtoupper(str()->random(6));
+                } while (self::where("join_code", $code)->exists());
+
+                $classroom->join_code = $code;
+            }
+
+            // ✅ اگر نوع کلاس نفرستادی، پیش‌فرض
+            if (empty($classroom->classroom_type)) {
+                $classroom->classroom_type = "single";
             }
         });
     }

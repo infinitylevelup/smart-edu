@@ -10,12 +10,17 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->engine = 'InnoDB';
-            $table->uuid("id")->primary();
+
+            $table->id();
+            $table->uuid('uuid')->unique();
+
             $table->string('name', 150);
             $table->string('email', 190)->nullable();
             $table->string('phone', 30)->nullable();
             $table->string('password', 255);
             $table->string('status', 30);
+            $table->string('selected_role', 30)->nullable(); // منتقل از add_
+
             $table->timestamps();
         });
     }

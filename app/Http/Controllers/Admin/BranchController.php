@@ -13,7 +13,8 @@ class BranchController extends BaseTaxonomyController
     protected ?string $title     = 'شاخه‌ها';
 
     protected array $validation = [
-        'section_id' => 'required|uuid|exists:sections,id',
+        // ✅ section_id الان عددی است نه UUID
+        'section_id' => 'required|integer|exists:sections,id',
         'slug'       => 'required|string|max:100|unique:branches,slug',
         'name_fa'    => 'required|string|max:200',
         'sort_order' => 'nullable|integer|min:0',
