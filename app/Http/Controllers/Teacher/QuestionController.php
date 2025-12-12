@@ -7,201 +7,187 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\Question;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Enums\QuestionType;
 
 class QuestionController extends Controller
 {
-    // لیست سوالات یک آزمون
     public function index(Exam $exam)
     {
+        $this->authorizeTeacherExam($exam);
+
         $exam->load('classroom');
 
-        $questions = $exam->questions()->latest()->get();
-        return view('dashboard.teacher.exams.questions', compact('exam','questions'));
+        $questions = Question::where('exam_id', $exam->id)
+            ->latest()
+            ->get();
+
+        return view('dashboard.teacher.exams.questions.index', compact('exam', 'questions'));
     }
 
-    // فرم ایجاد سوال جدید
     public function create(Exam $exam)
     {
         $this->authorizeTeacherExam($exam);
 
-        return view('dashboard.teacher.exams.questions-create', compact('exam'));
+        $examMode = $this->detectExamMode($exam);
+
+        $subjects = null;
+        if ($examMode === 'multi_subject') {
+            $subjects = $exam->subjects()->get(['id', 'title_fa']);
+        }
+
+        return view('dashboard.teacher.exams.questions.wizard.create', [
+            'exam'     => $exam,
+            'subjects' => $subjects,
+            'examMode' => $examMode,
+        ]);
     }
 
-    public function store(Request $request, Exam $exam)
-    {
-        $this->authorizeTeacherExam($exam);
+    // ✅ store (final)
+public function store(Request $request, Exam $exam)
+{
+    $this->authorizeTeacherExam($exam);
 
-        // ✅ هم question (فرم جدید) هم question_text (legacy)
-        $baseRules = [
-            'type'        => 'required|in:mcq,true_false,fill_blank,essay',
+    $validated = $request->validate([
+        'content'       => 'required|string|max:2000',
+        'question_type' => ['required', Rule::in(\App\Enums\QuestionType::values())],
+        'score'         => 'nullable|numeric|min:0',
+        'explanation'   => 'nullable|string',
+        'is_active'     => 'nullable|boolean',
+        'subject_id'    => 'nullable|integer',
 
-            'question'      => 'required_without:question_text|string|max:2000',
-            'question_text' => 'required_without:question|string|max:2000',
+        'options'        => 'nullable|array',
+        'correct_answer' => 'nullable|array',
+    ]);
 
-            'score'       => 'nullable|integer|min:1|max:100',
-            'explanation' => 'nullable|string|max:2000',
-        ];
+    $type = $validated['question_type'];
 
-        $typeRules = match ($request->type) {
-            'mcq' => [
-                'option_a'       => 'required|string|max:1000',
-                'option_b'       => 'required|string|max:1000',
-                'option_c'       => 'required|string|max:1000',
-                'option_d'       => 'required|string|max:1000',
-                'correct_option' => 'required|in:a,b,c,d',
-            ],
-            'true_false' => [
-                'correct_tf' => 'required|boolean',
-            ],
-            'fill_blank' => [
-                'correct_blanks' => 'required|string|max:2000',
-            ],
-            'essay' => [],
-            default => []
-        };
+    // ❗ correct_answer نباید null باشد
+    $correctAnswer = match ($type) {
+        'mcq' => [
+            'correct_option' => data_get($validated, 'correct_answer.correct_option'),
+        ],
+        'true_false' => [
+            'value' => (bool) data_get($validated, 'correct_answer.value'),
+        ],
+        'fill_blank' => [
+            'values' => array_values(array_filter(
+                data_get($validated, 'correct_answer.values', [])
+            )),
+        ],
+        'essay' => [], // 👈 بسیار مهم
+        default => [],
+    };
 
-        $validated = $request->validate(array_merge($baseRules, $typeRules));
+    Question::create([
+        'exam_id'        => $exam->id,
+        'subject_id'     => $validated['subject_id'] ?? $exam->primary_subject_id,
+        'section_id'     => $exam->section_id,
+        'grade_id'       => $exam->grade_id,
+        'branch_id'      => $exam->branch_id,
+        'field_id'       => $exam->field_id,
+        'subfield_id'    => $exam->subfield_id,
 
-        // ✅ متن سوال را از هر کدام که آمده بگیر
-        $questionText = $validated['question'] ?? $validated['question_text'];
+        'content'        => $validated['content'],
+        'question_type'  => $type,
+        'score'          => $validated['score'] ?? 1,
+        'explanation'    => $validated['explanation'] ?? null,
+        'is_active'      => $request->boolean('is_active', true),
 
-        $payload = [
-            'type'          => $validated['type'],
-            'question_text' => $questionText,   // ✅ ذخیره در ستون واقعی DB
-            'score'         => $validated['score'] ?? 1,
-            'explanation'   => $validated['explanation'] ?? null,
-        ];
+        'options'        => $validated['options'] ?? null,
+        'correct_answer' => $correctAnswer,
+        'difficulty'     => 2,
+    ]);
 
-        // reset multi-type fields
-        $payload['options']        = null;
-        $payload['correct_answer'] = null;
-        $payload['correct_tf']     = null;
+    return redirect()
+        ->route('teacher.exams.questions.index', $exam)
+        ->with('success', 'سوال با موفقیت اضافه شد.');
+}
 
-        // Legacy MCQ
-        if ($validated['type'] === 'mcq') {
-            $payload['option_a']       = $validated['option_a'];
-            $payload['option_b']       = $validated['option_b'];
-            $payload['option_c']       = $validated['option_c'];
-            $payload['option_d']       = $validated['option_d'];
-            $payload['correct_option'] = $validated['correct_option'];
-        }
-
-        if ($validated['type'] === 'true_false') {
-            $payload['correct_tf'] = (bool) $validated['correct_tf'];
-        }
-
-        if ($validated['type'] === 'fill_blank') {
-            $answers = preg_split("/[,\\n]+/", $validated['correct_blanks']);
-            $answers = array_values(array_filter(array_map('trim', $answers)));
-            $payload['correct_answer'] = $answers;
-        }
-
-        $exam->questions()->create($payload);
-
-        return redirect()
-            ->route('teacher.exams.questions.index', $exam)
-            ->with('success', 'سؤال جدید اضافه شد.');
-    }
 
     public function edit(Exam $exam, Question $question)
     {
         $this->authorizeTeacherExam($exam);
 
-        if ($question->exam_id !== $exam->id) {
-            abort(404);
+        if ($question->exam_id !== $exam->id) abort(404);
+
+        $examMode = $this->detectExamMode($exam);
+        $subjects = null;
+
+        if ($examMode === 'multi_subject') {
+            $subjects = $exam->subjects()->get(['id', 'title_fa']);
         }
 
-        return view('dashboard.teacher.exams.question-edit', compact('exam', 'question'));
+        return view('dashboard.teacher.exams.questions.wizard.edit', [
+            'exam'     => $exam,
+            'question' => $question,
+            'subjects' => $subjects,
+            'examMode' => $examMode,
+        ]);
     }
 
-    public function update(Request $request, Exam $exam, Question $question)
-    {
-        $this->authorizeTeacherExam($exam);
+    // ✅ update (final)
+public function update(Request $request, Exam $exam, Question $question)
+{
+    $this->authorizeTeacherExam($exam);
 
-        if ($question->exam_id !== $exam->id) {
-            abort(404);
-        }
-
-        $baseRules = [
-            'type'        => 'required|in:mcq,true_false,fill_blank,essay',
-
-            'question'      => 'required_without:question_text|string|max:2000',
-            'question_text' => 'required_without:question|string|max:2000',
-
-            'score'       => 'nullable|integer|min:1|max:100',
-            'explanation' => 'nullable|string|max:2000',
-        ];
-
-        $typeRules = match ($request->type) {
-            'mcq' => [
-                'option_a'       => 'required|string|max:1000',
-                'option_b'       => 'required|string|max:1000',
-                'option_c'       => 'required|string|max:1000',
-                'option_d'       => 'required|string|max:1000',
-                'correct_option' => 'required|in:a,b,c,d',
-            ],
-            'true_false' => [
-                'correct_tf' => 'required|boolean',
-            ],
-            'fill_blank' => [
-                'correct_blanks' => 'required|string|max:2000',
-            ],
-            'essay' => [],
-            default => []
-        };
-
-        $validated = $request->validate(array_merge($baseRules, $typeRules));
-
-        $questionText = $validated['question'] ?? $validated['question_text'];
-
-        $payload = [
-            'type'          => $validated['type'],
-            'question_text' => $questionText,
-            'score'         => $validated['score'] ?? 1,
-            'explanation'   => $validated['explanation'] ?? null,
-        ];
-
-        // reset fields
-        $payload['options']        = null;
-        $payload['correct_answer'] = null;
-        $payload['correct_tf']     = null;
-
-        // legacy MCQ reset
-        $payload['option_a'] = $payload['option_b'] = $payload['option_c'] = $payload['option_d'] = null;
-        $payload['correct_option'] = null;
-
-        if ($validated['type'] === 'mcq') {
-            $payload['option_a']       = $validated['option_a'];
-            $payload['option_b']       = $validated['option_b'];
-            $payload['option_c']       = $validated['option_c'];
-            $payload['option_d']       = $validated['option_d'];
-            $payload['correct_option'] = $validated['correct_option'];
-        }
-
-        if ($validated['type'] === 'true_false') {
-            $payload['correct_tf'] = (bool) $validated['correct_tf'];
-        }
-
-        if ($validated['type'] === 'fill_blank') {
-            $answers = preg_split("/[,\\n]+/", $validated['correct_blanks']);
-            $answers = array_values(array_filter(array_map('trim', $answers)));
-            $payload['correct_answer'] = $answers;
-        }
-
-        $question->update($payload);
-
-        return redirect()
-            ->route('teacher.exams.questions.index', $exam)
-            ->with('success', 'سؤال با موفقیت ویرایش شد.');
+    if ($question->exam_id !== $exam->id) {
+        abort(404);
     }
+
+    $validated = $request->validate([
+        'content'       => 'required|string|max:2000',
+        'question_type' => ['required', Rule::in(\App\Enums\QuestionType::values())],
+        'score'         => 'nullable|numeric|min:0',
+        'explanation'   => 'nullable|string',
+        'is_active'     => 'nullable|boolean',
+        'subject_id'    => 'nullable|integer',
+
+        'options'        => 'nullable|array',
+        'correct_answer' => 'nullable|array',
+    ]);
+
+    $type = $validated['question_type'];
+
+    $correctAnswer = match ($type) {
+        'mcq' => [
+            'correct_option' => data_get($validated, 'correct_answer.correct_option'),
+        ],
+        'true_false' => [
+            'value' => (bool) data_get($validated, 'correct_answer.value'),
+        ],
+        'fill_blank' => [
+            'values' => array_values(array_filter(
+                data_get($validated, 'correct_answer.values', [])
+            )),
+        ],
+        'essay' => [],
+        default => [],
+    };
+
+    $question->update([
+        'subject_id'     => $validated['subject_id'] ?? $question->subject_id,
+        'content'        => $validated['content'],
+        'question_type'  => $type,
+        'score'          => $validated['score'] ?? 1,
+        'explanation'    => $validated['explanation'] ?? null,
+        'is_active'      => $request->boolean('is_active', true),
+        'options'        => $validated['options'] ?? null,
+        'correct_answer' => $correctAnswer,
+        'difficulty'     => 2,
+    ]);
+
+    return redirect()
+        ->route('teacher.exams.questions.index', $exam)
+        ->with('success', 'سوال با موفقیت ویرایش شد.');
+}
+
 
     public function destroy(Exam $exam, Question $question)
     {
         $this->authorizeTeacherExam($exam);
 
-        if ($question->exam_id !== $exam->id) {
-            abort(404);
-        }
+        if ($question->exam_id !== $exam->id) abort(404);
 
         $question->delete();
 
@@ -210,23 +196,33 @@ class QuestionController extends Controller
             ->with('success', 'سؤال حذف شد.');
     }
 
+    private function detectExamMode(Exam $exam): string
+    {
+        if (!empty($exam->exam_mode)) return $exam->exam_mode;
+
+        if ($exam->exam_type === 'class_comprehensive') return 'multi_subject';
+
+        return 'single_subject';
+    }
+
     private function authorizeTeacherExam(Exam $exam): void
     {
-        if ($exam->scope === 'free') {
-            abort_unless(
-                $exam->teacher_id === Auth::id(),
-                403,
-                'شما اجازه مدیریت سوالات این آزمون را ندارید.'
-            );
-            return;
-        }
+        $teacherId = Auth::id();
 
         $exam->loadMissing('classroom');
 
-        abort_unless(
-            $exam->classroom && $exam->classroom->teacher_id === Auth::id(),
-            403,
-            'شما اجازه مدیریت سوالات این آزمون را ندارید.'
-        );
+        if (is_null($exam->classroom_id)) {
+            abort_unless(
+                $exam->teacher_id === $teacherId,
+                403,
+                'شما اجازه مدیریت سوالات این آزمون را ندارید.'
+            );
+        } else {
+            abort_unless(
+                $exam->classroom && $exam->classroom->teacher_id === $teacherId,
+                403,
+                'شما اجازه مدیریت سوالات این آزمون را ندارید.'
+            );
+        }
     }
 }

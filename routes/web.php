@@ -34,3 +34,5 @@ require __DIR__.'/counselor.php';
 Route::fallback(function () {
     return redirect()->route('landing');
 });
+// Diagnosis Routes
+require __DIR__ . '/diagnosis.php';

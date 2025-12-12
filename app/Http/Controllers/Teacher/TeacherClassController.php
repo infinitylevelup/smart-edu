@@ -16,7 +16,6 @@ use App\Models\Subject;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class TeacherClassController extends Controller
 {
@@ -37,8 +36,6 @@ class TeacherClassController extends Controller
                        ->orWhere('join_code', 'like', "%$q%");
                 });
             })
-            // اگر هنوز برای فیلتر از grade متنی استفاده می‌کنی،
-            // این خط را با grade_id یا relation جایگزین کن.
             ->when($grade && $grade !== 'all', fn($query)=>$query->where('grade_id', $grade))
             ->when($status && $status !== 'all', function($query) use ($status){
                 $query->where('is_active', $status === 'active');
@@ -252,75 +249,76 @@ class TeacherClassController extends Controller
     }
 
     // ==========================================================
-    // AJAX Taxonomy endpoints
+    // AJAX Taxonomy endpoints (FIXED for new DB)
     // ==========================================================
 
     public function sections()
     {
         return response()->json(
-            Section::select("id","name")->orderBy("name")->get()
+            Section::where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa'])
         );
     }
 
     public function grades(Section $section)
     {
         return response()->json(
-            Grade::where("section_id", $section->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            Grade::where('section_id', $section->id)
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa','value'])
         );
     }
 
     public function branches(Grade $grade)
     {
+        // اگر branches به section وصل است و grade_id ندارد، این متد را اصلاح کن
         return response()->json(
-            Branch::where("grade_id", $grade->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            Branch::where('section_id', $grade->section_id)   // ✅ سازگار با ساختار جدید تو
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa'])
         );
     }
 
     public function fields(Branch $branch)
     {
         return response()->json(
-            Field::where("branch_id", $branch->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            Field::where('branch_id', $branch->id)
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa'])
         );
     }
 
     public function subfields(Field $field)
     {
         return response()->json(
-            Subfield::where("field_id", $field->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            Subfield::where('field_id', $field->id)
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa'])
         );
     }
 
-    // اگر FK شما برای subject_types چیز دیگری است، فقط همین where را عوض کن
     public function subjectTypes(Field $field)
     {
+        // چون subject_types FK به field ندارد، همه فعال‌ها را بده
         return response()->json(
-            SubjectType::where("field_id", $field->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            SubjectType::where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','name_fa'])
         );
     }
 
-    // اگر FK شما برای subjects چیز دیگری است، فقط همین where را عوض کن
     public function subjects(SubjectType $subjectType)
     {
         return response()->json(
-            Subject::where("subject_type_id", $subjectType->id)
-                ->select("id","name")
-                ->orderBy("name")
-                ->get()
+            Subject::where('subject_type_id', $subjectType->id)
+                ->where('is_active', 1)
+                ->orderBy('sort_order')
+                ->get(['id','title_fa'])
         );
     }
 }

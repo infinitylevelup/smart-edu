@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Teacher/TeacherExamController.php
 
 namespace App\Http\Controllers\Teacher;
 
@@ -21,6 +22,7 @@ class TeacherExamController extends Controller
     // ==========================================================
     // Exams CRUD
     // ==========================================================
+
     public function index()
     {
         $teacherId = Auth::id();
@@ -41,117 +43,87 @@ class TeacherExamController extends Controller
 
     public function store(Request $request)
     {
-        $teacherId = Auth::id();
-
-        // اول exam_type را بگیر تا ولیدیشن شرطی کنیم
-        $examType = $request->input('exam_type');
-
-        $rules = [
+        $validated = $request->validate([
+            'exam_type'        => 'required|string',
             'title'            => 'required|string|max:255',
             'description'      => 'nullable|string',
-            'duration'         => 'required|integer|min:15|max:300',  // دقیقه
-            'exam_type'        => 'required|in:public,class_single,class_comprehensive',
+            'duration'         => 'required|integer|min:5|max:300',
+            'classroom_id'     => 'nullable|exists:classrooms,id',
 
-            'classroom_id'     => 'nullable|uuid|exists:classrooms,id',
+            // Taxonomy
+            'section_id'       => 'required|integer',
+            'grade_id'         => 'required|integer',
+            'branch_id'        => 'required|integer',
+            'field_id'         => 'required|integer',
+            'subfield_id'      => 'required|integer',
+            'subject_type_id'  => 'required|integer',
 
-            // taxonomy ها در آزمون عمومی اجباری‌اند
-            'section_id'       => 'nullable|uuid|exists:sections,id',
-            'grade_id'         => 'nullable|uuid|exists:grades,id',
-            'branch_id'        => 'nullable|uuid|exists:branches,id',
-            'field_id'         => 'nullable|uuid|exists:fields,id',
-            'subfield_id'      => 'nullable|uuid|exists:subfields,id',
-            'subject_type_id'  => 'nullable|uuid|exists:subject_types,id',
-
-            // از فرانت میاد: JSON array یا comma list
-            'subjects'         => 'required|string',
-            'is_active'        => 'nullable|boolean',
-        ];
-
-        // اگر عمومی است taxonomy باید حتماً پر باشد
-        if ($examType === 'public') {
-            $rules['section_id'] = 'required|uuid|exists:sections,id';
-            $rules['grade_id']   = 'required|uuid|exists:grades,id';
-            $rules['branch_id']  = 'required|uuid|exists:branches,id';
-            $rules['field_id']   = 'required|uuid|exists:fields,id';
-            // بقیه می‌تواند نال باشد
-        }
-
-        // اگر آزمون کلاسی است classroom_id اجباری
-        if (in_array($examType, ['class_single', 'class_comprehensive'])) {
-            $rules['classroom_id'] = 'required|uuid|exists:classrooms,id';
-        }
-
-        $data = $request->validate($rules);
-
-        // ---------- مالکیت کلاس در آزمون کلاسی ----------
-        $class = null;
-        if (!empty($data['classroom_id'])) {
-            $class = Classroom::findOrFail($data['classroom_id']);
-            abort_unless($class->teacher_id === $teacherId, 403);
-        }
-
-        // ---------- نرمال‌سازی subjects ----------
-        // فرانت جدید JSON می‌فرسته، ولی اگر قدیمی بود و comma بود تبدیلش کن
-        $subjectsRaw = trim($data['subjects']);
-
-        if (Str::startsWith($subjectsRaw, '[')) {
-            // JSON
-            $subjectsArr = json_decode($subjectsRaw, true) ?: [];
-        } else {
-            // comma list
-            $subjectsArr = array_values(array_filter(array_map('trim', explode(',', $subjectsRaw))));
-        }
-
-        // قوانین تعداد درس:
-        if ($examType === 'public' || $examType === 'class_single') {
-            if (count($subjectsArr) !== 1) {
-                return back()->withErrors([
-                    'subjects' => 'در این نوع آزمون فقط یک درس باید انتخاب شود.'
-                ])->withInput();
-            }
-        }
-
-        // ---------- اگر آزمون کلاسی است و taxonomy نیامده از کلاس بگیر ----------
-        if ($class) {
-            $data['section_id']      = $data['section_id']      ?: $class->section_id;
-            $data['grade_id']        = $data['grade_id']        ?: $class->grade_id;
-            $data['branch_id']       = $data['branch_id']       ?: $class->branch_id;
-            $data['field_id']        = $data['field_id']        ?: $class->field_id;
-            $data['subfield_id']     = $data['subfield_id']     ?: $class->subfield_id;
-            // subject_type برای کلاس جامع/تک درس میتونه نال بمونه
-            // subjects هم اگر خالی بود از کلاس بگیر (تک درس)
-            if (empty($subjectsArr) && $class->subject_id) {
-                $subjectsArr = [$class->subject_id];
-            }
-        }
-
-        // ذخیره subjects به صورت JSON
-        $subjectsJson = json_encode($subjectsArr, JSON_UNESCAPED_UNICODE);
-
-        $exam = Exam::create([
-            'id'              => (string) Str::uuid(),
-            'teacher_id'      => $teacherId,
-            'classroom_id'    => $data['classroom_id'] ?? null,
-            'title'           => $data['title'],
-            'description'     => $data['description'] ?? null,
-            'duration'        => $data['duration'],
-            'exam_type'       => $data['exam_type'],
-
-            'section_id'      => $data['section_id'] ?? null,
-            'grade_id'        => $data['grade_id'] ?? null,
-            'branch_id'       => $data['branch_id'] ?? null,
-            'field_id'        => $data['field_id'] ?? null,
-            'subfield_id'     => $data['subfield_id'] ?? null,
-            'subject_type_id' => $data['subject_type_id'] ?? null,
-
-            'subjects'        => $subjectsJson,
-            'is_active'       => (bool)($data['is_active'] ?? true),
+            // Step7
+            'subjects'         => 'required|string',  // JSON string
         ]);
 
+        // ---------------------------
+        // 1) استخراج subjects
+        // ---------------------------
+        $subjects = json_decode($validated['subjects'], true) ?? [];
+
+        if (!is_array($subjects) || count($subjects) === 0) {
+            return back()->withErrors(['subjects' => 'حداقل یک درس باید انتخاب شود.'])->withInput();
+        }
+
+        // ---------------------------
+        // 2) تعیین exam_mode
+        // ---------------------------
+        $examMode = $this->detectExamMode($validated['exam_type']);
+
+        // ---------------------------
+        // 3) تعیین درس اصلی در حالت تک‌درس
+        // ---------------------------
+        $primarySubjectId = ($examMode === 'single_subject')
+            ? $subjects[0]
+            : null;
+
+        // ---------------------------
+        // 4) ساخت رکورد exam
+        // ---------------------------
+        $exam = Exam::create([
+            'user_id'          => auth()->id(),
+            'teacher_id'       => auth()->id(),
+            'classroom_id'     => $validated['classroom_id'] ?? null,
+
+            'exam_type'        => $validated['exam_type'],
+            'exam_mode'        => $examMode,
+            'primary_subject_id' => $primarySubjectId,
+
+            'title'            => $validated['title'],
+            'description'      => $validated['description'] ?? null,
+            'duration_minutes' => $validated['duration'],
+
+            'section_id'       => $validated['section_id'],
+            'grade_id'         => $validated['grade_id'],
+            'branch_id'        => $validated['branch_id'],
+            'field_id'         => $validated['field_id'],
+            'subfield_id'      => $validated['subfield_id'],
+            'subject_type_id'  => $validated['subject_type_id'],
+
+            'is_active'        => $request->boolean('is_active', true),
+        ]);
+
+        // ---------------------------
+        // 5) اتصال subjects به pivot
+        // ---------------------------
+        if ($examMode === 'multi_subject') {
+            $exam->subjects()->sync($subjects);
+        } else {
+            // single_subject → فقط 1 درس
+            $exam->subjects()->sync([$primarySubjectId]);
+        }
+
         return redirect()
-            ->route('teacher.exams.show', $exam->id)
+            ->route('teacher.exams.index')
             ->with('success', 'آزمون با موفقیت ایجاد شد.');
     }
+
 
     public function show(Exam $exam)
     {
@@ -162,29 +134,60 @@ class TeacherExamController extends Controller
     public function edit(Exam $exam)
     {
         abort_unless($exam->teacher_id === Auth::id(), 403);
-        return view('dashboard.teacher.exams.edit', compact('exam'));
+
+        // کلاس‌های همین معلم برای دراپ‌دان
+        $classrooms = Classroom::query()
+            ->where('teacher_id', Auth::id())
+            ->orderBy('title')
+            ->get();
+
+        // لیست دروس برای دراپ‌دان ساده
+        $subjects = Subject::where('is_active', 1)
+            ->orderBy('title_fa')
+            ->pluck('title_fa')
+            ->toArray();
+
+        return view('dashboard.teacher.exams.edit', compact('exam', 'classrooms', 'subjects'));
     }
 
     public function update(Request $request, Exam $exam)
     {
-        abort_unless($exam->teacher_id === Auth::id(), 403);
+        $validated = $request->validate([
+            'title'            => 'required|string|max:255',
+            'description'      => 'nullable|string',
+            'duration'         => 'required|integer|min:5|max:300',
 
-        $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'duration'    => 'required|integer|min:15|max:300',
-            'is_active'   => 'nullable|boolean',
+            // Wizard در Edit نداریم → اما برای سازگاری ذخیره می‌کنیم
+            'scope'            => 'required|string|in:free,classroom',
+            'classroom_id'     => 'nullable|exists:classrooms,id',
+            'subject'          => 'nullable|string',
+            'level'            => 'nullable|string',
         ]);
 
+        // ---------------------------
+        // 1) update پایه
+        // ---------------------------
         $exam->update([
-            'title'       => $data['title'],
-            'description' => $data['description'] ?? null,
-            'duration'    => $data['duration'],
-            'is_active'   => (bool)($data['is_active'] ?? true),
+            'title'            => $validated['title'],
+            'description'      => $validated['description'] ?? null,
+            'duration_minutes' => $validated['duration'],
+
+            'scope'            => $validated['scope'],
+            'classroom_id'     => $validated['scope'] === 'classroom'
+                                    ? $validated['classroom_id']
+                                    : null,
+
+            'subject'          => $validated['subject'],
+            'level'            => $validated['level'],
+
+            'is_published'     => $request->boolean('is_published', false),
         ]);
 
-        return back()->with('success', 'آزمون بروزرسانی شد.');
+        return redirect()
+            ->route('teacher.exams.index')
+            ->with('success', 'آزمون با موفقیت بروزرسانی شد.');
     }
+
 
     public function destroy(Exam $exam)
     {
@@ -208,7 +211,10 @@ class TeacherExamController extends Controller
 
     public function grades(Request $request)
     {
+        $sectionId = $request->get('section_id');
+
         $grades = Grade::where('is_active', 1)
+            ->when($sectionId, fn($q)=>$q->where('section_id',$sectionId))
             ->orderBy('sort_order')
             ->get(['id','name_fa','slug','section_id']);
 
@@ -217,11 +223,12 @@ class TeacherExamController extends Controller
 
     public function branches(Request $request)
     {
-        $gradeId = $request->get('grade_id');
+        $sectionId = $request->get('section_id');
+
         $branches = Branch::where('is_active', 1)
-            ->when($gradeId, fn($q)=>$q->where('grade_id',$gradeId))
+            ->when($sectionId, fn($q)=>$q->where('section_id',$sectionId))
             ->orderBy('sort_order')
-            ->get(['id','name_fa','slug','grade_id']);
+            ->get(['id','name_fa','slug','section_id']);
 
         return response()->json(['branches' => $branches]);
     }
@@ -229,6 +236,7 @@ class TeacherExamController extends Controller
     public function fields(Request $request)
     {
         $branchId = $request->get('branch_id');
+
         $fields = Field::where('is_active', 1)
             ->when($branchId, fn($q)=>$q->where('branch_id',$branchId))
             ->orderBy('sort_order')
@@ -240,6 +248,7 @@ class TeacherExamController extends Controller
     public function subfields(Request $request)
     {
         $fieldId = $request->get('field_id');
+
         $subfields = Subfield::where('is_active', 1)
             ->when($fieldId, fn($q)=>$q->where('field_id',$fieldId))
             ->orderBy('sort_order')
@@ -248,30 +257,82 @@ class TeacherExamController extends Controller
         return response()->json(['subfields' => $subfields]);
     }
 
-    public function subjectTypes(Request $request)
-    {
-        $subfieldId = $request->get('subfield_id');
-        $subjectTypes = SubjectType::where('is_active', 1)
-            ->when($subfieldId, fn($q)=>$q->where('subfield_id',$subfieldId))
-            ->orderBy('sort_order')
-            ->get(['id','name_fa','slug','subfield_id']);
-
-        return response()->json(['subjectTypes' => $subjectTypes]);
-    }
-
     public function subjects(Request $request)
     {
-        $subjectTypeId = $request->get('subject_type_id');
-        $fieldId = $request->get('field_id');
-        $subfieldId = $request->get('subfield_id');
+        $q = Subject::query()->where('is_active', 1);
 
-        $subjects = Subject::where('is_active', 1)
-            ->when($subjectTypeId, fn($q)=>$q->where('subject_type_id',$subjectTypeId))
-            ->when($subfieldId, fn($q)=>$q->where('subfield_id',$subfieldId))
-            ->when($fieldId, fn($q)=>$q->where('field_id',$fieldId))
-            ->orderBy('sort_order')
-            ->get(['id','name_fa','slug','subject_type_id','field_id','subfield_id']);
+        $resolveId = function(string $modelClass, $val) {
+            if (!$val) return null;
 
-        return response()->json(['subjects' => $subjects]);
+            if (\Illuminate\Support\Str::isUuid($val)) {
+                $row = $modelClass::where('uuid', $val)->first();
+                return $row?->id;
+            }
+
+            return $val;
+        };
+
+        $gradeId    = $resolveId(Grade::class, $request->grade_id);
+        $branchId   = $resolveId(Branch::class, $request->branch_id);
+        $fieldId    = $resolveId(Field::class, $request->field_id);
+        $subfieldId = $resolveId(Subfield::class, $request->subfield_id);
+
+        if ($gradeId)    $q->where('grade_id', $gradeId);
+        if ($branchId)   $q->where('branch_id', $branchId);
+        if ($fieldId)    $q->where('field_id', $fieldId);
+        if ($subfieldId) $q->where('subfield_id', $subfieldId);
+
+        $typeId = $resolveId(SubjectType::class, $request->subject_type_id);
+        if ($typeId) $q->where('subject_type_id', $typeId);
+
+        return response()->json([
+            'subjects' => $q->get([
+                'uuid as id',
+                'title_fa',
+                'slug',
+                'code',
+                'hours',
+            ]),
+        ]);
+    }
+
+    public function subjectTypes(Request $request)
+    {
+        try {
+            $q = SubjectType::query()->where('is_active', 1);
+
+            if ($request->filled('grade_id') && \Schema::hasColumn('subject_types', 'grade_id')) {
+                $q->where('grade_id', $request->grade_id);
+            }
+            if ($request->filled('branch_id') && \Schema::hasColumn('subject_types', 'branch_id')) {
+                $q->where('branch_id', $request->branch_id);
+            }
+            if ($request->filled('field_id') && \Schema::hasColumn('subject_types', 'field_id')) {
+                $q->where('field_id', $request->field_id);
+            }
+            if ($request->filled('subfield_id') && \Schema::hasColumn('subject_types', 'subfield_id')) {
+                $q->where('subfield_id', $request->subfield_id);
+            }
+
+            $types = $q->orderBy('sort_order')->get([
+                'uuid as id',
+                'slug',
+                'name_fa',
+            ]);
+
+            return response()->json([
+                'subject_types' => $types,
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('subjectTypes error: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'subject_types' => [],
+                'message' => 'Server error in subjectTypes'
+            ], 500);
+        }
     }
 }

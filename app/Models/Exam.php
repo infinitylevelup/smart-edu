@@ -1,4 +1,5 @@
 <?php
+// app/Models/Exam.php
 
 namespace App\Models;
 
@@ -15,15 +16,20 @@ class Exam extends Model
 
     protected $table = 'exams';
 
-    // ✅ UUID PK
-    public $incrementing = false;
-    protected $keyType = 'string';
+    // id اینکریمنت است (INT) → تنظیم پیش‌فرض لاراول کافی است
 
     protected $fillable = [
+        'user_id',
         'teacher_id',
         'classroom_id',
 
         'exam_type',
+
+        // برای فرم ساده ویرایش
+        'scope',       // classroom / free
+        'subject',     // برچسب نمایشی درس (مثلاً عنوان فارسی)
+        'level',       // taghviyati / konkur / olympiad
+
         'title',
         'description',
         'duration_minutes',
@@ -48,6 +54,8 @@ class Exam extends Model
 
         'is_active',
         'is_published',
+
+        'uuid',
     ];
 
     protected $casts = [
@@ -69,26 +77,23 @@ class Exam extends Model
         'updated_at'        => 'datetime',
     ];
 
-    // ==========================================================
-    // Relationships
-    // ==========================================================
+    // ================== روابط ==================
 
-    /** معلم سازنده آزمون */
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    /** کلاس مربوط به آزمون (اختیاری) */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class, 'classroom_id');
     }
 
-    /**
-     * سوالات آزمون
-     * pivot: exam_questions(exam_id, question_id, sort_order)
-     */
     public function questions(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -99,19 +104,11 @@ class Exam extends Model
         )->withPivot('sort_order');
     }
 
-    /**
-     * شرکت‌کننده‌ها / تلاش‌ها
-     * جدول: exam_attempts
-     */
     public function attempts(): HasMany
     {
         return $this->hasMany(ExamAttempt::class, 'exam_id');
     }
 
-    /**
-     * دروس آزمون (اگر آزمون چنددرس باشد)
-     * pivot: exam_subject(exam_id, subject_id, question_count)
-     */
     public function subjects(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -122,7 +119,6 @@ class Exam extends Model
         )->withPivot('question_count');
     }
 
-    // --- دسته‌بندی‌های سطحی (همه اختیاری) ---
     public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class, 'section_id');
@@ -153,29 +149,27 @@ class Exam extends Model
         return $this->belongsTo(SubjectType::class, 'subject_type_id');
     }
 
-    /** اگر آزمون AI داشته باشد */
     public function aiSession(): BelongsTo
     {
         return $this->belongsTo(AiSession::class, 'ai_session_id');
     }
 
-    // ==========================================================
-    // Route Model Binding (UUID)
-    // ==========================================================
     public function getRouteKeyName()
     {
         return 'id';
     }
 
-    // ==========================================================
-    // Boot UUID
-    // ==========================================================
+    // ================== UUID ==================
+
     protected static function booted()
     {
         static::creating(function ($exam) {
-            if (empty($exam->id)) {
-                $exam->id = (string) Str::uuid();
+            if (empty($exam->uuid)) {
+                $exam->uuid = (string) Str::uuid();
             }
         });
     }
+
+
+
 }

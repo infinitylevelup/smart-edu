@@ -1,661 +1,715 @@
 @extends('layouts.app')
-@section('title', 'ساخت آزمون جدید - فنی و حرفه‌ای')
+@section('title', 'ساخت آزمون جدید - SmartEdu')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/exam-wizard.css') }}">
+<style>
+    /* تم فیروزه‌ای - آبی دریایی */
+    :root {
+        --primary: #00CED1;
+        --primary-light: rgba(0, 206, 209, 0.1);
+        --primary-gradient: linear-gradient(135deg, #00CED1, #20B2AA);
+        --secondary: #4682B4;
+        --secondary-light: rgba(70, 130, 180, 0.1);
+        --accent: #48D1CC;
+        --accent-light: rgba(72, 209, 204, 0.1);
+        --success: #32CD32;
+        --success-light: rgba(50, 205, 50, 0.1);
+        --warning: #FFA500;
+        --warning-light: rgba(255, 165, 0, 0.1);
+        --light: #ffffff;
+        --dark: #2F4F4F;
+        --dark-light: #4A6F6F;
+        --gray: #708090;
+        --light-gray: #F0F8FF;
+        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.16);
+        --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+        --radius-xl: 24px;
+        --radius-lg: 20px;
+        --radius-md: 16px;
+        --radius-sm: 12px;
+    }
+
+    * { font-family: 'Vazirmatn', sans-serif; }
+
+    body {
+        background-color: #f8fcfc;
+        color: var(--dark);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .create-exam-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px 15px 80px;
+        animation: fadeIn 0.6s ease both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInLeft {
+        from { transform: translateX(-30px); opacity: 0; }
+        to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
+
+    /* HEADER */
+    .page-header {
+        background: linear-gradient(135deg, rgba(0, 206, 209, 0.1), rgba(70, 130, 180, 0.1));
+        border-radius: var(--radius-xl);
+        padding: 25px 30px;
+        margin-bottom: 30px;
+        border: 2px solid rgba(0, 206, 209, 0.15);
+        position: relative;
+        overflow: hidden;
+        animation: slideInLeft 0.5s ease-out;
+    }
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(0, 206, 209, 0.08), transparent 70%);
+        border-radius: 50%;
+    }
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        position: relative;
+        z-index: 2;
+    }
+    .header-title h1 {
+        font-weight: 900;
+        font-size: 1.8rem;
+        color: var(--dark);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .header-title h1::before {
+        content: '';
+        width: 8px;
+        height: 40px;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+    }
+    .header-subtitle {
+        color: var(--gray);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        max-width: 600px;
+    }
+    .btn-back {
+        padding: 12px 24px;
+        border-radius: var(--radius-lg);
+        font-weight: 800;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: transparent;
+        color: var(--dark);
+        border: 2px solid var(--gray);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn-back:hover {
+        background: var(--light-gray);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* PROGRESS */
+    .progress-container { margin-bottom: 35px; animation: slideUp 0.5s ease-out; }
+    .progress-bar {
+        height: 8px;
+        background: var(--light-gray);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+    .progress-fill {
+        height: 100%;
+        background: var(--primary-gradient);
+        border-radius: 4px;
+        width: 12.5%;
+        transition: width 0.6s ease;
+    }
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 8px;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .step-item { text-align: center; flex: 1; min-width: 105px; }
+    .step-number {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: var(--light);
+        border: 2px solid var(--light-gray);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 900; color: var(--gray);
+        margin: 0 auto 6px;
+        transition: all 0.3s;
+        font-size: .9rem;
+    }
+    .step-item.active .step-number {
+        background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.08);
+    }
+    .step-item.completed .step-number {
+        background: var(--success); color: white; border-color: var(--success);
+    }
+    .step-name {
+        font-size: 0.82rem; font-weight: 800; color: var(--gray);
+        transition: all .3s;
+    }
+    .step-item.active .step-name { color: var(--primary); font-weight: 900; }
+
+    /* FORM CONTAINER */
+    .form-container {
+        background: var(--light);
+        border-radius: var(--radius-xl);
+        padding: 36px;
+        box-shadow: var(--shadow-lg);
+        border: 2px solid rgba(0, 206, 209, 0.08);
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    .form-section { display: none; animation: fadeIn .35s ease; }
+    .form-section.active { display: block; }
+
+    .section-header { margin-bottom: 25px; text-align: center; }
+    .section-icon { font-size: 2.6rem; margin-bottom: 10px; color: var(--primary); }
+    .section-title { font-weight: 900; font-size: 1.45rem; color: var(--dark); margin-bottom: 8px; }
+    .section-description {
+        color: var(--gray); font-size: 1.02rem; line-height: 1.7;
+        max-width: 700px; margin: 0 auto;
+    }
+
+    /* SELECTION GRID (reusable cards) */
+    .selection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+    }
+    @media (max-width: 768px) {
+        .selection-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+        .selection-grid { grid-template-columns: 1fr; }
+    }
+    .selection-card {
+        border: 3px solid var(--light-gray);
+        border-radius: var(--radius-lg);
+        padding: 18px 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        background: var(--light);
+        position: relative;
+        overflow: hidden;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+    }
+    .selection-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(0,206,209,.35); }
+    .selection-card.selected {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, rgba(0, 206, 209, 0.06), rgba(70, 130, 180, 0.06));
+        box-shadow: var(--shadow-md);
+    }
+    .selection-icon { font-size: 2rem; }
+    .selection-name { font-weight: 900; font-size: 1.05rem; color: var(--dark); }
+    .selection-description { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin: 0; }
+
+    /* EXAM TYPE cards (step1) */
+    .exam-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 768px) { .exam-type-grid { grid-template-columns: 1fr; } }
+    .type-card {
+        border: 3px solid var(--light-gray);
+        border-radius: var(--radius-lg);
+        padding: 22px 18px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        background: var(--light);
+        position: relative;
+        overflow: hidden;
+        min-height: 175px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+    }
+    .type-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .type-card.selected {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, rgba(0, 206, 209, 0.05), rgba(70, 130, 180, 0.05));
+        box-shadow: var(--shadow-md);
+    }
+    .type-icon { font-size: 2.2rem; color: var(--primary); }
+    .type-title { font-weight: 900; font-size: 1.1rem; color: var(--dark); }
+    .type-description { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin:0; }
+    .type-badge {
+        position: absolute; top: 10px; left: 10px;
+        background: var(--primary); color: #fff;
+        padding: 4px 12px; border-radius: 999px;
+        font-size: .75rem; font-weight: 900;
+    }
+
+    /* SUBJECTS LIST (step7) */
+    .subjects-wrap { margin-top: 8px; }
+    .subject-item {
+        display: flex; align-items: center; gap: 12px;
+        background: var(--light);
+        border: 2px solid var(--light-gray);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        transition: all .2s ease;
+    }
+    .subject-item:hover { border-color: rgba(0,206,209,.35); box-shadow: var(--shadow-sm); }
+    .subject-checkbox input { width: 18px; height: 18px; cursor: pointer; }
+    .subject-info { flex:1; text-align:right; }
+    .subject-name { font-weight: 900; font-size: 1rem; margin-bottom: 4px; }
+    .subject-meta { color: var(--gray); font-size: .85rem; display:flex; gap:10px; flex-wrap:wrap; }
+    .subject-code { background: var(--light-gray); padding:2px 8px; border-radius: 6px; }
+
+    /* PREVIEW (step8) */
+    .preview-section {
+        background: linear-gradient(135deg, rgba(0, 206, 209, 0.05), rgba(70, 130, 180, 0.05));
+        border-radius: var(--radius-xl);
+        padding: 22px;
+        margin-bottom: 25px;
+        border: 2px solid var(--primary-light);
+    }
+    .preview-title {
+        font-weight: 900; color: var(--dark);
+        margin-bottom: 14px; display:flex; align-items:center; gap:8px;
+        font-size: 1.15rem;
+    }
+    .preview-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;
+    }
+    .preview-item {
+        background: var(--light); border-radius: var(--radius-md); padding: 12px;
+        border: 2px solid var(--light-gray);
+    }
+    .preview-label { font-size: .85rem; color: var(--gray); font-weight: 700; margin-bottom: 4px; }
+    .preview-value { font-weight: 900; color: var(--dark); font-size: 1rem; }
+
+    /* DETAILS FORM (step8) */
+    .details-form { max-width: 650px; margin: 0 auto; }
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+        color: var(--dark);
+        font-weight: 900; font-size: 1rem; margin-bottom: 10px;
+        display:flex; align-items:center; gap:8px;
+    }
+    .form-label i {
+        color: var(--primary);
+        background: var(--primary-light);
+        width: 34px; height: 34px; border-radius: 10px;
+        display:flex; align-items:center; justify-content:center; font-size:1rem;
+    }
+    .form-input, .form-textarea {
+        width: 100%; padding: 14px 16px;
+        border: 2px solid var(--light-gray);
+        border-radius: var(--radius-md);
+        background: var(--light); color: var(--dark);
+        font-weight: 700; font-size: 1rem;
+        transition: all .25s ease;
+    }
+    .form-textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
+    .form-input:focus, .form-textarea:focus {
+        outline: none; border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.2);
+    }
+
+    .checkbox-group {
+        background: var(--light-gray);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        margin-top: 12px;
+    }
+    .form-check { display:flex; align-items:center; gap:10px; }
+    .form-check-input { width: 20px; height: 20px; cursor: pointer; }
+    .form-check-label { font-weight: 900; font-size: 1rem; cursor: pointer; }
+    .form-text { font-size: .9rem; color: var(--gray); margin-top: 8px; }
+
+    /* NAV BUTTONS */
+    .nav-buttons {
+        display: flex; justify-content: space-between;
+        margin-top: 30px; gap: 12px;
+    }
+    .btn-nav {
+        padding: 14px 26px;
+        border-radius: var(--radius-lg);
+        font-weight: 900; font-size: 1rem;
+        display:flex; align-items:center; gap:8px; justify-content:center;
+        cursor:pointer; border:2px solid transparent; min-width: 150px;
+        transition: all .25s ease;
+    }
+    .btn-prev { background: transparent; color: var(--dark); border:2px solid var(--gray); }
+    .btn-prev:hover { background: var(--light-gray); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .btn-next { background: var(--primary-gradient); color:#fff; box-shadow: 0 8px 18px rgba(0,206,209,.3); }
+    .btn-next:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,206,209,.4); }
+    .btn-submit { background: var(--success); color:#fff; box-shadow: 0 8px 18px rgba(50,205,50,.3); }
+    .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(50,205,50,.4); }
+
+    @media (max-width: 768px) {
+        .form-container { padding: 22px; }
+        .header-title h1 { font-size: 1.5rem; }
+        .nav-buttons { flex-direction: column; }
+        .btn-nav { width: 100%; min-width: unset; }
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="create-exam-container">
+<div class="create-exam-container">
 
-        {{-- ========== HEADER ========== --}}
-        <div class="page-header">
-            <div class="header-content">
-                <div class="header-title">
-                    <h1>
-                        <span
-                            style="background: linear-gradient(120deg, var(--primary) 0%, var(--secondary) 100%);
-                        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                            ساخت آزمون جدید 
-                        </span> 🔧
-                    </h1>
-<p class="page-subtitle">آزمون خود را برای هنرجویان به صورت مرحله‌ای ایجاد کنید.</p>
-
-                </div>
-                <a href="{{ route('teacher.exams.index') }}" class="btn-back">
-                    <i class="fas fa-arrow-right"></i>
-                    بازگشت به لیست آزمون‌ها
-                </a>
+    {{-- HEADER --}}
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-title">
+                <h1>
+                    <span style="background: linear-gradient(120deg, var(--primary) 0%, var(--secondary) 100%);
+                                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        ساخت آزمون جدید
+                    </span>
+                    📝
+                </h1>
+                <p class="header-subtitle">آزمون خود را به صورت مرحله‌ای و با دقت ایجاد کنید.</p>
             </div>
-        </div>
 
-        {{-- ========== PROGRESS BAR ========== --}}
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill" style="width: 14%;"></div>
-            </div>
-            <div class="progress-steps">
-                @php
-                    $steps = [
-                        1 => 'نوع آزمون',
-                        2 => 'پایه تحصیلی',
-                        3 => 'شاخه تحصیلی',
-                        4 => 'زمینه فنی',
-                        5 => 'زیررشته',
-                        6 => 'دسته درسی',
-                        7 => 'انتخاب درس',
-                        8 => 'جزئیات',
-                    ];
-                @endphp
-                @foreach ($steps as $num => $name)
-                    <div class="step-item @if ($num == 1) active @endif" data-step="{{ $num }}">
-                        <div class="step-number">{{ $num }}</div>
-                        <div class="step-name">{{ $name }}</div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- ========== FORM CONTAINER ========== --}}
-        <div class="form-container">
-            <form method="POST" action="{{ route('teacher.exams.store') }}" id="examForm"
-                onsubmit="return validateFinalStep()">
-                @csrf
-
-                {{-- Hidden Inputs (UUID expected by controller) --}}
-                <input type="hidden" name="exam_type" id="examType" value="">
-                <input type="hidden" name="classroom_id" id="classroomId" value="{{ $selectedClassroomId ?? '' }}">
-
-                <input type="hidden" name="section_id" id="sectionId" value="">
-                <input type="hidden" name="grade_id" id="gradeId" value="">
-                <input type="hidden" name="branch_id" id="branchId" value="">
-                <input type="hidden" name="field_id" id="fieldId" value="">
-                <input type="hidden" name="subfield_id" id="subfieldId" value="">
-                <input type="hidden" name="subject_type_id" id="subjectTypeId" value="">
-                <input type="hidden" name="subjects" id="subjectsInput" value="">
-
-                {{-- ===== STEP 1: EXAM TYPE ===== --}}
-                <div class="form-section active" id="step1">
-                    <div class="section-header">
-                        <div class="section-icon">🎯</div>
-                        <h2 class="section-title">نوع آزمون را انتخاب کنید</h2>
-                        <p class="section-description">
-                            بر اساس نیاز آموزشی خود، یکی از گزینه‌های زیر را انتخاب نمایید.
-                        </p>
-                    </div>
-
-                    <div class="exam-type-grid">
-<div class="type-card" data-type="public" onclick="selectExamType('public')">
-    <span class="type-badge type-badge--public">آزمون</span>
-    <div class="type-icon">🌐</div>
-    <h4>آزمون</h4>
-    <p>آزمونی آزاد برای عموم دانش‌آموزان؛ بدون وابستگی به کلاس.</p>
-</div>
-
-
-                        <div class="type-card" data-type="class_single" onclick="selectExamType('class_single')">
-                            <div class="type-icon">📚</div>
-                            <div class="type-title">کلاسی تک درس</div>
-                            <p class="type-description">برای یک کلاس خاص و فقط یک درس مشخص.</p>
-                            <div class="type-badge">تخصصی</div>
-                        </div>
-
-                        <div class="type-card" data-type="class_comprehensive"
-                            onclick="selectExamType('class_comprehensive')">
-                            <div class="type-icon">🎓</div>
-                            <div class="type-title">کلاسی جامع</div>
-                            <p class="type-description">برای یک کلاس شامل تمام دروس پایه.</p>
-                            <div class="type-badge">جامع</div>
-                        </div>
-                    </div>
-
-                    {{-- انتخاب کلاس --}}
-                    <div id="classroomSelectionSection" style="display: none; margin-top: 30px;">
-                        <div class="section-header" style="margin-bottom: 20px;">
-                            <h3 class="section-title">انتخاب کلاس</h3>
-                            <p class="section-description">
-                                لطفاً کلاس مورد نظر را انتخاب کنید یا یک کلاس جدید ایجاد نمایید.
-                            </p>
-                        </div>
-
-                        <div id="existingClassroomsContainer" class="selection-grid"
-                            style="grid-template-columns: repeat(2, 1fr);">
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                در حال بارگذاری کلاس‌ها...
-                            </div>
-                        </div>
-
-                        <div id="createNewClassContainer" style="margin-top: 25px; text-align: center;">
-                            <div class="type-card" onclick="createNewClassroom()"
-                                style="max-width: 400px; margin: 0 auto; cursor: pointer;
-                            background: linear-gradient(135deg, rgba(0, 206, 209, 0.1), rgba(70, 130, 180, 0.1));">
-                                <div class="type-icon">➕</div>
-                                <div class="type-title">ایجاد کلاس جدید</div>
-                                <p class="type-description">هنوز کلاسی ندارید؟ یک کلاس جدید ایجاد کنید.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ===== STEP 2: GRADE (dynamic) ===== --}}
-                <div class="form-section" id="step2">
-                    <div class="section-header">
-                        <div class="section-icon">📊</div>
-                        <h2 class="section-title">پایه تحصیلی را انتخاب کنید</h2>
-                        <p class="section-description">پایه مورد نظر برای آزمون خود را انتخاب نمایید.</p>
-                    </div>
-                    <div class="selection-grid" id="gradesGrid" style="grid-template-columns: repeat(3, 1fr);">
-                        {{-- ajax --}}
-                    </div>
-                </div>
-
-                {{-- ===== STEP 3: BRANCH (dynamic) ===== --}}
-                <div class="form-section" id="step3">
-                    <div class="section-header">
-                        <div class="section-icon">🎓</div>
-                        <h2 class="section-title">شاخه تحصیلی را انتخاب کنید</h2>
-                    </div>
-                    <div class="selection-grid" id="branchesGrid" style="grid-template-columns: repeat(2, 1fr);"></div>
-                </div>
-
-                {{-- ===== STEP 4: FIELD (dynamic) ===== --}}
-                <div class="form-section" id="step4">
-                    <div class="section-header">
-                        <div class="section-icon">🏭</div>
-                        <h2 class="section-title">زمینه فنی را انتخاب کنید</h2>
-                    </div>
-                    <div class="selection-grid" id="fieldsGrid" style="grid-template-columns: repeat(2, 1fr);"></div>
-                </div>
-
-                {{-- ===== STEP 5: SUBFIELD (dynamic) ===== --}}
-                <div class="form-section" id="step5">
-                    <div class="section-header">
-                        <div class="section-icon">🔬</div>
-                        <h2 class="section-title">زیررشته را انتخاب کنید</h2>
-                    </div>
-                    <div class="selection-grid" id="subfieldGrid" style="grid-template-columns: repeat(2, 1fr);"></div>
-                </div>
-
-                {{-- ===== STEP 6: SUBJECT TYPE (dynamic) ===== --}}
-                <div class="form-section" id="step6">
-                    <div class="section-header">
-                        <div class="section-icon">📚</div>
-                        <h2 class="section-title">دسته درسی را انتخاب کنید</h2>
-                    </div>
-                    <div class="selection-grid" id="subjectTypesGrid" style="grid-template-columns: repeat(3, 1fr);">
-                    </div>
-
-                    <div class="coefficient-settings" id="coefficientSettings"></div>
-                </div>
-
-                {{-- ===== STEP 7: SUBJECTS ===== --}}
-                <div class="form-section" id="step7">
-                    <div class="section-header">
-                        <div class="section-icon">📖</div>
-                        <h2 class="section-title">درس‌های آزمون را انتخاب کنید</h2>
-                    </div>
-
-                    <div class="subject-selection">
-                        <div id="subjectsContainer">
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                در حال بارگذاری دروس...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ===== STEP 8: DETAILS ===== --}}
-                <div class="form-section" id="step8">
-                    <div class="section-header">
-                        <div class="section-icon">📋</div>
-                        <h2 class="section-title">جزئیات آزمون را تکمیل کنید</h2>
-                    </div>
-
-                    <div class="preview-section">
-                        <div class="preview-title">
-                            <i class="fas fa-eye"></i>
-                            پیش‌نمایش آزمون
-                        </div>
-                        <div class="preview-grid">
-                            <div class="preview-item">
-                                <div class="preview-label">نوع آزمون</div>
-                                <div class="preview-value" id="previewExamType">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">پایه تحصیلی</div>
-                                <div class="preview-value" id="previewGrade">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">شاخه تحصیلی</div>
-                                <div class="preview-value" id="previewBranch">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">زمینه فنی</div>
-                                <div class="preview-value" id="previewField">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">زیررشته</div>
-                                <div class="preview-value" id="previewSubfield">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">دسته درسی</div>
-                                <div class="preview-value" id="previewSubjectType">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">تعداد دروس</div>
-                                <div class="preview-value" id="previewSubjectsCount">--</div>
-                            </div>
-                            <div class="preview-item">
-                                <div class="preview-label">کل سوالات</div>
-                                <div class="preview-value" id="previewTotalQuestions">--</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="details-form">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-heading"></i>عنوان آزمون</label>
-                            <input type="text" name="title" class="form-input" id="examTitle"
-                                placeholder="مثال: آزمون کارگاه برق صنعتی - پایه یازدهم" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-clock"></i>مدت زمان آزمون (دقیقه)</label>
-                            <input type="number" name="duration" class="form-input" value="90" min="15"
-                                max="300" step="5" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-align-left"></i>توضیحات آزمون</label>
-                            <textarea name="description" class="form-textarea" rows="4" placeholder="هدف آزمون، منابع مطالعاتی، نکات ..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_active" id="activeCheck"
-                                    value="1" checked>
-                                <label class="form-check-label" for="activeCheck">آزمون بلافاصله فعال شود</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- NAV BUTTONS --}}
-                <div class="nav-buttons">
-                    <button type="button" class="btn-nav btn-prev" onclick="prevStep()" style="display:none;">
-                        <i class="fas fa-arrow-right"></i> مرحله قبل
-                    </button>
-                    <button type="button" class="btn-nav btn-next" onclick="nextStep()">
-                        مرحله بعد <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <button type="submit" class="btn-nav btn-submit" style="display:none;">
-                        <i class="fas fa-check"></i> ایجاد آزمون
-                    </button>
-                </div>
-
-            </form>
+            <a href="{{ route('teacher.exams.index') }}" class="btn-back">
+                <i class="fas fa-arrow-right"></i>
+                بازگشت به لیست آزمون‌ها
+            </a>
         </div>
     </div>
+
+    {{-- PROGRESS --}}
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-steps">
+            <div class="step-item active" data-step="1">
+                <div class="step-number">۱</div>
+                <div class="step-name">نوع آزمون</div>
+            </div>
+            <div class="step-item" data-step="2">
+                <div class="step-number">۲</div>
+                <div class="step-name">پایه تحصیلی</div>
+            </div>
+            <div class="step-item" data-step="3">
+                <div class="step-number">۳</div>
+                <div class="step-name">شاخه تحصیلی</div>
+            </div>
+            <div class="step-item" data-step="4">
+                <div class="step-number">۴</div>
+                <div class="step-name">زمینه فنی</div>
+            </div>
+            <div class="step-item" data-step="5">
+                <div class="step-number">۵</div>
+                <div class="step-name">زیررشته</div>
+            </div>
+            <div class="step-item" data-step="6">
+                <div class="step-number">۶</div>
+                <div class="step-name">دسته درسی</div>
+            </div>
+            <div class="step-item" data-step="7">
+                <div class="step-number">۷</div>
+                <div class="step-name">انتخاب درس</div>
+            </div>
+            <div class="step-item" data-step="8">
+                <div class="step-number">۸</div>
+                <div class="step-name">جزئیات</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- FORM --}}
+    <div class="form-container">
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+        <form method="POST" action="{{ route('teacher.exams.store') }}" id="examForm" onsubmit="return validateFinalStep()">
+            @csrf
+
+            {{-- Hidden Inputs (JS fills these) --}}
+            <input type="hidden" name="exam_type" id="examType" value="public">
+            <input type="hidden" name="classroom_id" id="classroomId" value="{{ $selectedClassroomId ?? '' }}">
+
+            <input type="hidden" name="section_id" id="sectionId">
+            <input type="hidden" name="grade_id" id="gradeId">
+            <input type="hidden" name="branch_id" id="branchId">
+            <input type="hidden" name="field_id" id="fieldId">
+            <input type="hidden" name="subfield_id" id="subfieldId">
+            <input type="hidden" name="subject_type_id" id="subjectTypeId">
+            <input type="hidden" name="subjects" id="subjectsInput">
+
+            {{-- STEP 1 --}}
+            <div class="form-section active" id="step1">
+                <div class="section-header">
+                    <div class="section-icon">🎯</div>
+                    <h2 class="section-title">نوع آزمون را انتخاب کنید</h2>
+                    <p class="section-description">یکی از گزینه‌های زیر را انتخاب نمایید.</p>
+                </div>
+
+                <div class="exam-type-grid">
+                    <div class="type-card" data-type="public" onclick="selectExamType('public')">
+                        <div class="type-icon">🌐</div>
+                        <div class="type-title">آزمون عمومی</div>
+                        <p class="type-description">برای تمام هنرجویان قابل دسترسی است.</p>
+                        <div class="type-badge">عمومی</div>
+                    </div>
+
+                    <div class="type-card" data-type="class_single" onclick="selectExamType('class_single')">
+                        <div class="type-icon">📚</div>
+                        <div class="type-title">کلاسی تک‌درس</div>
+                        <p class="type-description">فقط برای یک کلاس و یک درس مشخص.</p>
+                        <div class="type-badge">تخصصی</div>
+                    </div>
+
+                    <div class="type-card" data-type="class_comprehensive" onclick="selectExamType('class_comprehensive')">
+                        <div class="type-icon">🎓</div>
+                        <div class="type-title">کلاسی جامع</div>
+                        <p class="type-description">برای یک کلاس شامل همه دروس پایه.</p>
+                        <div class="type-badge">جامع</div>
+                    </div>
+                </div>
+
+                {{-- Classroom selection (only for class exams) --}}
+                <div id="classroomSelectionSection" style="display:none; margin-top:24px;">
+                    <div class="section-header" style="margin-bottom:12px;">
+                        <h3 class="section-title" style="font-size:1.2rem;">کلاس را انتخاب کنید</h3>
+                        <p class="section-description">کلاس‌های شما از سیستم بارگذاری می‌شوند.</p>
+                    </div>
+
+                    <div class="selection-grid" id="existingClassroomsContainer"></div>
+
+                    <div style="text-align:center; margin-top:14px;">
+                        <button type="button" class="btn-nav btn-prev" onclick="createNewClassroom()" style="border-color:var(--primary); color:var(--primary);">
+                            <i class="fas fa-plus-circle"></i>
+                            ایجاد کلاس جدید
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- STEP 2 --}}
+            <div class="form-section" id="step2">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <h2 class="section-title">پایه تحصیلی را انتخاب کنید</h2>
+                    <p class="section-description">پایهٔ مورد نظر آزمون را انتخاب نمایید.</p>
+                </div>
+
+                <div class="selection-grid" id="gradesGrid"></div>
+            </div>
+
+            {{-- STEP 3 --}}
+            <div class="form-section" id="step3">
+                <div class="section-header">
+                    <div class="section-icon">🎓</div>
+                    <h2 class="section-title">شاخه تحصیلی را انتخاب کنید</h2>
+                    <p class="section-description">شاخهٔ آموزشی را انتخاب نمایید.</p>
+                </div>
+
+                <div class="selection-grid" id="branchesGrid"></div>
+            </div>
+
+            {{-- STEP 4 --}}
+            <div class="form-section" id="step4">
+                <div class="section-header">
+                    <div class="section-icon">🏭</div>
+                    <h2 class="section-title">زمینه آموزشی را انتخاب کنید</h2>
+                    <p class="section-description">زمینهٔ آموزشی مرتبط را انتخاب نمایید.</p>
+                </div>
+
+                <div class="selection-grid" id="fieldsGrid"></div>
+            </div>
+
+            {{-- STEP 5 --}}
+            <div class="form-section" id="step5">
+                <div class="section-header">
+                    <div class="section-icon">🔬</div>
+                    <h2 class="section-title">زیررشته را انتخاب کنید</h2>
+                    <p class="section-description">زیررشتهٔ مورد نظر را مشخص نمایید.</p>
+                </div>
+
+                <div class="selection-grid" id="subfieldGrid"></div>
+            </div>
+
+            {{-- STEP 6 --}}
+            <div class="form-section" id="step6">
+                <div class="section-header">
+                    <div class="section-icon">📚</div>
+                    <h2 class="section-title">دسته درسی را انتخاب کنید</h2>
+                    <p class="section-description">دستهٔ درسی آزمون را انتخاب نمایید.</p>
+                </div>
+
+                <div class="selection-grid" id="subjectTypesGrid"></div>
+            </div>
+
+            {{-- STEP 7 --}}
+            <div class="form-section" id="step7">
+                <div class="section-header">
+                    <div class="section-icon">📖</div>
+                    <h2 class="section-title">درس(ها) را انتخاب کنید</h2>
+                    <p class="section-description">بر اساس نوع آزمون، درس‌های مورد نظر را انتخاب نمایید.</p>
+                </div>
+
+                <div class="subjects-wrap" id="subjectsContainer"></div>
+            </div>
+
+            {{-- STEP 8 --}}
+            <div class="form-section" id="step8">
+                <div class="section-header">
+                    <div class="section-icon">✏️</div>
+                    <h2 class="section-title">جزئیات آزمون را تکمیل کنید</h2>
+                    <p class="section-description">اطلاعات تکمیلی آزمون را وارد نمایید.</p>
+                </div>
+
+                {{-- Preview --}}
+                <div class="preview-section">
+                    <div class="preview-title">
+                        <i class="fas fa-eye"></i>
+                        پیش‌نمایش آزمون
+                    </div>
+                    <div class="preview-grid">
+                        <div class="preview-item">
+                            <div class="preview-label">نوع آزمون</div>
+                            <div class="preview-value" id="previewExamType">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">پایه تحصیلی</div>
+                            <div class="preview-value" id="previewGrade">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">شاخه تحصیلی</div>
+                            <div class="preview-value" id="previewBranch">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">زمینه فنی</div>
+                            <div class="preview-value" id="previewField">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">زیررشته</div>
+                            <div class="preview-value" id="previewSubfield">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">دسته درسی</div>
+                            <div class="preview-value" id="previewSubjectType">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">تعداد درس‌های انتخابی</div>
+                            <div class="preview-value" id="previewSubjectsCount">--</div>
+                        </div>
+                        <div class="preview-item">
+                            <div class="preview-label">تعداد سوالات پیشنهادی</div>
+                            <div class="preview-value" id="previewTotalQuestions">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Details Form --}}
+                <div class="details-form">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-heading"></i>
+                            عنوان آزمون
+                        </label>
+                        <input type="text" name="title" class="form-input"
+                               value="{{ old('title') }}"
+                               placeholder="مثال: آزمون فصل ۱ شبکه"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock"></i>
+                            مدت زمان آزمون (دقیقه)
+                        </label>
+                        <input type="number" name="duration" class="form-input"
+                               value="{{ old('duration', 60) }}"
+                               min="5" max="300" step="5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            توضیحات آزمون
+                        </label>
+                        <textarea name="description" class="form-textarea" rows="4"
+                                  placeholder="هدف آزمون، نکات مهم و ...">{{ old('description') }}</textarea>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="activeCheck" value="1" checked>
+                            <label class="form-check-label" for="activeCheck">آزمون بلافاصله فعال شود</label>
+                        </div>
+                        <div class="form-text">
+                            در صورت عدم انتخاب، آزمون به صورت پیش‌نویس ذخیره می‌شود.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+{{-- ========== NAVIGATION BUTTONS ========== --}}
+<div class="nav-buttons">
+    <button type="button" class="btn-nav btn-prev" onclick="prevStep()">
+        <i class="fas fa-arrow-right"></i>
+        مرحله قبل
+    </button>
+
+    <button type="button" class="btn-nav btn-next" onclick="nextStep()">
+        مرحله بعد
+        <i class="fas fa-arrow-left"></i>
+    </button>
+
+    <button type="submit" class="btn-nav btn-submit">
+        <i class="fas fa-check"></i>
+        ایجاد آزمون
+    </button>
+</div>
+
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
-    {{-- SweetAlert2 --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    {{-- ✅ createNewClassroom حفظ شده --}}
-    <script>
-        async function createNewClassroom() {
-
-            const endpoints = {
-                sections: "/dashboard/teacher/exams/data/sections",
-                grades: "/dashboard/teacher/exams/data/grades",
-                branches: "/dashboard/teacher/exams/data/branches",
-                fields: "/dashboard/teacher/exams/data/fields",
-                subfields: "/dashboard/teacher/exams/data/subfields",
-                subjects: "/dashboard/teacher/exams/data/subjects",
-            };
-
-            const getJSON = async (url) => {
-                const res = await fetch(url, {
-                    headers: {
-                        "Accept": "application/json",
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                });
-                if (!res.ok) throw new Error("network");
-                return res.json();
-            };
-
-            const opt = (items, placeholder = "-- انتخاب کنید --", labelKey = "name_fa") => {
-                let html = `<option value="">${placeholder}</option>`;
-                items.forEach(i => {
-                    html +=
-                        `<option value="${i.id}" data-name="${i[labelKey] || i.title_fa || ''}">${i[labelKey] || i.title_fa}</option>`;
-                });
-                return html;
-            };
-
-            // قدم اول: لود مقطع
-            let sections = [];
-            try {
-                const s = await getJSON(endpoints.sections);
-                sections = s.sections || [];
-            } catch (e) {
-                Swal.fire("خطا", "دریافت مقاطع ممکن نیست", "error");
-                return;
-            }
-
-            Swal.fire({
-                title: 'ایجاد کلاس جدید',
-                html: `
-        <div style="text-align:right">
-
-            <label class="mb-2 fw-bold d-block">🎓 مقطع</label>
-            <select id="cc_section" class="swal2-input">${opt(sections, "مقطع را انتخاب کنید")}</select>
-
-            <label class="mb-2 fw-bold d-block mt-3">📊 پایه</label>
-            <select id="cc_grade" class="swal2-input" disabled>
-                <option value="">ابتدا مقطع را انتخاب کنید</option>
-            </select>
-
-            <label class="mb-2 fw-bold d-block mt-3">🧩 شاخه / رشته</label>
-            <select id="cc_branch" class="swal2-input" disabled>
-                <option value="">ابتدا پایه را انتخاب کنید</option>
-            </select>
-
-            <label class="mb-2 fw-bold d-block mt-3">🏭 زمینه آموزشی</label>
-            <select id="cc_field" class="swal2-input" disabled>
-                <option value="">ابتدا شاخه را انتخاب کنید</option>
-            </select>
-
-            <label class="mb-2 fw-bold d-block mt-3">🔬 زیررشته</label>
-            <select id="cc_subfield" class="swal2-input" disabled>
-                <option value="">ابتدا زمینه را انتخاب کنید</option>
-            </select>
-
-            <label class="mb-2 fw-bold d-block mt-3">📖 درس</label>
-            <select id="cc_subject" class="swal2-input" disabled>
-                <option value="">ابتدا زیررشته را انتخاب کنید</option>
-            </select>
-
-            <label class="mb-2 fw-bold d-block mt-3">🏷️ نام کلاس</label>
-            <input type="text" id="cc_title" class="swal2-input" placeholder="مثال: کلاس یازدهم شبکه - پایگاه داده">
-
-        </div>
-        `,
-                showCancelButton: true,
-                confirmButtonText: "ایجاد کلاس",
-                cancelButtonText: "انصراف",
-                reverseButtons: true,
-                width: 650,
-                didOpen: () => {
-
-                    const elSection = document.getElementById("cc_section");
-                    const elGrade = document.getElementById("cc_grade");
-                    const elBranch = document.getElementById("cc_branch");
-                    const elField = document.getElementById("cc_field");
-                    const elSubfield = document.getElementById("cc_subfield");
-                    const elSubject = document.getElementById("cc_subject");
-
-                    // ====== مقطع → پایه‌ها ======
-                    elSection.addEventListener("change", async () => {
-                        const sectionId = elSection.value;
-
-                        elGrade.innerHTML = `<option>در حال بارگذاری...</option>`;
-                        elGrade.disabled = true;
-
-                        elBranch.innerHTML =
-                            `<option value="">ابتدا پایه را انتخاب کنید</option>`;
-                        elBranch.disabled = true;
-
-                        elField.innerHTML =
-                            `<option value="">ابتدا شاخه را انتخاب کنید</option>`;
-                        elField.disabled = true;
-
-                        elSubfield.innerHTML =
-                            `<option value="">ابتدا زمینه را انتخاب کنید</option>`;
-                        elSubfield.disabled = true;
-
-                        elSubject.innerHTML =
-                            `<option value="">ابتدا زیررشته را انتخاب کنید</option>`;
-                        elSubject.disabled = true;
-
-                        if (!sectionId) {
-                            elGrade.innerHTML =
-                                `<option value="">ابتدا مقطع را انتخاب کنید</option>`;
-                            return;
-                        }
-
-                        const g = await getJSON(`${endpoints.grades}?section_id=${sectionId}`);
-                        elGrade.innerHTML = opt(g.grades || [], "پایه را انتخاب کنید");
-                        elGrade.disabled = false;
-                    });
-
-                    // ====== پایه → شاخه‌ها ======
-                    elGrade.addEventListener("change", async () => {
-                        const sectionId = elSection.value;
-
-                        elBranch.innerHTML = `<option>در حال بارگذاری...</option>`;
-                        elBranch.disabled = true;
-
-                        elField.innerHTML =
-                            `<option value="">ابتدا شاخه را انتخاب کنید</option>`;
-                        elField.disabled = true;
-
-                        elSubfield.innerHTML =
-                            `<option value="">ابتدا زمینه را انتخاب کنید</option>`;
-                        elSubfield.disabled = true;
-
-                        elSubject.innerHTML =
-                            `<option value="">ابتدا زیررشته را انتخاب کنید</option>`;
-                        elSubject.disabled = true;
-
-                        if (!sectionId) return;
-
-                        const b = await getJSON(
-                        `${endpoints.branches}?section_id=${sectionId}`);
-                        elBranch.innerHTML = opt(b.branches || [], "شاخه/رشته را انتخاب کنید");
-                        elBranch.disabled = false;
-                    });
-
-                    // ====== شاخه → زمینه‌ها ======
-                    elBranch.addEventListener("change", async () => {
-                        const branchId = elBranch.value;
-
-                        elField.innerHTML = `<option>در حال بارگذاری...</option>`;
-                        elField.disabled = true;
-
-                        elSubfield.innerHTML =
-                            `<option value="">ابتدا زمینه را انتخاب کنید</option>`;
-                        elSubfield.disabled = true;
-
-                        elSubject.innerHTML =
-                            `<option value="">ابتدا زیررشته را انتخاب کنید</option>`;
-                        elSubject.disabled = true;
-
-                        if (!branchId) {
-                            elField.innerHTML =
-                                `<option value="">ابتدا شاخه را انتخاب کنید</option>`;
-                            return;
-                        }
-
-                        const f = await getJSON(`${endpoints.fields}?branch_id=${branchId}`);
-                        elField.innerHTML = opt(f.fields || [], "زمینه را انتخاب کنید");
-                        elField.disabled = false;
-                    });
-
-                    // ====== زمینه → زیررشته ======
-                    elField.addEventListener("change", async () => {
-                        const fieldId = elField.value;
-
-                        elSubfield.innerHTML = `<option>در حال بارگذاری...</option>`;
-                        elSubfield.disabled = true;
-
-                        elSubject.innerHTML =
-                            `<option value="">ابتدا زیررشته را انتخاب کنید</option>`;
-                        elSubject.disabled = true;
-
-                        if (!fieldId) {
-                            elSubfield.innerHTML =
-                                `<option value="">ابتدا زمینه را انتخاب کنید</option>`;
-                            return;
-                        }
-
-                        const sf = await getJSON(`${endpoints.subfields}?field_id=${fieldId}`);
-                        elSubfield.innerHTML = opt(sf.subfields || [],
-                        "زیررشته را انتخاب کنید");
-                        elSubfield.disabled = false;
-                    });
-
-                    // ====== زیررشته → دروس ======
-                    elSubfield.addEventListener("change", async () => {
-                        const gradeId = elGrade.value;
-                        const branchId = elBranch.value;
-                        const fieldId = elField.value;
-                        const subfieldId = elSubfield.value;
-
-                        elSubject.innerHTML = `<option>در حال بارگذاری...</option>`;
-                        elSubject.disabled = true;
-
-                        if (!subfieldId) {
-                            elSubject.innerHTML =
-                                `<option value="">ابتدا زیررشته را انتخاب کنید</option>`;
-                            return;
-                        }
-
-                        const params = new URLSearchParams();
-                        if (gradeId) params.append("grade_id", gradeId);
-                        if (branchId) params.append("branch_id", branchId);
-                        if (fieldId) params.append("field_id", fieldId);
-                        if (subfieldId) params.append("subfield_id", subfieldId);
-
-                        const sub = await getJSON(`${endpoints.subjects}?${params.toString()}`);
-                        elSubject.innerHTML = opt(sub.subjects || [], "درس را انتخاب کنید",
-                            "title_fa");
-                        elSubject.disabled = false;
-                    });
-
-                },
-                preConfirm: () => {
-                    const sectionId = document.getElementById("cc_section").value;
-                    const gradeId = document.getElementById("cc_grade").value;
-                    const branchId = document.getElementById("cc_branch").value;
-                    const fieldId = document.getElementById("cc_field").value;
-                    const subfieldId = document.getElementById("cc_subfield").value;
-                    const subjectId = document.getElementById("cc_subject").value;
-                    const title = document.getElementById("cc_title").value.trim();
-
-                    if (!sectionId || !gradeId || !branchId || !fieldId || !subfieldId || !subjectId) {
-                        Swal.showValidationMessage("لطفاً همه موارد آموزشی را انتخاب کنید.");
-                        return false;
-                    }
-                    if (!title) {
-                        Swal.showValidationMessage("نام کلاس الزامی است.");
-                        return false;
-                    }
-
-                    const getName = (selectId) => {
-                        const el = document.getElementById(selectId);
-                        return el.options[el.selectedIndex]?.dataset?.name || el.options[el
-                            .selectedIndex]?.text || "";
-                    };
-
-                    return {
-                        section_id: sectionId,
-                        grade_id: gradeId,
-                        branch_id: branchId,
-                        field_id: fieldId,
-                        subfield_id: subfieldId,
-                        subject_id: subjectId,
-
-                        section_name: getName("cc_section"),
-                        grade_name: getName("cc_grade"),
-                        branch_name: getName("cc_branch"),
-                        field_name: getName("cc_field"),
-                        subfield_name: getName("cc_subfield"),
-                        subject_name: getName("cc_subject"),
-
-                        title
-                    };
-                }
-            }).then(async (result) => {
-                if (!result.isConfirmed) return;
-
-                const data = result.value;
-
-                Swal.fire({
-                    title: "در حال ایجاد کلاس...",
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
-                try {
-                    const fd = new FormData();
-                    fd.append("title", data.title);
-                    fd.append("section_id", data.section_id);
-                    fd.append("grade_id", data.grade_id);
-                    fd.append("branch_id", data.branch_id);
-                    fd.append("field_id", data.field_id);
-                    fd.append("subfield_id", data.subfield_id);
-                    fd.append("subject_id", data.subject_id);
-                    fd.append("is_active", 1);
-
-                    // metadata برای نمایش خوانا
-                    fd.append("metadata", JSON.stringify({
-                        section_name: data.section_name,
-                        grade_name: data.grade_name,
-                        branch_name: data.branch_name,
-                        field_name: data.field_name,
-                        subfield_name: data.subfield_name,
-                        subject_name: data.subject_name
-                    }));
-
-                    const res = await fetch("{{ route('teacher.classes.store') }}", {
-                        method: "POST",
-                        headers: {
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                            "X-Requested-With": "XMLHttpRequest",
-                            "Accept": "application/json"
-                        },
-                        body: fd
-                    });
-
-                    const responseData = await res.json();
-                    Swal.close();
-
-                    if (responseData.success) {
-                        Swal.fire("✅ موفقیت", "کلاس ایجاد شد", "success").then(() => {
-                            loadExistingClassrooms();
-
-                            if (responseData.classroom) {
-                                setTimeout(() => {
-                                    selectClassroom({
-                                            target: document.querySelector(
-                                                `[data-classroom-id="${responseData.classroom.id}"]`
-                                                )
-                                        },
-                                        responseData.classroom.id,
-                                        responseData.classroom.title
-                                    );
-                                }, 300);
-                            }
-                        });
-                    } else {
-                        Swal.fire("❌ خطا", responseData.message || "خطا در ایجاد کلاس", "error");
-                    }
-
-                } catch (e) {
-                    console.error(e);
-                    Swal.close();
-                    Swal.fire("❌ خطای شبکه", "ارتباط با سرور مشکل دارد.", "error");
-                }
-            });
-        }
-    </script>
-
-
-    {{-- ✅ exam wizard main js --}}
-    <script src="{{ asset('assets/js/exam-wizard.js') }}"></script>
+<script src="{{ asset('assets/js/exam-wizard.js') }}"></script>
+<script src="{{ asset('assets/js/classroom-modal.js') }}"></script>
 @endpush

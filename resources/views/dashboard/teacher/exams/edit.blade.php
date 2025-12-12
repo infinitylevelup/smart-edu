@@ -1,3 +1,4 @@
+{{-- resources/views/dashboard/teacher/exams/edit.blade.php --}}
 @extends('layouts.app')
 @section('title', 'ویرایش آزمون')
 
@@ -92,12 +93,12 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('teacher.exams.questions.index', $exam) }}"
-                    class="btn btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                   class="btn btn-outline-primary d-inline-flex align-items-center gap-2 shadow-sm">
                     <i class="bi bi-question-circle"></i>
                     مدیریت سوال‌ها
                 </a>
                 <a href="{{ route('teacher.exams.index') }}"
-                    class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm">
+                   class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm">
                     <i class="bi bi-arrow-right"></i>
                     بازگشت
                 </a>
@@ -107,8 +108,10 @@
         {{-- Validation errors --}}
         @if ($errors->any())
             <div class="alert alert-danger fade-up">
-                <div class="fw-semibold mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> لطفاً خطاهای زیر را بررسی
-                    کن:</div>
+                <div class="fw-semibold mb-2">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    لطفاً خطاهای زیر را بررسی کن:
+                </div>
                 <ul class="mb-0">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -142,25 +145,52 @@
                         {{-- Title --}}
                         <div class="col-12">
                             <label class="form-label fw-semibold">عنوان آزمون <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control input-soft"
-                                placeholder="مثلاً: آزمون فصل ۱ ریاضی" value="{{ old('title', $exam->title) }}" required>
+                            <input type="text"
+                                   name="title"
+                                   class="form-control input-soft"
+                                   placeholder="مثلاً: آزمون فصل ۱ ریاضی"
+                                   value="{{ old('title', $exam->title) }}"
+                                   required>
                         </div>
-                        {{-- ✅ NEW: Scope + Classroom --}}
-                        <div class="col-12">
-                            <label class="form-label fw-semibold d-block">نوع آزمون <span
-                                    class="text-danger">*</span></label>
 
-                            @php $scopeVal = old('scope', $exam->scope ?? 'classroom'); @endphp
+                        {{-- Scope + Classroom --}}
+                        <div class="col-12">
+                            <label class="form-label fw-semibold d-block">نوع آزمون <span class="text-danger">*</span></label>
+
+@php
+    // 1) اگر فرم با خطا برگشته، مقدار همان old('scope')
+    $scopeVal = old('scope');
+
+    // 2) اگر هنوز مقدار تعیین نشده:
+    if (!$scopeVal) {
+        if (!empty($exam->scope)) {
+            // اگر توی DB scope داریم، همان را بگیر
+            $scopeVal = $exam->scope;
+        } else {
+            // اگر scope خالی است، از نوع آزمون حدس بزن
+            // public = آزاد    |   بقیه = کلاسی
+            $scopeVal = $exam->exam_type === 'public' ? 'free' : 'classroom';
+        }
+    }
+@endphp
 
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="scope" id="editScopeClassroom"
-                                    value="classroom" {{ $scopeVal === 'classroom' ? 'checked' : '' }}>
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="scope"
+                                       id="editScopeClassroom"
+                                       value="classroom"
+                                    {{ $scopeVal === 'classroom' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="editScopeClassroom">کلاسی</label>
                             </div>
 
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="scope" id="editScopeFree"
-                                    value="free" {{ $scopeVal === 'free' ? 'checked' : '' }}>
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="scope"
+                                       id="editScopeFree"
+                                       value="free"
+                                    {{ $scopeVal === 'free' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="editScopeFree">آزاد</label>
                             </div>
 
@@ -173,7 +203,7 @@
                                 <option value="">انتخاب کلاس...</option>
                                 @foreach ($classrooms as $c)
                                     <option value="{{ $c->id }}"
-                                        {{ old('classroom_id', $exam->classroom_id) == $c->id ? 'selected' : '' }}>
+                                        {{ (string) old('classroom_id', $exam->classroom_id) === (string) $c->id ? 'selected' : '' }}>
                                         {{ $c->title ?? $c->name }}
                                     </option>
                                 @endforeach
@@ -184,18 +214,20 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">درس / موضوع <span class="text-danger">*</span></label>
                             <select name="subject" class="form-select input-soft" required>
-                                <option value="" disabled>انتخاب درس</option>
+                                <option value="" disabled {{ old('subject', $exam->subject) ? '' : 'selected' }}>انتخاب درس</option>
                                 @foreach ($subjects ?? [] as $s)
                                     <option value="{{ $s }}"
-                                        {{ old('subject', $exam->subject) === $s ? 'selected' : '' }}>{{ $s }}
+                                        {{ old('subject', $exam->subject) === $s ? 'selected' : '' }}>
+                                        {{ $s }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">سطح آزمون <span class="text-danger">*</span></label>
+                            @php $lvl = old('level', $exam->level ?? 'taghviyati'); @endphp
                             <select name="level" class="form-select input-soft" required>
-                                @php $lvl = old('level', $exam->level); @endphp
                                 <option value="taghviyati" {{ $lvl === 'taghviyati' ? 'selected' : '' }}>تقویتی</option>
                                 <option value="konkur" {{ $lvl === 'konkur' ? 'selected' : '' }}>کنکور</option>
                                 <option value="olympiad" {{ $lvl === 'olympiad' ? 'selected' : '' }}>المپیاد</option>
@@ -204,32 +236,44 @@
 
                         {{-- Duration & Start time --}}
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">مدت آزمون (دقیقه) <span
-                                    class="text-danger">*</span></label>
-                            <input type="number" min="1" name="duration" class="form-control input-soft"
-                                value="{{ old('duration', $exam->duration) }}" required>
+                            <label class="form-label fw-semibold">مدت آزمون (دقیقه) <span class="text-danger">*</span></label>
+                            <input type="number"
+                                   min="1"
+                                   name="duration"
+                                   class="form-control input-soft"
+                                   value="{{ old('duration', $exam->duration_minutes) }}"
+                                   required>
                         </div>
+
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">تاریخ و زمان شروع <span
-                                    class="text-danger">*</span></label>
-                            <input type="datetime-local" name="start_at" class="form-control input-soft"
-                                value="{{ old('start_at', optional($exam->start_at)->format('Y-m-d\TH:i')) }}" required>
+                            <label class="form-label fw-semibold">تاریخ و زمان شروع</label>
+                            <input type="datetime-local"
+                                   name="start_at"
+                                   class="form-control input-soft"
+                                   value="{{ old('start_at', optional($exam->start_at)->format('Y-m-d\TH:i')) }}">
                             <div class="hint mt-1">تاریخ/زمان را برای هماهنگی برگزاری تنظیم کن.</div>
                         </div>
 
                         {{-- Description --}}
                         <div class="col-12">
                             <label class="form-label fw-semibold">توضیحات</label>
-                            <textarea name="description" rows="4" class="form-control input-soft"
-                                placeholder="توضیحات کوتاه درباره هدف آزمون...">{{ old('description', $exam->description) }}</textarea>
+                            <textarea name="description"
+                                      rows="4"
+                                      class="form-control input-soft"
+                                      placeholder="توضیحات کوتاه درباره هدف آزمون...">{{ old('description', $exam->description) }}</textarea>
                         </div>
 
                         {{-- Publish toggle --}}
                         <div class="col-12">
                             @php $pub = old('is_published', $exam->is_published); @endphp
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="publishSwitch"
-                                    name="is_published" value="1" {{ $pub ? 'checked' : '' }}>
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       role="switch"
+                                       id="publishSwitch"
+                                       name="is_published"
+                                       value="1"
+                                    {{ $pub ? 'checked' : '' }}>
                                 <label class="form-check-label fw-semibold" for="publishSwitch">آزمون منتشر باشد</label>
                             </div>
                             <div class="hint mt-1">در صورت انتشار، آزمون برای دانش‌آموزها قابل مشاهده می‌شود.</div>
@@ -242,7 +286,7 @@
                                 ذخیره تغییرات
                             </button>
                             <a href="{{ route('teacher.exams.questions.index', $exam) }}"
-                                class="btn btn-outline-primary btn-wizard shadow-sm">
+                               class="btn btn-outline-primary btn-wizard shadow-sm">
                                 <i class="bi bi-question-circle"></i>
                                 رفتن به سوال‌ها
                             </a>
@@ -250,17 +294,20 @@
 
                     </form>
 
-                    {{-- Danger zone (optional delete here too) --}}
+                    {{-- Danger zone --}}
                     <div class="danger-zone p-3 mt-4">
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div>
-                                <div class="fw-bold text-danger"><i class="bi bi-trash3 me-1"></i> حذف آزمون</div>
+                                <div class="fw-bold text-danger">
+                                    <i class="bi bi-trash3 me-1"></i> حذف آزمون
+                                </div>
                                 <div class="small text-muted">این عملیات غیرقابل بازگشت است.</div>
                             </div>
                             <form action="{{ route('teacher.exams.destroy', $exam) }}" method="POST">
-                                @csrf @method('DELETE')
+                                @csrf
+                                @method('DELETE')
                                 <button class="btn btn-outline-danger btn-wizard"
-                                    onclick="return confirm('آیا از حذف آزمون مطمئن هستید؟')">
+                                        onclick="return confirm('آیا از حذف آزمون مطمئن هستید؟')">
                                     حذف قطعی
                                 </button>
                             </form>
@@ -276,31 +323,39 @@
 
                     <div class="preview-card p-3 mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-2">
-                            <div class="fw-bold"><i class="bi bi-eye me-1"></i> پیش‌نمایش سریع</div>
+                            <div class="fw-bold">
+                                <i class="bi bi-eye me-1"></i> پیش‌نمایش سریع
+                            </div>
                             <span class="badge preview-badge">Live</span>
                         </div>
                         <div class="small text-muted mb-2">با تغییر فرم، این کارت آپدیت می‌شود.</div>
 
                         <div class="border rounded-3 p-3 bg-white" id="livePreview">
                             <div class="fw-semibold" id="pvTitle">{{ $exam->title }}</div>
-                            <div class="text-muted small mt-1" id="pvMeta">{{ $exam->level }} • {{ $exam->subject }}
-                                • {{ $exam->duration }} دقیقه</div>
-                            <div class="text-muted small mt-2" id="pvStart">شروع:
-                                {{ optional($exam->start_at)->format('Y/m/d H:i') }}</div>
+                            <div class="text-muted small mt-1" id="pvMeta">
+                                {{ $exam->level }} • {{ $exam->subject }} • {{ $exam->duration_minutes }} دقیقه
+                            </div>
+                            <div class="text-muted small mt-2" id="pvStart">
+                                شروع: {{ optional($exam->start_at)->format('Y/m/d H:i') }}
+                            </div>
                             <div class="mt-2">
                                 @if ($exam->is_published)
-                                    <span class="badge bg-success"><i class="bi bi-broadcast-pin me-1"></i> منتشر
-                                        شده</span>
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-broadcast-pin me-1"></i> منتشر شده
+                                    </span>
                                 @else
-                                    <span class="badge bg-secondary"><i class="bi bi-pencil-square me-1"></i>
-                                        پیش‌نویس</span>
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-pencil-square me-1"></i> پیش‌نویس
+                                    </span>
                                 @endif
                             </div>
                         </div>
                     </div>
 
                     <div class="form-card p-3">
-                        <div class="fw-bold mb-2"><i class="bi bi-lightbulb me-1 text-warning"></i> پیشنهادهای بهبود</div>
+                        <div class="fw-bold mb-2">
+                            <i class="bi bi-lightbulb me-1 text-warning"></i> پیشنهادهای بهبود
+                        </div>
                         <ul class="small text-muted mb-0 ps-3">
                             <li>قبل از انتشار، حداقل ۵ سؤال اضافه کن.</li>
                             <li>اگر زمان برگزاری تغییر کرد، اطلاعیه بفرست.</li>
@@ -333,14 +388,18 @@
                     const l = level?.value || 'سطح';
                     const d = duration?.value || '—';
                     if (pvMeta) pvMeta.textContent = `${l} • ${s} • ${d} دقیقه`;
-                    if (pvStart) pvStart.textContent = startAt?.value ? `شروع: ${startAt.value.replace('T',' ')}` :
-                        'زمان شروع';
+                    if (pvStart) pvStart.textContent = startAt?.value
+                        ? `شروع: ${startAt.value.replace('T', ' ')}`
+                        : 'زمان شروع';
                 }
 
-                [title, subject, level, duration, startAt].forEach(el => el?.addEventListener('input', updatePreview));
+                [title, subject, level, duration, startAt].forEach(el =>
+                    el?.addEventListener('input', updatePreview)
+                );
                 updatePreview();
             });
-            // ✅ NEW: toggle classroom box in edit
+
+            // toggle classroom box
             const editScopeFree = document.getElementById('editScopeFree');
             const editScopeClassroom = document.getElementById('editScopeClassroom');
             const editClassroomBox = document.getElementById('editClassroomBox');
