@@ -22,10 +22,11 @@ const endpoint = {
 
 // UI Names (preview)
 const examTypeNames = {
-  public: "آزمون عمومی",
-  class_single: "کلاسی تک درس",
-  class_comprehensive: "کلاسی جامع",
+  public: "آزمون آزاد",
+  class_single: "آزمون کلاسی",
+  class_comprehensive: "آزمون کلاسی",
 };
+
 
 const subjectTypeFallbackNames = {
   base_competency: "شایستگی پایه",
@@ -111,7 +112,21 @@ document.addEventListener("DOMContentLoaded", () => {
   updateProgress();
   updateNavigationButtons();
   loadFromLocalStorage();
-
+(async () => {
+try {
+    if (!formData.sectionId) {
+    const data = await getJSON(endpoint.sections);
+    const sections = data.sections || [];
+    if (sections.length) {
+        formData.sectionId = sections[0].id;
+        setHidden("#sectionId", formData.sectionId);
+        saveToLocalStorage();
+    }
+    }
+} catch (e) {
+    console.warn("sections preload failed", e);
+}
+})();
   // ✅ اگر classroom_id از Blade/URL آمده و قبلاً انتخاب نشده
   const preClassId = qs("#classroomId")?.value;
   if (!formData.classroomId && preClassId) {
@@ -154,10 +169,10 @@ window.selectExamType = function (type) {
   qsa(".type-card").forEach((c) => c.classList.remove("selected"));
   qs(`.type-card[data-type="${type}"]`)?.classList.add("selected");
 
-  formData.examType = type;
-  setHidden("#examType", type);
-
   if (type === "public") {
+    formData.examType = "public";
+    setHidden("#examType", "public");
+
     showClassroomSection(false);
 
     formData.classroomId = null;
@@ -165,16 +180,23 @@ window.selectExamType = function (type) {
     setHidden("#classroomId", "");
 
     enableNext(true);
-  } else {
+  } else if (type === "class") {
+    // ✅ برای اینکه StoreExamRequest خراب نشود، فعلاً class_single می‌گذاریم
+    formData.examType = "class_single";
+    setHidden("#examType", "class_single");
+
     showClassroomSection(true);
     loadExistingClassrooms();
-    enableNext(false);
+
+    // تا کلاس انتخاب نشده Next غیر فعال
+    enableNext(!!formData.classroomId);
   }
 
   updateExamTypeIndicator?.();
   updatePreview();
   saveToLocalStorage();
 };
+
 
 function showClassroomSection(show) {
   const sec = qs("#classroomSelectionSection");
@@ -263,9 +285,22 @@ window.selectClassroom = async function (e, classroomId, classroomName) {
   formData.classroomName = classroomName;
   setHidden("#classroomId", classroomId);
 
+
   try {
     const metaData = await getJSON(endpoint.classMeta(classroomId));
     const meta = metaData.classroom || {};
+
+    // ✅ تعیین نوع آزمون کلاسی بر اساس نوع کلاس
+    if (meta.classroom_type === "comprehensive") {
+    formData.examType = "class_comprehensive";
+    setHidden("#examType", "class_comprehensive");
+    } else {
+    // پیش‌فرض: single
+    formData.examType = "class_single";
+    setHidden("#examType", "class_single");
+    }
+
+
 
     if (meta.section_id) {
       formData.sectionId = meta.section_id;
@@ -302,6 +337,7 @@ window.selectClassroom = async function (e, classroomId, classroomName) {
       formData.subjectTypeName = subjectTypeFallbackNames.all;
       formData.subjectTypeId = "";
       setHidden("#subjectTypeId", "");
+      setHidden("#subjectTypeSlug", "all"); // ✅ اضافه شد
       calculateCoefficients("all");
 
       try {
@@ -702,16 +738,16 @@ window.selectSubjectType = function (e, id, slug, name) {
 
   formData.subjectTypeId = id;
   formData.subjectTypeSlug = slug;
-
-  // name یا از بک‌اند یا از map
   formData.subjectTypeName = name || getSubjectTypeMeta(slug).name;
 
   setHidden("#subjectTypeId", id);
+  setHidden("#subjectTypeSlug", slug); // ✅ اضافه شد
 
   calculateCoefficients(slug);
   updatePreview();
   saveToLocalStorage();
 };
+
 
 /* ---------- coefficient section (FIX slugs) ---------- */
 

@@ -23,7 +23,9 @@ class Exam extends Model
         'teacher_id',
         'classroom_id',
 
-        'exam_type',
+       // 'exam_type',
+        'exam_mode',
+        'primary_subject_id',
 
         // برای فرم ساده ویرایش
         'scope',       // classroom / free

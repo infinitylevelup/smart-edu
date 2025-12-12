@@ -242,7 +242,7 @@
     .selection-description { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin: 0; }
 
     /* EXAM TYPE cards (step1) */
-    .exam-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .exam-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
     @media (max-width: 768px) { .exam-type-grid { grid-template-columns: 1fr; } }
     .type-card {
         border: 3px solid var(--light-gray);
@@ -476,6 +476,7 @@
             <input type="hidden" name="subfield_id" id="subfieldId">
             <input type="hidden" name="subject_type_id" id="subjectTypeId">
             <input type="hidden" name="subjects" id="subjectsInput">
+            <input type="hidden" name="subject_type_slug" id="subjectTypeSlug">
 
             {{-- STEP 1 --}}
             <div class="form-section active" id="step1">
@@ -485,28 +486,21 @@
                     <p class="section-description">یکی از گزینه‌های زیر را انتخاب نمایید.</p>
                 </div>
 
-                <div class="exam-type-grid">
-                    <div class="type-card" data-type="public" onclick="selectExamType('public')">
-                        <div class="type-icon">🌐</div>
-                        <div class="type-title">آزمون عمومی</div>
-                        <p class="type-description">برای تمام هنرجویان قابل دسترسی است.</p>
-                        <div class="type-badge">عمومی</div>
+                    <div class="exam-type-grid" >
+                        <div class="type-card" data-type="public" onclick="selectExamType('public')">
+                            <div class="type-icon">🌐</div>
+                            <div class="type-title">آزمون آزاد</div>
+                            <p class="type-description">رایگان است و برای همه هنرجویان قابل دسترسی می‌باشد.</p>
+                            <div class="type-badge" style="background: var(--success);">رایگان</div>
+                        </div>
+                        <div class="type-card" data-type="class" onclick="selectExamType('class')">
+                            <div class="type-icon">🏫</div>
+                            <div class="type-title">آزمون کلاسی</div>
+                            <p class="type-description">بر اساس پنل قیمت دارد و فقط برای کلاس‌های شما فعال می‌شود.</p>
+                            <div class="type-badge" style="background: var(--warning); color:#111;">درآمد</div>
+                        </div>
                     </div>
 
-                    <div class="type-card" data-type="class_single" onclick="selectExamType('class_single')">
-                        <div class="type-icon">📚</div>
-                        <div class="type-title">کلاسی تک‌درس</div>
-                        <p class="type-description">فقط برای یک کلاس و یک درس مشخص.</p>
-                        <div class="type-badge">تخصصی</div>
-                    </div>
-
-                    <div class="type-card" data-type="class_comprehensive" onclick="selectExamType('class_comprehensive')">
-                        <div class="type-icon">🎓</div>
-                        <div class="type-title">کلاسی جامع</div>
-                        <p class="type-description">برای یک کلاس شامل همه دروس پایه.</p>
-                        <div class="type-badge">جامع</div>
-                    </div>
-                </div>
 
                 {{-- Classroom selection (only for class exams) --}}
                 <div id="classroomSelectionSection" style="display:none; margin-top:24px;">
