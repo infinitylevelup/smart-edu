@@ -35,7 +35,7 @@
         @if (session('success'))
             <div class="alert-success-custom d-flex align-items-center">
                 <i class="fas fa-check-circle"></i>
-                <div class="flex-grow-1">{{ session('success') }}</div>
+                <div class="grow">{{ session('success') }}</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif

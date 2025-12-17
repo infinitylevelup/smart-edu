@@ -1,329 +1,601 @@
-/* ===========================================================
- * teacher-classroom.js (ID + AJAX Real Data)
- * برای صفحات کلاس‌های معلم:
- * 1) create/edit classroom taxonomy chain
- * 2) index classrooms ajax filters (?ajax=1)
- * سازگار با TeacherClassController data endpoints
- * =========================================================== */
+/*!
+ * Smart-Edu — Teacher Classes (index/create/show/edit) module
+ * Location: public/assets/js/teacher-classes.js
+ *
+ * صفحات باید HTML-only باشند و فقط یک marker داشته باشند:
+ *   data-page="teacher-classes-index|create|show|edit"
+ *
+ * (اختیاری) config برای routeها را روی همان wrapper بگذارید:
+ *   data-sections-url
+ *   data-grades-url          (template, contains :section)
+ *   data-branches-url        (template, contains :grade)
+ *   data-fields-url          (template, contains :branch)
+ *   data-subfields-url       (template, contains :field)
+ *   data-subject-types-url   (template, contains :field)
+ *   data-subjects-url        (template, contains :subjectType)
+ *
+ * (اختیاری برای edit) initial values:
+ *   data-initial-section, data-initial-grade, data-initial-branch, data-initial-field,
+ *   data-initial-subfield, data-initial-subject-type, data-initial-subject
+ */
 
 (function () {
-  /* -------------------- helpers -------------------- */
-  const qs = (sel, root = document) => root.querySelector(sel);
-  const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  'use strict';
 
-  async function getJSON(url) {
+  // --------- Core helpers ---------
+  function $(sel, root = document) { return root.querySelector(sel); }
+  function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+
+  function getPageRoot() {
+    // Prefer the first element that declares data-page; fallback to body.
+    return document.querySelector('[data-page]') || document.body;
+  }
+
+  function getPageName(root) {
+    return (root && root.dataset && root.dataset.page) || (document.body && document.body.dataset && document.body.dataset.page) || '';
+  }
+
+  function safeText(v) {
+    return (v ?? '').toString().trim();
+  }
+
+  function templateUrl(tpl, key, value) {
+    if (!tpl) return '';
+    return tpl.replace(`:${key}`, encodeURIComponent(String(value)));
+  }
+
+  async function fetchJson(url, { signal } = {}) {
     const res = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest"
-      }
+      headers: { 'Accept': 'application/json' },
+      signal
     });
-    if (!res.ok) throw new Error("Network error");
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} for ${url}${text ? `\n${text}` : ''}`);
+    }
     return res.json();
   }
 
-  function debounce(fn, delay = 350) {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), delay);
-    };
-  }
-
-  function setOptions(selectEl, items, placeholder = "انتخاب کنید") {
+  function setSelectOptions(selectEl, items, { placeholder = 'انتخاب کنید', valueKey = 'id', labelKey = 'title' } = {}) {
     if (!selectEl) return;
-    selectEl.innerHTML = "";
+    selectEl.innerHTML = '';
+    const ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = placeholder;
+    selectEl.appendChild(ph);
 
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = placeholder;
-    selectEl.appendChild(opt0);
-
-    items.forEach((it) => {
-      const opt = document.createElement("option");
-      opt.value = it.id;
+    (items || []).forEach((it) => {
+      const opt = document.createElement('option');
+      opt.value = it[valueKey] ?? it.id ?? '';
       opt.textContent =
-        it.name_fa || it.title_fa || it.name || it.title || it.slug;
+        it[labelKey] ??
+        it.title_fa ??
+        it.name_fa ??
+        it.title ??
+        it.name ??
+        '';
       selectEl.appendChild(opt);
     });
-
-    selectEl.disabled = false;
   }
 
-  function resetSelect(selectEl, placeholder = "انتخاب کنید") {
+  function setSelectEnabled(selectEl, enabled) {
     if (!selectEl) return;
-    selectEl.innerHTML = `<option value="">${placeholder}</option>`;
-    selectEl.disabled = true;
+    selectEl.disabled = !enabled;
   }
 
-  function setValueIfExists(selectEl, val) {
-    if (!selectEl || !val) return;
-    const opt = selectEl.querySelector(`option[value="${val}"]`);
-    if (opt) selectEl.value = val;
+  function resetSelect(selectEl, placeholder) {
+    if (!selectEl) return;
+    setSelectOptions(selectEl, [], { placeholder: placeholder || 'انتخاب کنید' });
+    setSelectEnabled(selectEl, false);
   }
 
-  /* -----------------------------------------------------------
-   * 1) CREATE / EDIT CLASSROOM TAXONOMY CHAIN
-   * ----------------------------------------------------------- */
-
-  const form =
-    qs("#teacherClassroomForm") ||
-    qs("#classroomCreateForm") ||
-    qs("form[data-classroom-taxonomy='1']") ||
-    qs("form[action*='teacher/classes']");
-
-  if (form) {
-    const endpoint = {
-      sections:
-        form.dataset.sectionsEndpoint ||
-        "/dashboard/teacher/classes/data/sections",
-      grades:
-        form.dataset.gradesEndpoint ||
-        "/dashboard/teacher/classes/data/grades",
-      branches:
-        form.dataset.branchesEndpoint ||
-        "/dashboard/teacher/classes/data/branches",
-      fields:
-        form.dataset.fieldsEndpoint ||
-        "/dashboard/teacher/classes/data/fields",
-      subfields:
-        form.dataset.subfieldsEndpoint ||
-        "/dashboard/teacher/classes/data/subfields",
-      subjectTypes:
-        form.dataset.subjectTypesEndpoint ||
-        "/dashboard/teacher/classes/data/subject-types",
-      subjects:
-        form.dataset.subjectsEndpoint ||
-        "/dashboard/teacher/classes/data/subjects"
+  // --------- Taxonomy loader (shared between create/edit/modal later) ---------
+  function createTaxonomyLoader(root) {
+    const cfg = {
+      sectionsUrl: root.dataset.sectionsUrl || '',
+      gradesTpl: root.dataset.gradesUrl || '',
+      branchesTpl: root.dataset.branchesUrl || '',
+      fieldsTpl: root.dataset.fieldsUrl || '',
+      subfieldsTpl: root.dataset.subfieldsUrl || '',
+      subjectTypesTpl: root.dataset.subjectTypesUrl || '',
+      subjectsTpl: root.dataset.subjectsUrl || '',
     };
 
-    const sectionSel  = qs('select[name="section_id"]', form) || qs("#section_id", form);
-    const gradeSel    = qs('select[name="grade_id"]', form) || qs("#grade_id", form);
-    const branchSel   = qs('select[name="branch_id"]', form) || qs("#branch_id", form);
-    const fieldSel    = qs('select[name="field_id"]', form) || qs("#field_id", form);
-    const subfieldSel = qs('select[name="subfield_id"]', form) || qs("#subfield_id", form);
-    const stSel       = qs('select[name="subject_type_id"]', form) || qs("#subject_type_id", form);
-    const subjectSel  = qs('select[name="subject_id"]', form) || qs("#subject_id", form);
+    const ac = new AbortController();
 
-    const preload = {
-      section_id: sectionSel?.dataset?.selected || sectionSel?.value || "",
-      grade_id: gradeSel?.dataset?.selected || gradeSel?.value || "",
-      branch_id: branchSel?.dataset?.selected || branchSel?.value || "",
-      field_id: fieldSel?.dataset?.selected || fieldSel?.value || "",
-      subfield_id: subfieldSel?.dataset?.selected || subfieldSel?.value || "",
-      subject_type_id: stSel?.dataset?.selected || stSel?.value || "",
-      subject_id: subjectSel?.dataset?.selected || subjectSel?.value || ""
+    async function loadSections(select) {
+      if (!cfg.sectionsUrl) return [];
+      const data = await fetchJson(cfg.sectionsUrl, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب مقطع' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadGrades(sectionId, select) {
+      if (!cfg.gradesTpl) return [];
+      const url = templateUrl(cfg.gradesTpl, 'section', sectionId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب پایه' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadBranches(gradeId, select) {
+      if (!cfg.branchesTpl) return [];
+      const url = templateUrl(cfg.branchesTpl, 'grade', gradeId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب شاخه' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadFields(branchId, select) {
+      if (!cfg.fieldsTpl) return [];
+      const url = templateUrl(cfg.fieldsTpl, 'branch', branchId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب رشته' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadSubfields(fieldId, select) {
+      if (!cfg.subfieldsTpl) return [];
+      const url = templateUrl(cfg.subfieldsTpl, 'field', fieldId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب زیررشته' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadSubjectTypes(fieldId, select) {
+      if (!cfg.subjectTypesTpl) return [];
+      const url = templateUrl(cfg.subjectTypesTpl, 'field', fieldId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب نوع درس' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    async function loadSubjects(subjectTypeId, select) {
+      if (!cfg.subjectsTpl) return [];
+      const url = templateUrl(cfg.subjectsTpl, 'subjectType', subjectTypeId);
+      const data = await fetchJson(url, { signal: ac.signal });
+      setSelectOptions(select, data, { placeholder: 'انتخاب درس' });
+      setSelectEnabled(select, true);
+      return data;
+    }
+
+    function destroy() { ac.abort(); }
+
+    return {
+      cfg,
+      loadSections,
+      loadGrades,
+      loadBranches,
+      loadFields,
+      loadSubfields,
+      loadSubjectTypes,
+      loadSubjects,
+      destroy
     };
-
-    async function loadSections() {
-      const data = await getJSON(endpoint.sections);
-      setOptions(sectionSel, data || [], "انتخاب مقطع");
-      setValueIfExists(sectionSel, preload.section_id);
-    }
-
-    async function loadGrades(sectionId) {
-      if (!sectionId) {
-        resetSelect(gradeSel, "انتخاب پایه");
-        return;
-      }
-      const data = await getJSON(`${endpoint.grades}/${sectionId}`);
-      setOptions(gradeSel, data || [], "انتخاب پایه");
-      setValueIfExists(gradeSel, preload.grade_id);
-    }
-
-    async function loadBranches(gradeId) {
-      if (!gradeId) {
-        resetSelect(branchSel, "انتخاب شاخه");
-        return;
-      }
-      const data = await getJSON(`${endpoint.branches}/${gradeId}`);
-      setOptions(branchSel, data || [], "انتخاب شاخه");
-      setValueIfExists(branchSel, preload.branch_id);
-    }
-
-    async function loadFields(branchId) {
-      if (!branchId) {
-        resetSelect(fieldSel, "انتخاب رشته");
-        return;
-      }
-      const data = await getJSON(`${endpoint.fields}/${branchId}`);
-      setOptions(fieldSel, data || [], "انتخاب رشته");
-      setValueIfExists(fieldSel, preload.field_id);
-    }
-
-    async function loadSubfields(fieldId) {
-      if (!fieldId) {
-        resetSelect(subfieldSel, "انتخاب زیررشته");
-        return;
-      }
-      const data = await getJSON(`${endpoint.subfields}/${fieldId}`);
-      setOptions(subfieldSel, data || [], "انتخاب زیررشته");
-      setValueIfExists(subfieldSel, preload.subfield_id);
-    }
-
-    async function loadSubjectTypes(fieldId) {
-      if (!fieldId) {
-        resetSelect(stSel, "انتخاب نوع درس");
-        return;
-      }
-      const data = await getJSON(`${endpoint.subjectTypes}/${fieldId}`);
-      setOptions(stSel, data || [], "انتخاب نوع درس");
-      setValueIfExists(stSel, preload.subject_type_id);
-    }
-
-    async function loadSubjects(subjectTypeId) {
-      if (!subjectTypeId) {
-        resetSelect(subjectSel, "انتخاب درس");
-        return;
-      }
-      const data = await getJSON(`${endpoint.subjects}/${subjectTypeId}`);
-      setOptions(subjectSel, data || [], "انتخاب درس");
-      setValueIfExists(subjectSel, preload.subject_id);
-    }
-
-    function resetDownstream(from) {
-      if (from <= 1) resetSelect(gradeSel, "انتخاب پایه");
-      if (from <= 2) resetSelect(branchSel, "انتخاب شاخه");
-      if (from <= 3) resetSelect(fieldSel, "انتخاب رشته");
-      if (from <= 4) resetSelect(subfieldSel, "انتخاب زیررشته");
-      if (from <= 5) resetSelect(stSel, "انتخاب نوع درس");
-      if (from <= 6) resetSelect(subjectSel, "انتخاب درس");
-    }
-
-    sectionSel?.addEventListener("change", async () => {
-      resetDownstream(1);
-      await loadGrades(sectionSel.value);
-    });
-
-    gradeSel?.addEventListener("change", async () => {
-      resetDownstream(2);
-      await loadBranches(gradeSel.value);
-    });
-
-    branchSel?.addEventListener("change", async () => {
-      resetDownstream(3);
-      await loadFields(branchSel.value);
-    });
-
-    fieldSel?.addEventListener("change", async () => {
-      resetDownstream(4);
-      await loadSubfields(fieldSel.value);
-      await loadSubjectTypes(fieldSel.value); // ✅ جدا
-    });
-
-    stSel?.addEventListener("change", async () => {
-      resetDownstream(6);
-      await loadSubjects(stSel.value);
-    });
-
-    (async function initTaxonomyChain() {
-      try {
-        await loadSections();
-
-        if (preload.section_id) await loadGrades(preload.section_id);
-        if (preload.grade_id) await loadBranches(preload.grade_id);
-        if (preload.branch_id) await loadFields(preload.branch_id);
-        if (preload.field_id) {
-          await loadSubfields(preload.field_id);
-          await loadSubjectTypes(preload.field_id);
-        }
-        if (preload.subject_type_id) {
-          await loadSubjects(preload.subject_type_id);
-        }
-      } catch (e) {
-        console.error("taxonomy init error", e);
-      }
-    })();
   }
 
-  /* -----------------------------------------------------------
-   * 2) INDEX CLASSROOMS AJAX FILTERS (?ajax=1)
-   * ----------------------------------------------------------- */
+  // --------- Common UI utils ---------
+  function copyToClipboard(text) {
+    const t = safeText(text);
+    if (!t) return Promise.resolve(false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(t).then(() => true).catch(() => false);
+    }
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = t;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return Promise.resolve(ok);
+    } catch {
+      document.body.removeChild(ta);
+      return Promise.resolve(false);
+    }
+  }
 
-  const listRoot =
-    qs("#classroomsList") ||
-    qs("[data-classrooms-list='1']");
+  function randomJoinCode(len = 6) {
+    // Friendly uppercase code: A-Z + 2-9 (avoid 0/1/O/I)
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let out = '';
+    for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    return out;
+  }
 
-  if (listRoot) {
-    const ajaxEndpoint =
-      listRoot.dataset.ajaxEndpoint ||
-      "/dashboard/teacher/classes?ajax=1";
+  // --------- Page inits ---------
+  function initIndex(root) {
+    // Optional: confirm delete buttons (data-confirm)
+    $all('[data-confirm]', root).forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const msg = btn.getAttribute('data-confirm') || 'آیا مطمئن هستید؟';
+        if (!confirm(msg)) e.preventDefault();
+      });
+    });
+  }
 
-    const searchInput =
-      qs("#classroomsSearch") ||
-      qs('input[name="q"]');
+  function initShow(root) {
+    const codeEl = $('#joinCode', root);
+    const copyBtn = $('#copyCodeBtn', root);
+    if (copyBtn && codeEl) {
+      copyBtn.addEventListener('click', async () => {
+        const ok = await copyToClipboard(codeEl.value || codeEl.textContent);
+        if (!ok) alert('کپی انجام نشد. لطفاً دستی کپی کنید.');
+      });
+    }
+  }
 
-    const gradeFilter =
-      qs("#filterGrade") ||
-      qs('select[name="grade_id"]');
+  function initCreate(root) {
+    const form = $('form', root);
+    if (!form) return;
 
-    const statusFilter =
-      qs("#filterStatus") ||
-      qs('select[name="status"]');
+    const steps = $all('.step[data-step]', root);
+    const stepTabs = $all('.wiz-step[data-step]', root);
+    const prevBtn = $('#prevBtn', root);
+    const nextBtn = $('#nextBtn', root);
+    const submitBtn = $('#submitBtn', root);
+    const reviewBox = $('#reviewBox', root);
 
-    const sortFilter =
-      qs("#filterSort") ||
-      qs('select[name="sort"]');
+    const pvTitle = $('#pvTitle', root);
+    const pvTax = $('#pvTax', root);
+    const pvType = $('#pvType', root);
+    const pvActive = $('#pvActive', root);
+    const pvCode = $('#pvCode', root);
+    const pvDesc = $('#pvDesc', root);
 
-    async function fetchAndRender() {
-      try {
-        const params = new URLSearchParams();
-        if (searchInput?.value) params.append("q", searchInput.value.trim());
-        if (gradeFilter?.value) params.append("grade", gradeFilter.value);
-        if (statusFilter?.value) params.append("status", statusFilter.value);
-        if (sortFilter?.value) params.append("sort", sortFilter.value);
+    const titleEl = $('input[name="title"]', root);
+    const descEl = $('textarea[name="description"]', root);
+    const activeSwitch = $('#activeSwitch', root);
+    const classroomType = $('#classroom_type', root);
+    const joinCodeInput = $('#joinCode', root);
+    const genCodeBtn = $('#genCodeBtn', root);
 
-        const data = await getJSON(`${ajaxEndpoint}&${params}`);
-        const items = data.classrooms || [];
-        renderClassrooms(items);
-      } catch (e) {
-        console.error("classrooms ajax error", e);
-        listRoot.innerHTML = `
-          <div class="alert alert-danger text-center">
-            خطا در دریافت کلاس‌ها
-          </div>
-        `;
+    const sectionSel = $('#section_id', root);
+    const gradeSel = $('#grade_id', root);
+    const branchSel = $('#branch_id', root);
+    const fieldSel = $('#field_id', root);
+    const subfieldSel = $('#subfield_id', root);
+    const subjectTypeSel = $('#subject_type_id', root);
+    const subjectSel = $('#subject_id', root);
+
+    const tax = createTaxonomyLoader(root);
+
+    let currentStep = 1;
+
+    function setStep(n) {
+      currentStep = n;
+
+      steps.forEach((el) => {
+        const s = Number(el.getAttribute('data-step'));
+        el.style.display = (s === currentStep) ? '' : 'none';
+      });
+
+      stepTabs.forEach((el) => {
+        const s = Number(el.getAttribute('data-step'));
+        el.classList.toggle('active', s === currentStep);
+        el.classList.toggle('done', s < currentStep);
+      });
+
+      if (prevBtn) prevBtn.disabled = currentStep <= 1;
+
+      const isLast = currentStep >= 3;
+      if (nextBtn) nextBtn.style.display = isLast ? 'none' : '';
+      if (submitBtn) submitBtn.style.display = isLast ? '' : 'none';
+
+      if (currentStep === 3) fillReview();
+    }
+
+    function validateStep1() {
+      const container = $('.step[data-step="1"]', root);
+      if (!container) return true;
+
+      const requiredEls = $all('[required]', container).filter((el) => !el.disabled);
+      let ok = true;
+
+      requiredEls.forEach((el) => {
+        if (!safeText(el.value)) {
+          ok = false;
+          el.classList.add('is-invalid');
+        } else {
+          el.classList.remove('is-invalid');
+        }
+      });
+
+      return ok;
+    }
+
+    function taxonomyLabel(selectEl) {
+      if (!selectEl) return '';
+      const opt = selectEl.options && selectEl.options[selectEl.selectedIndex];
+      const v = safeText(opt && opt.textContent);
+      return v && v !== 'انتخاب کنید' ? v : '';
+    }
+
+    function updateLivePreview() {
+      if (pvTitle && titleEl) pvTitle.textContent = safeText(titleEl.value) || 'نام کلاس';
+      if (pvDesc && descEl) pvDesc.textContent = safeText(descEl.value);
+
+      const taxParts = [
+        taxonomyLabel(sectionSel),
+        taxonomyLabel(gradeSel),
+        taxonomyLabel(branchSel),
+        taxonomyLabel(fieldSel),
+        taxonomyLabel(subfieldSel),
+        taxonomyLabel(subjectTypeSel),
+        taxonomyLabel(subjectSel),
+      ].filter(Boolean);
+
+      if (pvTax) pvTax.textContent = taxParts.length ? `تاکسونومی: ${taxParts.join(' / ')}` : 'تاکسونومی: —';
+
+      if (pvType && classroomType) {
+        const type = safeText(classroomType.value);
+        pvType.textContent = type ? `نوع کلاس: ${type === 'single' ? 'تکی' : (type === 'comprehensive' ? 'جامع' : type)}` : 'نوع کلاس: —';
+      }
+
+      if (pvActive && activeSwitch) {
+        const on = !!activeSwitch.checked;
+        pvActive.innerHTML = on ? '<i class="bi bi-broadcast"></i> فعال' : '<i class="bi bi-pause-circle"></i> غیرفعال';
+      }
+
+      if (pvCode && joinCodeInput) {
+        const code = safeText(joinCodeInput.value);
+        pvCode.innerHTML = code ? `<i class="bi bi-key"></i> کد: ${code}` : '<i class="bi bi-key"></i> کد: —';
       }
     }
 
-    function renderClassrooms(items) {
-      if (!items.length) {
-        listRoot.innerHTML = `
-          <div class="text-center p-4 text-muted">
-            کلاسی یافت نشد.
-          </div>
-        `;
-        return;
-      }
+    function fillReview() {
+      if (!reviewBox) return;
+      reviewBox.innerHTML = '';
 
-      listRoot.innerHTML = "";
-      items.forEach((c) => {
-        const card = document.createElement("div");
-        card.className = "classroom-card";
-        card.innerHTML = `
-          <div class="classroom-card__title">${c.title}</div>
-          <div class="classroom-card__meta">
-            ${c.grade || "-"} / ${c.subject || "-"}
-          </div>
-          <div class="classroom-card__stats">
-            ${c.students_count || 0} هنرجو
-          </div>
-          <div class="classroom-card__actions">
-            <a href="/dashboard/teacher/classes/${c.id}/edit" class="btn btn-sm btn-outline-primary">ویرایش</a>
-            <a href="/dashboard/teacher/classes/${c.id}" class="btn btn-sm btn-outline-secondary">مشاهده</a>
-          </div>
-        `;
-        listRoot.appendChild(card);
+      const rows = [
+        ['نام کلاس', safeText(titleEl && titleEl.value)],
+        ['مقطع', taxonomyLabel(sectionSel)],
+        ['پایه', taxonomyLabel(gradeSel)],
+        ['شاخه', taxonomyLabel(branchSel)],
+        ['رشته', taxonomyLabel(fieldSel)],
+        ['زیررشته', taxonomyLabel(subfieldSel)],
+        ['نوع درس', taxonomyLabel(subjectTypeSel)],
+        ['درس', taxonomyLabel(subjectSel)],
+        ['نوع کلاس', (safeText(classroomType && classroomType.value) === 'single' ? 'تکی' : (safeText(classroomType && classroomType.value) === 'comprehensive' ? 'جامع' : safeText(classroomType && classroomType.value)))],
+        ['وضعیت', (activeSwitch && activeSwitch.checked) ? 'فعال' : 'غیرفعال'],
+        ['توضیحات', safeText(descEl && descEl.value)],
+      ].filter((pair) => pair[1]);
+
+      const ul = document.createElement('ul');
+      ul.className = 'review-list';
+      rows.forEach(([k, v]) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="k">${k}:</span> <span class="v">${v}</span>`;
+        ul.appendChild(li);
+      });
+      reviewBox.appendChild(ul);
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', () => setStep(Math.max(1, currentStep - 1)));
+    if (nextBtn) nextBtn.addEventListener('click', () => {
+      if (currentStep === 1 && !validateStep1()) return;
+      setStep(Math.min(3, currentStep + 1));
+    });
+
+    ['input', 'change'].forEach((ev) => {
+      if (titleEl) titleEl.addEventListener(ev, updateLivePreview);
+      if (descEl) descEl.addEventListener(ev, updateLivePreview);
+      if (activeSwitch) activeSwitch.addEventListener(ev, updateLivePreview);
+      if (classroomType) classroomType.addEventListener(ev, updateLivePreview);
+    });
+
+    if (genCodeBtn && joinCodeInput) {
+      genCodeBtn.addEventListener('click', () => {
+        joinCodeInput.value = randomJoinCode(6);
+        updateLivePreview();
       });
     }
 
-    const refresh = debounce(fetchAndRender, 300);
+    function resetDownstream(from) {
+      if (from === 'section') {
+        resetSelect(gradeSel, 'انتخاب پایه');
+        resetSelect(branchSel, 'انتخاب شاخه');
+        resetSelect(fieldSel, 'انتخاب رشته');
+        resetSelect(subfieldSel, 'انتخاب زیررشته');
+        resetSelect(subjectTypeSel, 'انتخاب نوع درس');
+        resetSelect(subjectSel, 'انتخاب درس');
+      } else if (from === 'grade') {
+        resetSelect(branchSel, 'انتخاب شاخه');
+        resetSelect(fieldSel, 'انتخاب رشته');
+        resetSelect(subfieldSel, 'انتخاب زیررشته');
+        resetSelect(subjectTypeSel, 'انتخاب نوع درس');
+        resetSelect(subjectSel, 'انتخاب درس');
+      } else if (from === 'branch') {
+        resetSelect(fieldSel, 'انتخاب رشته');
+        resetSelect(subfieldSel, 'انتخاب زیررشته');
+        resetSelect(subjectTypeSel, 'انتخاب نوع درس');
+        resetSelect(subjectSel, 'انتخاب درس');
+      } else if (from === 'field') {
+        resetSelect(subfieldSel, 'انتخاب زیررشته');
+        resetSelect(subjectTypeSel, 'انتخاب نوع درس');
+        resetSelect(subjectSel, 'انتخاب درس');
+      } else if (from === 'subjectType') {
+        resetSelect(subjectSel, 'انتخاب درس');
+      }
+      updateLivePreview();
+    }
 
-    searchInput?.addEventListener("input", refresh);
-    gradeFilter?.addEventListener("change", fetchAndRender);
-    statusFilter?.addEventListener("change", fetchAndRender);
-    sortFilter?.addEventListener("change", fetchAndRender);
+    async function bootTaxonomy() {
+      if (sectionSel) setSelectEnabled(sectionSel, false);
+      resetDownstream('section');
 
-    fetchAndRender();
+      if (sectionSel && tax.cfg.sectionsUrl) {
+        try {
+          await tax.loadSections(sectionSel);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      updateLivePreview();
+    }
+
+    if (sectionSel) sectionSel.addEventListener('change', async () => {
+      resetDownstream('section');
+      const sectionId = safeText(sectionSel.value);
+      if (!sectionId) return;
+
+      try { await tax.loadGrades(sectionId, gradeSel); } catch (e) { console.error(e); }
+      updateLivePreview();
+    });
+
+    if (gradeSel) gradeSel.addEventListener('change', async () => {
+      resetDownstream('grade');
+      const gradeId = safeText(gradeSel.value);
+      if (!gradeId) return;
+
+      try { await tax.loadBranches(gradeId, branchSel); } catch (e) { console.error(e); }
+      updateLivePreview();
+    });
+
+    if (branchSel) branchSel.addEventListener('change', async () => {
+      resetDownstream('branch');
+      const branchId = safeText(branchSel.value);
+      if (!branchId) return;
+
+      try { await tax.loadFields(branchId, fieldSel); } catch (e) { console.error(e); }
+      updateLivePreview();
+    });
+
+    if (fieldSel) fieldSel.addEventListener('change', async () => {
+      resetDownstream('field');
+      const fieldId = safeText(fieldSel.value);
+      if (!fieldId) return;
+
+      const tasks = [];
+      if (subfieldSel && tax.cfg.subfieldsTpl) tasks.push(tax.loadSubfields(fieldId, subfieldSel));
+      if (subjectTypeSel && tax.cfg.subjectTypesTpl) tasks.push(tax.loadSubjectTypes(fieldId, subjectTypeSel));
+      try { await Promise.all(tasks); } catch (e) { console.error(e); }
+      updateLivePreview();
+    });
+
+    if (subjectTypeSel) subjectTypeSel.addEventListener('change', async () => {
+      resetDownstream('subjectType');
+      const stId = safeText(subjectTypeSel.value);
+      if (!stId) return;
+
+      try { await tax.loadSubjects(stId, subjectSel); } catch (e) { console.error(e); }
+      updateLivePreview();
+    });
+
+    if (subjectSel) subjectSel.addEventListener('change', updateLivePreview);
+    if (subfieldSel) subfieldSel.addEventListener('change', updateLivePreview);
+
+    setStep(1);
+    updateLivePreview();
+    bootTaxonomy();
+
+    window.addEventListener('beforeunload', () => tax.destroy(), { once: true });
+  }
+
+  function initEdit(root) {
+    // Safe progressive enhancement: copy button + (optional) taxonomy prefill
+    initShow(root);
+
+    const tax = createTaxonomyLoader(root);
+
+    const sectionSel = $('#section_id', root);
+    const gradeSel = $('#grade_id', root);
+    const branchSel = $('#branch_id', root);
+    const fieldSel = $('#field_id', root);
+    const subfieldSel = $('#subfield_id', root);
+    const subjectTypeSel = $('#subject_type_id', root);
+    const subjectSel = $('#subject_id', root);
+
+    const initial = {
+      section: root.dataset.initialSection || '',
+      grade: root.dataset.initialGrade || '',
+      branch: root.dataset.initialBranch || '',
+      field: root.dataset.initialField || '',
+      subfield: root.dataset.initialSubfield || '',
+      subjectType: root.dataset.initialSubjectType || '',
+      subject: root.dataset.initialSubject || '',
+    };
+
+    const hasTaxUI = !!(sectionSel && gradeSel && branchSel && fieldSel);
+    if (!hasTaxUI) return;
+
+    (async () => {
+      try {
+        await tax.loadSections(sectionSel);
+        if (initial.section) sectionSel.value = initial.section;
+
+        if (initial.section) {
+          await tax.loadGrades(initial.section, gradeSel);
+          if (initial.grade) gradeSel.value = initial.grade;
+        }
+
+        if (initial.grade) {
+          await tax.loadBranches(initial.grade, branchSel);
+          if (initial.branch) branchSel.value = initial.branch;
+        }
+
+        if (initial.branch) {
+          await tax.loadFields(initial.branch, fieldSel);
+          if (initial.field) fieldSel.value = initial.field;
+        }
+
+        if (initial.field) {
+          const tasks = [];
+          if (subfieldSel && tax.cfg.subfieldsTpl) tasks.push(tax.loadSubfields(initial.field, subfieldSel));
+          if (subjectTypeSel && tax.cfg.subjectTypesTpl) tasks.push(tax.loadSubjectTypes(initial.field, subjectTypeSel));
+          await Promise.all(tasks).catch(() => {});
+
+          if (initial.subfield && subfieldSel) subfieldSel.value = initial.subfield;
+          if (initial.subjectType && subjectTypeSel) subjectTypeSel.value = initial.subjectType;
+        }
+
+        if (initial.subjectType && subjectSel && tax.cfg.subjectsTpl) {
+          await tax.loadSubjects(initial.subjectType, subjectSel);
+          if (initial.subject) subjectSel.value = initial.subject;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    window.addEventListener('beforeunload', () => tax.destroy(), { once: true });
+  }
+
+  // --------- Boot dispatcher ---------
+  function boot() {
+    const root = getPageRoot();
+    const page = getPageName(root);
+
+    switch (page) {
+      case 'teacher-classes-index':
+        initIndex(root);
+        break;
+      case 'teacher-classes-create':
+        initCreate(root);
+        break;
+      case 'teacher-classes-show':
+        initShow(root);
+        break;
+      case 'teacher-classes-edit':
+        initEdit(root);
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
   }
 })();

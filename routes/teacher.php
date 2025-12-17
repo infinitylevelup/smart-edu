@@ -51,12 +51,15 @@ Route::prefix('dashboard')
                 Route::prefix('classes/data')->name('classes.data.')->group(function () {
                     Route::get('/sections', [TeacherClassController::class, 'sections'])->name('sections');
                     Route::get('/grades/{section}', [TeacherClassController::class, 'grades'])->name('grades');
-                    Route::get('/branches/{section}', [TeacherClassController::class, 'branches'])->name('branches');
+
+                    Route::get('/branches/{grade}', [TeacherClassController::class, 'branches'])->name('branches');          // ✅
                     Route::get('/fields/{branch}', [TeacherClassController::class, 'fields'])->name('fields');
                     Route::get('/subfields/{field}', [TeacherClassController::class, 'subfields'])->name('subfields');
-                    Route::get('/subject-types', [TeacherClassController::class, 'subjectTypes'])->name('subject-types');
-                    Route::get('/subjects', [TeacherClassController::class, 'subjects'])->name('subjects');
+
+                    Route::get('/subject-types/{field}', [TeacherClassController::class, 'subjectTypes'])->name('subject-types'); // ✅
+                    Route::get('/subjects/{subjectType}', [TeacherClassController::class, 'subjects'])->name('subjects');        // ✅
                 });
+
 
                 // ============================================
                 // 📝 بخش آزمون‌ها (Exams) - قسمت اول: داده‌های AJAX
@@ -79,6 +82,7 @@ Route::prefix('dashboard')
                 // JSON کلاس‌ها برای ویزارد/ادیت آزمون
                 Route::get('exams/data/classes-json', [TeacherExamController::class, 'classesJson'])
                     ->name('exams.data.classes-json');
+                
                 // ============================================
                 // 📝 بخش آزمون‌ها (Exams) - قسمت دوم: عملیات CRUD
                 // ⭐⭐ نکته مهم: edit را جدا تعریف می‌کنیم تا تداخل با create نداشته باشد ⭐⭐
@@ -87,6 +91,15 @@ Route::prefix('dashboard')
 
                 // ⭐⭐ تعریف جداگانه route edit برای جلوگیری از تداخل ⭐⭐
                 Route::get('exams/{exam}/edit', [TeacherExamController::class, 'edit'])->name('exams.edit');
+
+                // ============================================
+                // 📎 مسیرهای الحاق سوالات به آزمون (جدید اضافه شد)
+                // ============================================
+                Route::get('exams/{exam}/questions/attach', [TeacherExamController::class, 'attachQuestions'])
+                    ->name('exams.questions.attach');
+                
+                Route::post('exams/{exam}/questions/attach', [TeacherExamController::class, 'storeAttachedQuestions'])
+                    ->name('exams.questions.store-attached');
 
                 // ============================================
                 // ❓ بخش سوالات آزمون (Questions)

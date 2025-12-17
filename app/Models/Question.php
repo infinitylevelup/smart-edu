@@ -6,6 +6,7 @@ use App\Enums\QuestionType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,7 +23,7 @@ class Question extends Model
 
     protected $fillable = [
         'uuid',
-        'exam_id',
+    // ❌ 'exam_id', // این خط را حذف کنید
 
         'user_id',
         'creator_id',
@@ -36,7 +37,7 @@ class Question extends Model
         'topic_id',
 
         'difficulty',
-        'score',
+        'score', // ✅ این را نگه دارید
 
         'question_type',
         'content',
@@ -85,8 +86,14 @@ class Question extends Model
         });
     }
 
-    public function exam(): BelongsTo
+    // و این رابطه را اضافه کنید (اگر نیست):
+    public function exams(): BelongsToMany
     {
-        return $this->belongsTo(Exam::class, 'exam_id');
+        return $this->belongsToMany(
+            Exam::class,
+            'exam_questions',
+            'question_id',
+            'exam_id'
+        )->withPivot('sort_order');
     }
 }

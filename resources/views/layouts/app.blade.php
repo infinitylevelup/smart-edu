@@ -13,7 +13,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/dashboard.css') }}">
-
+    
+    <link rel="stylesheet" href="{{ asset('assets/css/teacher-classes.css') }}">
+    <script src="{{ asset('assets/js/teacher-classes.js') }}" defer></script>
     <style>
         body {
             font-family: Vazirmatn, system-ui, -apple-system, "Segoe UI", sans-serif;

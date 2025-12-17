@@ -1,0 +1,108 @@
+/*!
+ * Smart-Edu — Teacher Classes styles (index/create/show/edit)
+ * Location: public/assets/css/teacher-classes.css
+ *
+ * نکته: Bootstrap 5 فعال است. این فایل فقط ظاهر ماژول کلاس‌ها را بهتر می‌کند.
+ */
+
+/* ---------- Shared (all teacher-classes pages) ---------- */
+[data-page^="teacher-classes-"] .form-shell {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 14px;
+  background: #fff;
+}
+
+[data-page^="teacher-classes-"] .form-card {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 14px;
+  background: #fff;
+}
+
+[data-page^="teacher-classes-"] .input-soft {
+  border-radius: 12px;
+}
+
+[data-page^="teacher-classes-"] .preview-card {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+[data-page^="teacher-classes-"] .meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem .6rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  background: rgba(0,0,0,.04);
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+/* simple fade-up */
+@keyframes tc_fade_up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+[data-page^="teacher-classes-"] .fade-up {
+  animation: tc_fade_up .35s ease both;
+}
+
+/* Review list */
+[data-page^="teacher-classes-"] .review-list {
+  margin: 0;
+  padding-right: 1.1rem;
+}
+[data-page^="teacher-classes-"] .review-list li {
+  margin: .35rem 0;
+}
+[data-page^="teacher-classes-"] .review-list .k {
+  font-weight: 700;
+  margin-left: .4rem;
+}
+
+/* ---------- Create page ---------- */
+[data-page="teacher-classes-create"] .wizard {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+[data-page="teacher-classes-create"] .wiz-step {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem .7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.06);
+  background: rgba(0,0,0,.03);
+  font-size: .9rem;
+  user-select: none;
+}
+[data-page="teacher-classes-create"] .wiz-step .num {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,.1);
+  background: #fff;
+  font-weight: 700;
+}
+[data-page="teacher-classes-create"] .wiz-step.active {
+  background: rgba(13,110,253,.10);
+  border-color: rgba(13,110,253,.25);
+}
+[data-page="teacher-classes-create"] .wiz-step.done {
+  background: rgba(25,135,84,.10);
+  border-color: rgba(25,135,84,.25);
+}
+
+/* ---------- Edit / Show ---------- */
+[data-page="teacher-classes-edit"] .preview-card,
+[data-page="teacher-classes-show"] .preview-card {
+  background: #fff;
+}
+
+/* ---------- Index ---------- */
+/* add later if needed */

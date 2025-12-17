@@ -101,10 +101,7 @@
             </div>
         @endif
 
-        @php
-            $questions = $exam->questions ?? collect();
-            $totalScore = $questions->sum('score');
-        @endphp
+
 
         {{-- Summary Cards --}}
         <div class="row g-3 mb-4">
@@ -147,9 +144,17 @@
                     سوال‌های آزمون
                 </span>
 
-                <a href="{{ route('teacher.exams.questions.create', $exam) }}" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2">
-                    <i class="bi bi-plus"></i> افزودن سوال
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('teacher.exams.questions.attach', $exam) }}" 
+                    class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2">
+                        <i class="bi bi-plus"></i> افزودن از بانک
+                    </a>
+                    
+                    <a href="{{ route('teacher.exams.questions.create', $exam) }}" 
+                    class="btn btn-sm btn-outline-success d-flex align-items-center gap-2">
+                        <i class="bi bi-plus-circle"></i> ایجاد جدید
+                    </a>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -196,8 +201,7 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border rounded-pill px-3 py-1">
-                                        {{ str_replace('_', ' ', $q->question_type) }}
-                                    </span>
+                                        {{ str_replace('_', ' ', $q->question_type instanceof \App\Enums\QuestionType ? $q->question_type->value : (string) $q->question_type) }}                                    </span>
                                 </td>
                                 <td class="fw-bold text-success">{{ $q->score }}</td>
                                 <td class="tiny muted correct-answer" title="{{ $correct }}">

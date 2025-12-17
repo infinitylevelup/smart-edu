@@ -56,16 +56,19 @@ enum QuestionType: string
      * برای نمایش در select و UI: مقدار DB را به مقدار UI برمی‌گرداند
      * تا Wizard edit درست selected شود.
      */
-    public static function toUi(string|null $dbValue): string
+    public static function toUi(string|self|null $dbValue): string
     {
         if (!$dbValue) return '';
 
-        return match ($dbValue) {
+        $value = $dbValue instanceof self ? $dbValue->value : $dbValue;
+
+        return match ($value) {
             'mcq' => 'mcq',
             'true_false' => 'true_false',
             'short_answer' => 'fill_blank',
             'descriptive' => 'essay',
-            default => $dbValue, // fallback
+            default => $value,
         };
     }
+
 }

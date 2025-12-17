@@ -24,21 +24,11 @@ public function up()
     });
 }
 
-
-    public function down()
-    {
-        Schema::table('questions', function (Blueprint $table) {
-            $table->dropForeign(['subject_id']);
-            $table->dropColumn([
-                'subject_id',
-                'module_label',
-                'page_number',
-                'difficulty',
-                'hint',
-                'solution',
-                'resource_links',
-                'topic_id',
-            ]);
-        });
-    }
+public function down()
+{
+    // اگر چیزی اضافه نکرده‌ایم، down رو خالی بذاریم
+    // Schema::table('questions', function (Blueprint $table) {
+    //     // nothing to drop
+    // });
+}
 };

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
@@ -14,6 +13,8 @@ use App\Models\SubjectType;
 use App\Models\Subject;
 use App\Models\Exam;
 use App\Models\Classroom;
+// اضافه کردن این خط:
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -359,8 +360,152 @@ class TeacherExamController extends Controller
     public function show(Exam $exam)
     {
         abort_unless((int) $exam->teacher_id === (int) Auth::id(), 403);
-        return view('dashboard.teacher.exams.show', compact('exam'));
+        
+        // سوالات را از جدول pivot با مرتب‌سازی بگیرید
+        $questions = $exam->questions()
+            ->orderByPivot('sort_order', 'asc')
+            ->get();
+        
+        $totalScore = $questions->sum('score');
+        
+        return view('dashboard.teacher.exams.show', compact('exam', 'questions', 'totalScore'));
     }
+//--------------------------------------------
+    public function attachQuestions(Exam $exam, Request $request)
+    {
+        abort_unless((int) $exam->teacher_id === (int) Auth::id(), 403);
+        
+        // موضوع اصلی آزمون
+        $subjectId = $exam->primary_subject_id;
+        
+        if (!$subjectId) {
+            $subjectId = $exam->subjects()->first()?->id;
+            
+            if (!$subjectId) {
+                return back()->withErrors(['error' => 'این آزمون موضوع مشخصی ندارد.']);
+            }
+        }
+        
+        $teacherId = Auth::id();
+        
+        // کوئری پایه
+        $query = Question::query()
+            ->where('is_active', true)
+            ->where('subject_id', $subjectId);
+        
+        // فیلتر اصلی
+        $query->where(function($q) use ($teacherId) {
+            $q->where('user_id', $teacherId)
+            ->orWhere('creator_id', $teacherId)
+            ->orWhere('is_global', true);
+        });
+        
+        // حذف سوالات قبلاً اضافه شده
+        $existingQuestionIds = $exam->questions()->pluck('questions.id')->toArray();
+        if (!empty($existingQuestionIds)) {
+            $query->whereNotIn('id', $existingQuestionIds);
+        }
+        
+        // فیلترهای اختیاری
+        if ($request->filled('module')) {
+            $query->where('module_label', $request->module);
+        }
+        
+        if ($request->filled('chapter')) {
+            $query->where('chapter_id', $request->chapter);
+        }
+        
+        if ($request->filled('page')) {
+            $query->where('page_number', $request->page);
+        }
+        
+        if ($request->filled('type')) {
+            $query->where('question_type', $request->type);
+        }
+        
+        if ($request->filled('difficulty')) {
+            $query->where('difficulty', $request->difficulty);
+        }
+        
+        // مرتب‌سازی
+        $query->orderBy('is_global', 'desc')
+            ->orderBy('created_at', 'desc');
+        
+        $questions = $query->paginate(20);
+        
+        // داده‌های فیلتر
+        // داده‌های فیلتر
+        $modules = Question::where('subject_id', $subjectId)
+            ->whereNotNull('module_label')
+            ->distinct()
+            ->pluck('module_label');
+
+        $chapters = Question::where('subject_id', $subjectId)
+            ->whereNotNull('chapter_id')
+            ->distinct()
+            ->pluck('chapter_id');
+
+        $pages = Question::where('subject_id', $subjectId)
+            ->whereNotNull('page_number')
+            ->distinct()
+            ->pluck('page_number')
+            ->sort();
+
+        // به این تغییر بده:
+        // داده‌های فیلتر (فعلاً خالی - بعداً اضافه می‌شه)
+        $modules = collect([]);
+        $chapters = collect([]);
+        $pages = collect([]);
+        
+        return view('dashboard.teacher.exams.attach-questions', compact(
+            'exam', 
+            'questions',
+            'modules',
+            'chapters',
+            'pages'
+        ));
+    }
+
+    public function storeAttachedQuestions(Request $request, Exam $exam)
+    {
+        abort_unless((int) $exam->teacher_id === (int) Auth::id(), 403);
+        
+        $request->validate([
+            'question_ids' => 'required|array|min:1',
+            'question_ids.*' => 'exists:questions,id',
+        ]);
+        
+        // بررسی مالکیت سوالات
+        $teacherId = Auth::id();
+        $questionIds = $request->input('question_ids');
+        
+        $validQuestions = Question::whereIn('id', $questionIds)
+            ->where(function($q) use ($teacherId) {
+                $q->where('user_id', $teacherId)
+                ->orWhere('creator_id', $teacherId)
+                ->orWhere('is_global', true);
+            })
+            ->pluck('id')
+            ->toArray();
+        
+        if (count($validQuestions) !== count($questionIds)) {
+            return back()->withErrors(['error' => 'برخی سوالات انتخابی مجاز نیستند.']);
+        }
+        
+        // اضافه کردن سوالات به آزمون
+        $currentCount = $exam->questions()->count();
+        $syncData = [];
+        
+        foreach ($validQuestions as $index => $questionId) {
+            $syncData[$questionId] = ['sort_order' => $currentCount + $index];
+        }
+        
+        $exam->questions()->syncWithoutDetaching($syncData);
+        
+        return redirect()->route('teacher.exams.show', $exam)
+            ->with('success', count($validQuestions) . ' سوال به آزمون "' . $exam->title . '" اضافه شد.');
+    }
+//--------------------------------------------
 
     public function edit(Exam $exam)
     {
