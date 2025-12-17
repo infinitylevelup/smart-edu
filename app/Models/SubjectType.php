@@ -12,9 +12,9 @@ class SubjectType extends Model
 
     protected $table = 'subject_types';
 
-    // ✅ id اتواینکریمنت است => اینها نباید باشند
-    // public $incrementing = false;
-    // protected $keyType = 'string';
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
+    // public $incrementing = true; // پیش‌فرض
+    // protected $keyType = 'int';  // پیش‌فرض
 
     protected $fillable = [
         'uuid',
@@ -26,7 +26,7 @@ class SubjectType extends Model
 
     protected $casts = [
         'sort_order' => 'integer',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     protected static function booted()

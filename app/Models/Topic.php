@@ -11,6 +11,13 @@ class Topic extends Model
     use HasFactory;
 
     protected $table = 'topics';
+
+    // ⚠️ توجه: اگر id اتوایکریمنت INT است، این تنظیمات درست است:
+    // public $incrementing = true; // پیش‌فرض (اتوایکریمنت)
+    // protected $keyType = 'int';  // پیش‌فرض
+
+    // اگر migration جدول topics از UUID برای id استفاده می‌کند،
+    // تنظیمات زیر درست هستند:
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -24,8 +31,14 @@ class Topic extends Model
     protected static function booted()
     {
         static::creating(function ($m) {
-            if (empty($m->id)) {
+            // اگر id از نوع UUID است و ستونی به نام id دارید (نه uuid)
+            if (empty($m->id) && $m->incrementing === false) {
                 $m->id = (string) Str::uuid();
+            }
+
+            // اگر ستون uuid جداگانه دارید
+            if (empty($m->uuid) && !empty($m->getAttributes()['uuid'])) {
+                $m->uuid = (string) Str::uuid();
             }
         });
     }

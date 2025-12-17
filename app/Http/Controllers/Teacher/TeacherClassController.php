@@ -28,12 +28,12 @@ class TeacherClassController extends Controller
         $status = $request->status;
         $sort = $request->sort ?? 'latest';
 
-        $classes = Classroom::query()
+        $baseQuery = Classroom::query()
             ->where('teacher_id', $teacherId)
             ->when($q, function($query) use ($q){
                 $query->where(function($qq) use ($q){
                     $qq->where('title', 'like', "%$q%")
-                       ->orWhere('join_code', 'like', "%$q%");
+                    ->orWhere('join_code', 'like', "%$q%");
                 });
             })
             ->when($grade && $grade !== 'all', fn($query)=>$query->where('grade_id', $grade))
@@ -46,26 +46,37 @@ class TeacherClassController extends Controller
             ->when($sort === 'students', fn($query)=>$query->orderByDesc('students_count'))
             ->when($sort === 'title_asc', fn($query)=>$query->orderBy('title'))
             ->when($sort === 'title_desc', fn($query)=>$query->orderByDesc('title'))
-            ->when($sort === 'latest', fn($query)=>$query->latest())
-            ->paginate(9)
-            ->withQueryString();
+            ->when($sort === 'latest', fn($query)=>$query->latest());
 
+        // ✅ AJAX: همه کلاس‌ها بدون paginate
         if ($request->ajax() || $request->filled('ajax')) {
+            $classes = $baseQuery->get();
+
+            $classrooms = $classes->map(function($class) {
+                return [
+                    'id' => $class->id,
+                    'uuid' => $class->uuid,
+                    'title' => $class->title,
+                    'classroom_type' => $class->classroom_type,
+                    'students_count' => $class->students_count,
+                    'exams_count' => $class->exams_count,
+                    'is_active' => $class->is_active
+                ];
+            })->values();
+
             return response()->json([
                 'success' => true,
-                'classrooms' => $classes->map(function($class) {
-                    return [
-                        'id' => $class->id,
-                        'uuid' => $class->uuid,
-                        'title' => $class->title,
-                        'students_count' => $class->students_count,
-                        'exams_count' => $class->exams_count,
-                        'is_active' => $class->is_active
-                    ];
-                })
+                'classrooms' => $classrooms,
+                'classes' => $classrooms->map(fn($c) => [
+                    'id' => $c['id'],
+                    'title' => $c['title'],
+                    'classroom_type' => $c['classroom_type'],
+                ])->values(),
             ]);
         }
 
+        // حالت صفحه کلاس‌ها
+        $classes = $baseQuery->paginate(9)->withQueryString();
         return view('dashboard.teacher.classes.index', compact('classes'));
     }
 
@@ -126,6 +137,9 @@ class TeacherClassController extends Controller
                     "uuid" => $classroom->uuid,
                     "title" => $classroom->title,
                     "join_code" => $classroom->join_code,
+
+                    // ✅ لازم برای ویزارد
+                    "classroom_type" => $classroom->classroom_type,
                 ],
             ]);
         }
@@ -273,9 +287,8 @@ class TeacherClassController extends Controller
 
     public function branches(Grade $grade)
     {
-        // اگر branches به section وصل است و grade_id ندارد، این متد را اصلاح کن
         return response()->json(
-            Branch::where('section_id', $grade->section_id)   // ✅ سازگار با ساختار جدید تو
+            Branch::where('section_id', $grade->section_id)
                 ->where('is_active', 1)
                 ->orderBy('sort_order')
                 ->get(['id','name_fa'])
@@ -304,7 +317,6 @@ class TeacherClassController extends Controller
 
     public function subjectTypes(Field $field)
     {
-        // چون subject_types FK به field ندارد، همه فعال‌ها را بده
         return response()->json(
             SubjectType::where('is_active', 1)
                 ->orderBy('sort_order')

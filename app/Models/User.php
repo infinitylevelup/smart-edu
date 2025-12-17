@@ -23,8 +23,9 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    public $incrementing = false;
-    protected $keyType = 'string';
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
+    // public $incrementing = true; // پیش‌فرض
+    // protected $keyType = 'int';  // پیش‌فرض
 
     /**
      * Mass Assignment fields
@@ -36,7 +37,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'status',
-        // 'role'  ❌ حذف شد (نقش از pivot خوانده می‌شود)
+        // 'role' ❌ حذف شد (نقش از pivot خوانده می‌شود)
         'is_active',
     ];
 
@@ -54,7 +55,7 @@ class User extends Authenticatable
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // ==========================================================
@@ -198,7 +199,7 @@ class User extends Authenticatable
     }
 
     // ==========================================================
-    // Boot (auto-generate string id)
+    // Boot (auto-generate uuid)
     // ==========================================================
 
     protected static function booted()

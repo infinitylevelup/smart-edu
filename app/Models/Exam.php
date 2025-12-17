@@ -1,5 +1,4 @@
 <?php
-// app/Models/Exam.php
 
 namespace App\Models;
 
@@ -16,21 +15,21 @@ class Exam extends Model
 
     protected $table = 'exams';
 
-    // id اینکریمنت است (INT) → تنظیم پیش‌فرض لاراول کافی است
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
 
     protected $fillable = [
         'user_id',
         'teacher_id',
         'classroom_id',
 
-       // 'exam_type',
+        'exam_type',
         'exam_mode',
         'primary_subject_id',
 
         // برای فرم ساده ویرایش
-        'scope',       // classroom / free
+        'scope',       // classroom/free
         'subject',     // برچسب نمایشی درس (مثلاً عنوان فارسی)
-        'level',       // taghviyati / konkur / olympiad
+        'level',       // taghviyati/konkur/olympiad
 
         'title',
         'description',
@@ -61,25 +60,88 @@ class Exam extends Model
     ];
 
     protected $casts = [
-        'duration_minutes'  => 'integer',
-        'total_questions'   => 'integer',
+        'duration_minutes' => 'integer',
+        'total_questions' => 'integer',
 
-        'coefficients'      => 'array',
+        'coefficients' => 'array',
 
         'shuffle_questions' => 'boolean',
-        'shuffle_options'   => 'boolean',
-        'ai_assisted'       => 'boolean',
+        'shuffle_options' => 'boolean',
+        'ai_assisted' => 'boolean',
 
-        'is_active'         => 'boolean',
-        'is_published'      => 'boolean',
+        'is_active' => 'boolean',
+        'is_published' => 'boolean',
 
-        'start_at'          => 'datetime',
-        'end_at'            => 'datetime',
-        'created_at'        => 'datetime',
-        'updated_at'        => 'datetime',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // ================== روابط ==================
+    // ================== Accessors ==================
+
+    /**
+     * ترجمه نوع آزمون به فارسی
+     */
+    public function getExamTypeFaAttribute()
+    {
+        $map = [
+            'public' => 'آزمون آزاد',
+            'class_single' => 'کلاسی تک‌درس',
+            'class_comprehensive' => 'کلاسی جامع'
+        ];
+
+        return $map[$this->exam_type] ?? $this->exam_type;
+    }
+
+    /**
+     * بررسی آیا آزمون کلاسی است
+     */
+    public function getIsClassExamAttribute(): bool
+    {
+        return in_array($this->exam_type, ['class_single', 'class_comprehensive']);
+    }
+
+    /**
+     * نام درس‌ها به صورت متن
+     */
+    public function getSubjectNamesAttribute(): string
+    {
+        return $this->subjects->pluck('title_fa')->implode('، ');
+    }
+
+    /**
+     * مدت زمان به صورت فرمت شده
+     */
+    public function getDurationFormattedAttribute(): string
+    {
+        $hours = floor($this->duration_minutes / 60);
+        $minutes = $this->duration_minutes % 60;
+
+        if ($hours > 0) {
+            return "{$hours} ساعت و {$minutes} دقیقه";
+        }
+
+        return "{$minutes} دقیقه";
+    }
+
+    /**
+     * وضعیت انتشار به فارسی
+     */
+    public function getPublishedStatusAttribute(): string
+    {
+        return $this->is_published ? 'منتشر شده' : 'پیش‌نویس';
+    }
+
+    /**
+     * وضعیت فعال بودن به فارسی
+     */
+    public function getActiveStatusAttribute(): string
+    {
+        return $this->is_active ? 'فعال' : 'غیرفعال';
+    }
+
+    // ================== روابط ===================
 
     public function teacher(): BelongsTo
     {
@@ -111,15 +173,7 @@ class Exam extends Model
         return $this->hasMany(ExamAttempt::class, 'exam_id');
     }
 
-    public function subjects(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            Subject::class,
-            'exam_subject',
-            'exam_id',
-            'subject_id'
-        )->withPivot('question_count');
-    }
+
 
     public function section(): BelongsTo
     {
@@ -173,5 +227,49 @@ class Exam extends Model
     }
 
 
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Subject::class,
+            'exam_subject',
+            'exam_id',
+            'subject_id'
+        )->withPivot('question_count', 'coverage'); // + coverage
+    }
 
+
+    // مقدار پیش‌فرض برای type
+    protected $attributes = [
+        'exam_type' => 'free',
+    ];
+    // بعد از سایر accessorها اضافه کنید:
+    public function getTypeFaAttribute()
+    {
+        return [
+            'public' => 'آزاد',
+            'class' => 'کلاسی',
+            'class_single' => 'کلاسی تک‌درس',
+            'class_comprehensive' => 'کلاسی جامع',
+        ][$this->exam_type] ?? 'آزاد';
+    }
+
+    public function getTypeIconAttribute()
+    {
+        return [
+            'public' => 'fa-globe',
+            'class' => 'fa-people-group',
+            'class_single' => 'fa-book',
+            'class_comprehensive' => 'fa-graduation-cap',
+        ][$this->exam_type] ?? 'fa-globe';
+    }
+
+    public function getTypeClassAttribute()
+    {
+        return [
+            'public' => 'type-public',
+            'class' => 'type-class',
+            'class_single' => 'type-class-single',
+            'class_comprehensive' => 'type-class-comprehensive',
+        ][$this->exam_type] ?? 'type-public';
+    }
 }

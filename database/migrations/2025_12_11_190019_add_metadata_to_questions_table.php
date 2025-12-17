@@ -5,34 +5,25 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up()
-    {
-        Schema::table('questions', function (Blueprint $table) {
+public function up()
+{
+    Schema::table('questions', function (Blueprint $table) {
 
-            // درس سؤال (تعیین‌شده توسط exam_mode)
-            $table->unsignedBigInteger('subject_id')
-                  ->nullable()
-                  ->after('exam_id');
+        if (!Schema::hasColumn('questions', 'subject_id')) {
+            $table->unsignedBigInteger('subject_id')->nullable()->after('exam_id');
+        }
 
-            // اتصال اختیاری
-            $table->foreign('subject_id')
-                  ->references('id')->on('subjects')
-                  ->nullOnDelete();
+        if (!Schema::hasColumn('questions', 'difficulty')) {
+            $table->unsignedTinyInteger('difficulty')->default(1);
+        }
 
-            // متادیتای آموزشی
-            $table->string('module_label')->nullable()->after('subject_id');
-            $table->unsignedSmallInteger('page_number')->nullable()->after('module_label');
-            $table->string('difficulty')->nullable()->after('page_number');
-            $table->text('hint')->nullable()->after('difficulty');
-            $table->longText('solution')->nullable()->after('hint');
+        if (!Schema::hasColumn('questions', 'importance')) {
+            $table->unsignedTinyInteger('importance')->default(1);
+        }
 
-            // JSON آرایهٔ لینک‌های آموزشی
-            $table->json('resource_links')->nullable()->after('solution');
+    });
+}
 
-            // اتصال آینده به جدول topics
-            $table->unsignedBigInteger('topic_id')->nullable()->after('resource_links');
-        });
-    }
 
     public function down()
     {

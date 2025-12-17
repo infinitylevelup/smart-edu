@@ -71,6 +71,9 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+
+            // 👇 این خط حیاتی است
+            'tap' => [App\Logging\CustomizeFormatter::class],
         ],
 
         'slack' => [

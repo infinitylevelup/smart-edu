@@ -12,9 +12,9 @@ class Grade extends Model
 
     protected $table = 'grades';
 
-    // ✅ id اتواینکریمنت است => اینها نباید باشند
-    // public $incrementing = false;
-    // protected $keyType = 'string';
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
+    // public $incrementing = true; // پیش‌فرض
+    // protected $keyType = 'int';  // پیش‌فرض
 
     protected $fillable = [
         'uuid',
@@ -28,9 +28,9 @@ class Grade extends Model
 
     protected $casts = [
         'section_id' => 'integer',
-        'value'      => 'integer',
+        'value' => 'integer',
         'sort_order' => 'integer',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     protected static function booted()

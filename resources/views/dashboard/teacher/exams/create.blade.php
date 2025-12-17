@@ -1,709 +1,540 @@
 @extends('layouts.app')
-@section('title', 'ساخت آزمون جدید - SmartEdu')
+@section('title', 'ساخت آزمون جدید')
 
 @push('styles')
-<style>
-    /* تم فیروزه‌ای - آبی دریایی */
-    :root {
-        --primary: #00CED1;
-        --primary-light: rgba(0, 206, 209, 0.1);
-        --primary-gradient: linear-gradient(135deg, #00CED1, #20B2AA);
-        --secondary: #4682B4;
-        --secondary-light: rgba(70, 130, 180, 0.1);
-        --accent: #48D1CC;
-        --accent-light: rgba(72, 209, 204, 0.1);
-        --success: #32CD32;
-        --success-light: rgba(50, 205, 50, 0.1);
-        --warning: #FFA500;
-        --warning-light: rgba(255, 165, 0, 0.1);
-        --light: #ffffff;
-        --dark: #2F4F4F;
-        --dark-light: #4A6F6F;
-        --gray: #708090;
-        --light-gray: #F0F8FF;
-        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
-        --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.12);
-        --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.16);
-        --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
-        --radius-xl: 24px;
-        --radius-lg: 20px;
-        --radius-md: 16px;
-        --radius-sm: 12px;
-    }
-
-    * { font-family: 'Vazirmatn', sans-serif; }
-
-    body {
-        background-color: #f8fcfc;
-        color: var(--dark);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-
-    .create-exam-container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 20px 15px 80px;
-        animation: fadeIn 0.6s ease both;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes slideInLeft {
-        from { transform: translateX(-30px); opacity: 0; }
-        to   { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideUp {
-        from { transform: translateY(30px); opacity: 0; }
-        to   { transform: translateY(0); opacity: 1; }
-    }
-
-    /* HEADER */
-    .page-header {
-        background: linear-gradient(135deg, rgba(0, 206, 209, 0.1), rgba(70, 130, 180, 0.1));
-        border-radius: var(--radius-xl);
-        padding: 25px 30px;
-        margin-bottom: 30px;
-        border: 2px solid rgba(0, 206, 209, 0.15);
-        position: relative;
-        overflow: hidden;
-        animation: slideInLeft 0.5s ease-out;
-    }
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 300px;
-        height: 300px;
-        background: radial-gradient(circle, rgba(0, 206, 209, 0.08), transparent 70%);
-        border-radius: 50%;
-    }
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        position: relative;
-        z-index: 2;
-    }
-    .header-title h1 {
-        font-weight: 900;
-        font-size: 1.8rem;
-        color: var(--dark);
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .header-title h1::before {
-        content: '';
-        width: 8px;
-        height: 40px;
-        background: var(--primary-gradient);
-        border-radius: 10px;
-    }
-    .header-subtitle {
-        color: var(--gray);
-        font-size: 1.05rem;
-        line-height: 1.8;
-        max-width: 600px;
-    }
-    .btn-back {
-        padding: 12px 24px;
-        border-radius: var(--radius-lg);
-        font-weight: 800;
-        font-size: 1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: transparent;
-        color: var(--dark);
-        border: 2px solid var(--gray);
-        transition: all 0.25s ease;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-    .btn-back:hover {
-        background: var(--light-gray);
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-md);
-    }
-
-    /* PROGRESS */
-    .progress-container { margin-bottom: 35px; animation: slideUp 0.5s ease-out; }
-    .progress-bar {
-        height: 8px;
-        background: var(--light-gray);
-        border-radius: 4px;
-        overflow: hidden;
-        margin-bottom: 15px;
-    }
-    .progress-fill {
-        height: 100%;
-        background: var(--primary-gradient);
-        border-radius: 4px;
-        width: 12.5%;
-        transition: width 0.6s ease;
-    }
-    .progress-steps {
-        display: flex;
-        justify-content: space-between;
-        padding: 0 8px;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .step-item { text-align: center; flex: 1; min-width: 105px; }
-    .step-number {
-        width: 34px; height: 34px; border-radius: 50%;
-        background: var(--light);
-        border: 2px solid var(--light-gray);
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 900; color: var(--gray);
-        margin: 0 auto 6px;
-        transition: all 0.3s;
-        font-size: .9rem;
-    }
-    .step-item.active .step-number {
-        background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.08);
-    }
-    .step-item.completed .step-number {
-        background: var(--success); color: white; border-color: var(--success);
-    }
-    .step-name {
-        font-size: 0.82rem; font-weight: 800; color: var(--gray);
-        transition: all .3s;
-    }
-    .step-item.active .step-name { color: var(--primary); font-weight: 900; }
-
-    /* FORM CONTAINER */
-    .form-container {
-        background: var(--light);
-        border-radius: var(--radius-xl);
-        padding: 36px;
-        box-shadow: var(--shadow-lg);
-        border: 2px solid rgba(0, 206, 209, 0.08);
-        position: relative;
-        overflow: hidden;
-        animation: slideUp 0.6s ease-out;
-    }
-
-    .form-section { display: none; animation: fadeIn .35s ease; }
-    .form-section.active { display: block; }
-
-    .section-header { margin-bottom: 25px; text-align: center; }
-    .section-icon { font-size: 2.6rem; margin-bottom: 10px; color: var(--primary); }
-    .section-title { font-weight: 900; font-size: 1.45rem; color: var(--dark); margin-bottom: 8px; }
-    .section-description {
-        color: var(--gray); font-size: 1.02rem; line-height: 1.7;
-        max-width: 700px; margin: 0 auto;
-    }
-
-    /* SELECTION GRID (reusable cards) */
-    .selection-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 16px;
-        margin-top: 12px;
-    }
-    @media (max-width: 768px) {
-        .selection-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 480px) {
-        .selection-grid { grid-template-columns: 1fr; }
-    }
-    .selection-card {
-        border: 3px solid var(--light-gray);
-        border-radius: var(--radius-lg);
-        padding: 18px 16px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        background: var(--light);
-        position: relative;
-        overflow: hidden;
-        min-height: 120px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 6px;
-    }
-    .selection-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(0,206,209,.35); }
-    .selection-card.selected {
-        border-color: var(--primary);
-        background: linear-gradient(135deg, rgba(0, 206, 209, 0.06), rgba(70, 130, 180, 0.06));
-        box-shadow: var(--shadow-md);
-    }
-    .selection-icon { font-size: 2rem; }
-    .selection-name { font-weight: 900; font-size: 1.05rem; color: var(--dark); }
-    .selection-description { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin: 0; }
-
-    /* EXAM TYPE cards (step1) */
-    .exam-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-    @media (max-width: 768px) { .exam-type-grid { grid-template-columns: 1fr; } }
-    .type-card {
-        border: 3px solid var(--light-gray);
-        border-radius: var(--radius-lg);
-        padding: 22px 18px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        background: var(--light);
-        position: relative;
-        overflow: hidden;
-        min-height: 175px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 8px;
-    }
-    .type-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
-    .type-card.selected {
-        border-color: var(--primary);
-        background: linear-gradient(135deg, rgba(0, 206, 209, 0.05), rgba(70, 130, 180, 0.05));
-        box-shadow: var(--shadow-md);
-    }
-    .type-icon { font-size: 2.2rem; color: var(--primary); }
-    .type-title { font-weight: 900; font-size: 1.1rem; color: var(--dark); }
-    .type-description { color: var(--gray); font-size: 0.9rem; line-height: 1.6; margin:0; }
-    .type-badge {
-        position: absolute; top: 10px; left: 10px;
-        background: var(--primary); color: #fff;
-        padding: 4px 12px; border-radius: 999px;
-        font-size: .75rem; font-weight: 900;
-    }
-
-    /* SUBJECTS LIST (step7) */
-    .subjects-wrap { margin-top: 8px; }
-    .subject-item {
-        display: flex; align-items: center; gap: 12px;
-        background: var(--light);
-        border: 2px solid var(--light-gray);
-        border-radius: var(--radius-md);
-        padding: 12px 14px;
-        margin-bottom: 10px;
-        transition: all .2s ease;
-    }
-    .subject-item:hover { border-color: rgba(0,206,209,.35); box-shadow: var(--shadow-sm); }
-    .subject-checkbox input { width: 18px; height: 18px; cursor: pointer; }
-    .subject-info { flex:1; text-align:right; }
-    .subject-name { font-weight: 900; font-size: 1rem; margin-bottom: 4px; }
-    .subject-meta { color: var(--gray); font-size: .85rem; display:flex; gap:10px; flex-wrap:wrap; }
-    .subject-code { background: var(--light-gray); padding:2px 8px; border-radius: 6px; }
-
-    /* PREVIEW (step8) */
-    .preview-section {
-        background: linear-gradient(135deg, rgba(0, 206, 209, 0.05), rgba(70, 130, 180, 0.05));
-        border-radius: var(--radius-xl);
-        padding: 22px;
-        margin-bottom: 25px;
-        border: 2px solid var(--primary-light);
-    }
-    .preview-title {
-        font-weight: 900; color: var(--dark);
-        margin-bottom: 14px; display:flex; align-items:center; gap:8px;
-        font-size: 1.15rem;
-    }
-    .preview-grid {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;
-    }
-    .preview-item {
-        background: var(--light); border-radius: var(--radius-md); padding: 12px;
-        border: 2px solid var(--light-gray);
-    }
-    .preview-label { font-size: .85rem; color: var(--gray); font-weight: 700; margin-bottom: 4px; }
-    .preview-value { font-weight: 900; color: var(--dark); font-size: 1rem; }
-
-    /* DETAILS FORM (step8) */
-    .details-form { max-width: 650px; margin: 0 auto; }
-    .form-group { margin-bottom: 20px; }
-    .form-label {
-        color: var(--dark);
-        font-weight: 900; font-size: 1rem; margin-bottom: 10px;
-        display:flex; align-items:center; gap:8px;
-    }
-    .form-label i {
-        color: var(--primary);
-        background: var(--primary-light);
-        width: 34px; height: 34px; border-radius: 10px;
-        display:flex; align-items:center; justify-content:center; font-size:1rem;
-    }
-    .form-input, .form-textarea {
-        width: 100%; padding: 14px 16px;
-        border: 2px solid var(--light-gray);
-        border-radius: var(--radius-md);
-        background: var(--light); color: var(--dark);
-        font-weight: 700; font-size: 1rem;
-        transition: all .25s ease;
-    }
-    .form-textarea { min-height: 110px; resize: vertical; line-height: 1.7; }
-    .form-input:focus, .form-textarea:focus {
-        outline: none; border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.2);
-    }
-
-    .checkbox-group {
-        background: var(--light-gray);
-        border-radius: var(--radius-lg);
-        padding: 16px;
-        margin-top: 12px;
-    }
-    .form-check { display:flex; align-items:center; gap:10px; }
-    .form-check-input { width: 20px; height: 20px; cursor: pointer; }
-    .form-check-label { font-weight: 900; font-size: 1rem; cursor: pointer; }
-    .form-text { font-size: .9rem; color: var(--gray); margin-top: 8px; }
-
-    /* NAV BUTTONS */
-    .nav-buttons {
-        display: flex; justify-content: space-between;
-        margin-top: 30px; gap: 12px;
-    }
-    .btn-nav {
-        padding: 14px 26px;
-        border-radius: var(--radius-lg);
-        font-weight: 900; font-size: 1rem;
-        display:flex; align-items:center; gap:8px; justify-content:center;
-        cursor:pointer; border:2px solid transparent; min-width: 150px;
-        transition: all .25s ease;
-    }
-    .btn-prev { background: transparent; color: var(--dark); border:2px solid var(--gray); }
-    .btn-prev:hover { background: var(--light-gray); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-    .btn-next { background: var(--primary-gradient); color:#fff; box-shadow: 0 8px 18px rgba(0,206,209,.3); }
-    .btn-next:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,206,209,.4); }
-    .btn-submit { background: var(--success); color:#fff; box-shadow: 0 8px 18px rgba(50,205,50,.3); }
-    .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(50,205,50,.4); }
-
-    @media (max-width: 768px) {
-        .form-container { padding: 22px; }
-        .header-title h1 { font-size: 1.5rem; }
-        .nav-buttons { flex-direction: column; }
-        .btn-nav { width: 100%; min-width: unset; }
-    }
-</style>
+    @include('dashboard.teacher.exams.create-style')
 @endpush
 
 @section('content')
-<div class="create-exam-container">
+<div class="exam-container">
 
-    {{-- HEADER --}}
-    <div class="page-header">
-        <div class="header-content">
-            <div class="header-title">
-                <h1>
-                    <span style="background: linear-gradient(120deg, var(--primary) 0%, var(--secondary) 100%);
-                                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                        ساخت آزمون جدید
-                    </span>
-                    📝
-                </h1>
-                <p class="header-subtitle">آزمون خود را به صورت مرحله‌ای و با دقت ایجاد کنید.</p>
+    <!-- ================================
+         🌟 راهنمای جامع ایجاد آزمون
+    ================================== -->
+    <div class="guide-card glass-card mb-4">
+        <h4 class="mb-3">
+            <i class="bi bi-info-circle-fill text-primary me-2"></i>
+            راهنمای ایجاد آزمون هوشمند
+        </h4>
+        
+        <div class="row">
+            <!-- آزمون آزاد -->
+            <div class="col-md-6 mb-3">
+                <div class="guide-item p-3">
+                    <div class="guide-icon bg-primary">
+                        <i class="bi bi-globe"></i>
+                    </div>
+                    <h6 class="fw-bold">آزمون آزاد (رایگان)</h6>
+                    <ul class="small text-muted mb-0">
+                        <li>برای معرفی توانایی معلمان</li>
+                        <li>دسترسی عمومی و رایگان</li>
+                        <li>قابل اشتراک‌گذاری عمومی</li>
+                        <li>بدون نیاز به عضویت در کلاس</li>
+                    </ul>
+                </div>
             </div>
-
-            <a href="{{ route('teacher.exams.index') }}" class="btn-back">
-                <i class="fas fa-arrow-right"></i>
-                بازگشت به لیست آزمون‌ها
-            </a>
+            
+            <!-- آزمون کلاسی -->
+            <div class="col-md-6 mb-3">
+                <div class="guide-item p-3">
+                    <div class="guide-icon bg-success">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h6 class="fw-bold">آزمون کلاسی (پولی)</h6>
+                    <ul class="small text-muted mb-0">
+                        <li>نیاز به عضویت در کلاس</li>
+                        <li>خرید کد ورود از پنل خرید</li>
+                        <li>دو زیرنوع: تک‌درس و جامع</li>
+                        <li>مدیریت پیشرفته دانش‌آموزان</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-    </div>
-
-    {{-- PROGRESS --}}
-    <div class="progress-container">
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <div class="progress-steps">
-            <div class="step-item active" data-step="1">
-                <div class="step-number">۱</div>
-                <div class="step-name">نوع آزمون</div>
-            </div>
-            <div class="step-item" data-step="2">
-                <div class="step-number">۲</div>
-                <div class="step-name">پایه تحصیلی</div>
-            </div>
-            <div class="step-item" data-step="3">
-                <div class="step-number">۳</div>
-                <div class="step-name">شاخه تحصیلی</div>
-            </div>
-            <div class="step-item" data-step="4">
-                <div class="step-number">۴</div>
-                <div class="step-name">زمینه فنی</div>
-            </div>
-            <div class="step-item" data-step="5">
-                <div class="step-number">۵</div>
-                <div class="step-name">زیررشته</div>
-            </div>
-            <div class="step-item" data-step="6">
-                <div class="step-number">۶</div>
-                <div class="step-name">دسته درسی</div>
-            </div>
-            <div class="step-item" data-step="7">
-                <div class="step-number">۷</div>
-                <div class="step-name">انتخاب درس</div>
-            </div>
-            <div class="step-item" data-step="8">
-                <div class="step-number">۸</div>
-                <div class="step-name">جزئیات</div>
+        
+        <!-- هشدار مهم -->
+        <div class="alert alert-warning mt-3 mb-0">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                <div>
+                    <strong class="d-block">توجه مهم:</strong>
+                    <span class="small">نوع آزمون پس از ایجاد <strong>غیرقابل تغییر</strong> است. برای استفاده مجدد از آزمون، از <strong>بانک سوالات</strong> خود استفاده کنید.</span>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- FORM --}}
-    <div class="form-container">
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+    <!-- ================================
+         🌟 Step Bar
+    ================================== -->
+    <div class="step-bar">
+        <div class="step-item active" id="stepIndicator1">
+            <div class="step-number">1</div>
+            <span class="step-title">نوع آزمون</span>
+            <span class="step-desc">آزاد یا کلاسی</span>
+        </div>
+        <div class="step-item" id="stepIndicator2">
+            <div class="step-number">2</div>
+            <span class="step-title">دسته‌بندی</span>
+            <span class="step-desc">پایه و شاخه</span>
+        </div>
+        <div class="step-item" id="stepIndicator3">
+            <div class="step-number">3</div>
+            <span class="step-title">درس‌ها</span>
+            <span class="step-desc">تک‌درس یا جامع</span>
+        </div>
+        <div class="step-item" id="stepIndicator4">
+            <div class="step-number">4</div>
+            <span class="step-title">تنظیمات</span>
+            <span class="step-desc">جزئیات آزمون</span>
+        </div>
+        <div class="step-item" id="stepIndicator5">
+            <div class="step-number">5</div>
+            <span class="step-title">پیش‌نمایش</span>
+            <span class="step-desc">تایید نهایی</span>
+        </div>
     </div>
-@endif
 
-        <form method="POST" action="{{ route('teacher.exams.store') }}" id="examForm" onsubmit="return validateFinalStep()">
-            @csrf
+    <!-- ================================
+         🌟 فرم
+    ================================== -->
+    <form id="examForm" action="{{ route('teacher.exams.store') }}" method="POST">
+        @csrf
 
-            {{-- Hidden Inputs (JS fills these) --}}
-            <input type="hidden" name="exam_type" id="examType" value="public">
-            <input type="hidden" name="classroom_id" id="classroomId" value="{{ $selectedClassroomId ?? '' }}">
+        <!-- Hidden Inputs -->
+        <input type="hidden" name="exam_type" id="exam_type">
+        <input type="hidden" name="classroom_id" id="classroom_id">
+        <input type="hidden" name="classroom_type" id="classroom_type">
+        
+        <input type="hidden" name="section_id" id="section_id">
+        <input type="hidden" name="grade_id" id="grade_id">
+        <input type="hidden" name="branch_id" id="branch_id">
+        <input type="hidden" name="field_id" id="field_id">
+        <input type="hidden" name="subfield_id" id="subfield_id">
 
-            <input type="hidden" name="section_id" id="sectionId">
-            <input type="hidden" name="grade_id" id="gradeId">
-            <input type="hidden" name="branch_id" id="branchId">
-            <input type="hidden" name="field_id" id="fieldId">
-            <input type="hidden" name="subfield_id" id="subfieldId">
-            <input type="hidden" name="subject_type_id" id="subjectTypeId">
-            <input type="hidden" name="subjects" id="subjectsInput">
-            <input type="hidden" name="subject_type_slug" id="subjectTypeSlug">
+        <input type="hidden" name="subject_type_id" id="subject_type_id">
+        <input type="hidden" name="subjects" id="subjects_json">
 
-            {{-- STEP 1 --}}
-            <div class="form-section active" id="step1">
-                <div class="section-header">
-                    <div class="section-icon">🎯</div>
-                    <h2 class="section-title">نوع آزمون را انتخاب کنید</h2>
-                    <p class="section-description">یکی از گزینه‌های زیر را انتخاب نمایید.</p>
+        <!-- ================================
+             🌟 STEP 1 — نوع آزمون
+        ================================== -->
+        <div class="wizard-step active" id="step1">
+            <div class="glass-card">
+                <h4 class="mb-3">نوع آزمون را انتخاب کنید</h4>
+                <p class="text-muted mb-4">این انتخاب پس از ایجاد غیرقابل تغییر است</p>
+
+                <div class="row">
+                    <!-- آزمون آزاد -->
+                    <div class="col-md-6 mb-4">
+                        <div class="exam-type-card" id="examTypePublic" data-type="public">
+                            <div class="exam-type-header bg-primary-gradient">
+                                <i class="bi bi-globe"></i>
+                                <h5>آزمون آزاد</h5>
+                            </div>
+                            <div class="exam-type-body">
+                                <ul class="exam-features">
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> رایگان برای همه</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> بدون محدودیت کلاس</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> برای معرفی توانایی</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> نتیجه عمومی</li>
+                                </ul>
+                                <div class="text-center mt-3">
+                                    <span class="badge bg-warning">پس از ایجاد غیرقابل تغییر</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آزمون کلاسی -->
+                    <div class="col-md-6 mb-4">
+                        <div class="exam-type-card" id="examTypeClass" data-type="class">
+                            <div class="exam-type-header bg-success-gradient">
+                                <i class="bi bi-people-fill"></i>
+                                <h5>آزمون کلاسی</h5>
+                            </div>
+                            <div class="exam-type-body">
+                                <ul class="exam-features">
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> نیاز به عضویت در کلاس</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> خرید کد ورود</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> مدیریت دانش‌آموزان</li>
+                                    <li><i class="bi bi-check-circle-fill text-success"></i> گزارش‌گیری پیشرفته</li>
+                                </ul>
+                                <div class="text-center mt-3">
+                                    <span class="badge bg-warning">پس از ایجاد غیرقابل تغییر</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- انتخاب نوع کلاس (فقط برای آزمون کلاسی) -->
+            <div id="classExamBox" style="display:none;">
+                <div class="glass-card mt-4">
+                    <h4 class="mb-3">نوع کلاس را انتخاب کنید</h4>
+                    
+                    <div class="row">
+                        <!-- کلاس تک‌درس -->
+                        <div class="col-md-6 mb-3">
+                            <div class="class-type-card" id="classTypeSingle">
+                                <div class="class-type-icon">
+                                    <i class="bi bi-book-half"></i>
+                                </div>
+                                <h5>کلاس تک‌درس</h5>
+                                <p class="small text-muted">برای آزمون‌های متمرکز بر یک درس خاص</p>
+                            </div>
+                        </div>
+
+                        <!-- کلاس جامع -->
+                        <div class="col-md-6 mb-3">
+                            <div class="class-type-card" id="classTypeComprehensive">
+                                <div class="class-type-icon">
+                                    <i class="bi bi-journal-text"></i>
+                                </div>
+                                <h5>کلاس جامع</h5>
+                                <p class="small text-muted">برای آزمون‌های شامل چندین درس مرتبط</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                    <div class="exam-type-grid" >
-                        <div class="type-card" data-type="public" onclick="selectExamType('public')">
-                            <div class="type-icon">🌐</div>
-                            <div class="type-title">آزمون آزاد</div>
-                            <p class="type-description">رایگان است و برای همه هنرجویان قابل دسترسی می‌باشد.</p>
-                            <div class="type-badge" style="background: var(--success);">رایگان</div>
+                <!-- انتخاب کلاس -->
+                <div id="classSelectionArea" style="display:none;">
+                    <div class="glass-card mt-3">
+                        <h5>انتخاب کلاس</h5>
+                        
+                        <!-- کلاس‌های تک‌درس -->
+                        <div id="singleClassSection" style="display:none;">
+                            @php $single = $classrooms->where('classroom_type','single'); @endphp
+                            @if($single->count() > 0)
+                                <div class="class-list">
+                                    @foreach($single as $c)
+                                        <div class="class-item" data-id="{{ $c->id }}" data-type="single">
+                                            <div class="class-info">
+                                                <h6>{{ $c->title }}</h6>
+                                                <span class="badge bg-primary">تک‌درس</span>
+                                                <small class="text-muted d-block mt-1">
+                                                    {{ $c->students_count ?? 0 }} دانش‌آموز
+                                                </small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary select-class">
+                                                انتخاب
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="alert alert-warning">
+                                    هیچ کلاس تک‌درسی وجود ندارد.
+                                    <button class="btn btn-sm btn-primary mt-2"
+                                            data-bs-toggle="modal" data-bs-target="#createClassModal"
+                                            data-class-type="single">
+                                        ساخت کلاس تک‌درس
+                                    </button>
+                                </div>
+                            @endif
                         </div>
-                        <div class="type-card" data-type="class" onclick="selectExamType('class')">
-                            <div class="type-icon">🏫</div>
-                            <div class="type-title">آزمون کلاسی</div>
-                            <p class="type-description">بر اساس پنل قیمت دارد و فقط برای کلاس‌های شما فعال می‌شود.</p>
-                            <div class="type-badge" style="background: var(--warning); color:#111;">درآمد</div>
+
+                        <!-- کلاس‌های جامع -->
+                        <div id="comprehensiveClassSection" style="display:none;">
+                            @php $comp = $classrooms->where('classroom_type','comprehensive'); @endphp
+                            @if($comp->count() > 0)
+                                <div class="class-list">
+                                    @foreach($comp as $c)
+                                        <div class="class-item" data-id="{{ $c->id }}" data-type="comprehensive">
+                                            <div class="class-info">
+                                                <h6>{{ $c->title }}</h6>
+                                                <span class="badge bg-success">جامع</span>
+                                                <small class="text-muted d-block mt-1">
+                                                    {{ $c->students_count ?? 0 }} دانش‌آموز
+                                                </small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary select-class">
+                                                انتخاب
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="alert alert-warning">
+                                    هیچ کلاس جامعی وجود ندارد.
+                                    <button class="btn btn-sm btn-primary mt-2"
+                                            data-bs-toggle="modal" data-bs-target="#createClassModal"
+                                            data-class-type="comprehensive">
+                                        ساخت کلاس جامع
+                                    </button>
+                                </div>
+                            @endif
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- ================================
+             🌟 STEP 2 — دسته‌بندی آموزشی
+        ================================== -->
+        <div class="wizard-step" id="step2">
+            <div class="glass-card">
+                <h4>دسته‌بندی آموزشی</h4>
+                <p class="text-muted mb-4">پایه و شاخه تحصیلی را انتخاب کنید</p>
 
-                {{-- Classroom selection (only for class exams) --}}
-                <div id="classroomSelectionSection" style="display:none; margin-top:24px;">
-                    <div class="section-header" style="margin-bottom:12px;">
-                        <h3 class="section-title" style="font-size:1.2rem;">کلاس را انتخاب کنید</h3>
-                        <p class="section-description">کلاس‌های شما از سیستم بارگذاری می‌شوند.</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">پایه</label>
+                        <select id="gradeSelect" class="form-select">
+                            <option value="">انتخاب پایه...</option>
+                            @foreach($grades as $g)
+                                <option value="{{ $g->id }}" data-section="{{ $g->section_id }}">
+                                    {{ $g->name_fa }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <div class="selection-grid" id="existingClassroomsContainer"></div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">شاخه</label>
+                        <select id="branchSelect" class="form-select" disabled>
+                            <option value="">ابتدا پایه را انتخاب کنید...</option>
+                        </select>
+                    </div>
 
-                    <div style="text-align:center; margin-top:14px;">
-                        <button type="button" class="btn-nav btn-prev" onclick="createNewClassroom()" style="border-color:var(--primary); color:var(--primary);">
-                            <i class="fas fa-plus-circle"></i>
-                            ایجاد کلاس جدید
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">زمینه</label>
+                        <select id="fieldSelect" class="form-select" disabled>
+                            <option value="">ابتدا شاخه را انتخاب کنید...</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">زیررشته</label>
+                        <select id="subfieldSelect" class="form-select" disabled>
+                            <option value="">ابتدا زمینه را انتخاب کنید...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================
+             🌟 STEP 3 — انتخاب درس‌ها
+        ================================== -->
+        <div class="wizard-step" id="step3">
+            <div class="glass-card">
+                <h4>انتخاب نوع درس</h4>
+                <p class="text-muted mb-3">نوع درس را انتخاب کنید تا لیست درس‌ها نمایش داده شود</p>
+                <select id="subjectTypeSelect" class="form-select mb-4">
+                    <option value="">انتخاب نوع درس...</option>
+                    @foreach ($subjectTypes as $st)
+                        <option value="{{ $st->id }}">{{ $st->name_fa }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="glass-card" id="subjectsCard">
+                <h4>انتخاب درس‌ها</h4>
+                <p class="text-muted mb-3">
+                    <span id="subjectSelectionHint">برای آزمون تک‌درس، یک درس انتخاب کنید</span>
+                </p>
+                <div id="subjectsContainer" class="row"></div>
+            </div>
+        </div>
+
+        <!-- ================================
+             🌟 STEP 4 — تنظیمات آزمون
+        ================================== -->
+        <div class="wizard-step" id="step4">
+            <div class="glass-card">
+                <h4>تنظیمات آزمون</h4>
+                
+                <div class="mb-3">
+                    <label class="form-label">عنوان آزمون *</label>
+                    <div class="input-group">
+                        <input id="title" name="title" type="text" class="form-control"
+                               placeholder="مثال: آزمون فصل ۲ ریاضی پایه هفتم" required>
+                        <button type="button" id="aiTitleBtn" class="btn btn-outline-primary">
+                            پیشنهاد هوشمند
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">توضیحات آزمون</label>
+                    <div class="input-group">
+                        <textarea id="description" name="description" class="form-control" rows="3"
+                                  placeholder="مثال: این آزمون برای سنجش یادگیری دانش‌آموزان طراحی شده است..."></textarea>
+                        <button type="button" id="aiDescBtn" class="btn btn-outline-primary">
+                            پیشنهاد هوشمند
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">زمان شروع آزمون</label>
+                        <input type="text" id="start_at" name="start_at" class="form-control" autocomplete="off">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">زمان پایان آزمون</label>
+                        <input type="text" id="end_at" name="end_at" class="form-control" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">مدت آزمون (دقیقه) *</label>
+                        <input id="duration_minutes" name="duration_minutes" type="number"
+                               class="form-control" min="1" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">نمره قبولی (%)</label>
+                        <input id="passing_score" name="passing_score" type="number"
+                               class="form-control" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    سوالات آزمون را پس از ایجاد، از بخش "مدیریت سوالات" اضافه کنید.
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================
+             🌟 STEP 5 — پیش‌نمایش
+        ================================== -->
+        <div class="wizard-step" id="step5">
+            <div class="glass-card">
+                <h4>پیش‌نمایش آزمون</h4>
+                <p class="text-muted mb-4">اطلاعات وارد شده را بررسی و تایید کنید</p>
+
+                <div class="preview-grid">
+                    <div class="preview-item">
+                        <strong>نوع آزمون:</strong>
+                        <span id="preview_exam_type" class="badge bg-primary">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>نوع کلاس:</strong>
+                        <span id="preview_classroom_type" class="badge bg-info">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>کلاس:</strong>
+                        <span id="preview_classroom">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>پایه:</strong>
+                        <span id="preview_grade">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>شاخه:</strong>
+                        <span id="preview_branch">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>زمینه:</strong>
+                        <span id="preview_field">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>زیررشته:</strong>
+                        <span id="preview_subfield">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>نوع درس:</strong>
+                        <span id="preview_subject_type">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>تعداد درس‌ها:</strong>
+                        <span id="preview_subjects_count">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>عنوان:</strong>
+                        <span id="preview_title">--</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>مدت آزمون:</strong>
+                        <span id="preview_duration">-- دقیقه</span>
+                    </div>
+                    
+                    <div class="preview-item">
+                        <strong>نمره قبولی:</strong>
+                        <span id="preview_passing_score">--</span>
+                    </div>
+                    
+                    <div class="preview-item full-width">
+                        <strong>توضیحات:</strong>
+                        <p id="preview_description" class="text-muted small mt-1">--</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-4">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    پس از تایید، نوع آزمون قابل تغییر نخواهد بود.
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================
+             🌟 دکمه‌های Wizard
+        ================================== -->
+        <div class="wizard-buttons">
+            <button type="button" class="btn-prev" id="prevBtn">
+                <i class="bi bi-chevron-right"></i> مرحله قبل
+            </button>
+
+            <div>
+                <button type="button" class="btn-next" id="nextBtn">
+                    مرحله بعد <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="submit" class="btn-submit d-none" id="submitBtn">
+                    <i class="bi bi-check-circle"></i> ایجاد آزمون
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Modal ساخت کلاس -->
+    <div class="modal fade" id="createClassModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-journal-plus me-2"></i>
+                        ساخت کلاس جدید
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-info-circle text-primary fs-1 mb-3"></i>
+                    <h5 class="mb-3">لطفاً به بخش کلاس‌ها مراجعه کنید</h5>
+                    <p class="text-muted mb-4">
+                        برای ساخت کلاس جدید نیاز به اطلاعات کامل آموزشی دارید.
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ route('teacher.classes.create') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            رفتن به ساخت کلاس
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            ادامه
                         </button>
                     </div>
                 </div>
             </div>
-
-            {{-- STEP 2 --}}
-            <div class="form-section" id="step2">
-                <div class="section-header">
-                    <div class="section-icon">📊</div>
-                    <h2 class="section-title">پایه تحصیلی را انتخاب کنید</h2>
-                    <p class="section-description">پایهٔ مورد نظر آزمون را انتخاب نمایید.</p>
-                </div>
-
-                <div class="selection-grid" id="gradesGrid"></div>
-            </div>
-
-            {{-- STEP 3 --}}
-            <div class="form-section" id="step3">
-                <div class="section-header">
-                    <div class="section-icon">🎓</div>
-                    <h2 class="section-title">شاخه تحصیلی را انتخاب کنید</h2>
-                    <p class="section-description">شاخهٔ آموزشی را انتخاب نمایید.</p>
-                </div>
-
-                <div class="selection-grid" id="branchesGrid"></div>
-            </div>
-
-            {{-- STEP 4 --}}
-            <div class="form-section" id="step4">
-                <div class="section-header">
-                    <div class="section-icon">🏭</div>
-                    <h2 class="section-title">زمینه آموزشی را انتخاب کنید</h2>
-                    <p class="section-description">زمینهٔ آموزشی مرتبط را انتخاب نمایید.</p>
-                </div>
-
-                <div class="selection-grid" id="fieldsGrid"></div>
-            </div>
-
-            {{-- STEP 5 --}}
-            <div class="form-section" id="step5">
-                <div class="section-header">
-                    <div class="section-icon">🔬</div>
-                    <h2 class="section-title">زیررشته را انتخاب کنید</h2>
-                    <p class="section-description">زیررشتهٔ مورد نظر را مشخص نمایید.</p>
-                </div>
-
-                <div class="selection-grid" id="subfieldGrid"></div>
-            </div>
-
-            {{-- STEP 6 --}}
-            <div class="form-section" id="step6">
-                <div class="section-header">
-                    <div class="section-icon">📚</div>
-                    <h2 class="section-title">دسته درسی را انتخاب کنید</h2>
-                    <p class="section-description">دستهٔ درسی آزمون را انتخاب نمایید.</p>
-                </div>
-
-                <div class="selection-grid" id="subjectTypesGrid"></div>
-            </div>
-
-            {{-- STEP 7 --}}
-            <div class="form-section" id="step7">
-                <div class="section-header">
-                    <div class="section-icon">📖</div>
-                    <h2 class="section-title">درس(ها) را انتخاب کنید</h2>
-                    <p class="section-description">بر اساس نوع آزمون، درس‌های مورد نظر را انتخاب نمایید.</p>
-                </div>
-
-                <div class="subjects-wrap" id="subjectsContainer"></div>
-            </div>
-
-            {{-- STEP 8 --}}
-            <div class="form-section" id="step8">
-                <div class="section-header">
-                    <div class="section-icon">✏️</div>
-                    <h2 class="section-title">جزئیات آزمون را تکمیل کنید</h2>
-                    <p class="section-description">اطلاعات تکمیلی آزمون را وارد نمایید.</p>
-                </div>
-
-                {{-- Preview --}}
-                <div class="preview-section">
-                    <div class="preview-title">
-                        <i class="fas fa-eye"></i>
-                        پیش‌نمایش آزمون
-                    </div>
-                    <div class="preview-grid">
-                        <div class="preview-item">
-                            <div class="preview-label">نوع آزمون</div>
-                            <div class="preview-value" id="previewExamType">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">پایه تحصیلی</div>
-                            <div class="preview-value" id="previewGrade">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">شاخه تحصیلی</div>
-                            <div class="preview-value" id="previewBranch">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">زمینه فنی</div>
-                            <div class="preview-value" id="previewField">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">زیررشته</div>
-                            <div class="preview-value" id="previewSubfield">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">دسته درسی</div>
-                            <div class="preview-value" id="previewSubjectType">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">تعداد درس‌های انتخابی</div>
-                            <div class="preview-value" id="previewSubjectsCount">--</div>
-                        </div>
-                        <div class="preview-item">
-                            <div class="preview-label">تعداد سوالات پیشنهادی</div>
-                            <div class="preview-value" id="previewTotalQuestions">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Details Form --}}
-                <div class="details-form">
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-heading"></i>
-                            عنوان آزمون
-                        </label>
-                        <input type="text" name="title" class="form-input"
-                               value="{{ old('title') }}"
-                               placeholder="مثال: آزمون فصل ۱ شبکه"
-                               required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-clock"></i>
-                            مدت زمان آزمون (دقیقه)
-                        </label>
-                        <input type="number" name="duration" class="form-input"
-                               value="{{ old('duration', 60) }}"
-                               min="5" max="300" step="5" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-align-left"></i>
-                            توضیحات آزمون
-                        </label>
-                        <textarea name="description" class="form-textarea" rows="4"
-                                  placeholder="هدف آزمون، نکات مهم و ...">{{ old('description') }}</textarea>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="activeCheck" value="1" checked>
-                            <label class="form-check-label" for="activeCheck">آزمون بلافاصله فعال شود</label>
-                        </div>
-                        <div class="form-text">
-                            در صورت عدم انتخاب، آزمون به صورت پیش‌نویس ذخیره می‌شود.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-{{-- ========== NAVIGATION BUTTONS ========== --}}
-<div class="nav-buttons">
-    <button type="button" class="btn-nav btn-prev" onclick="prevStep()">
-        <i class="fas fa-arrow-right"></i>
-        مرحله قبل
-    </button>
-
-    <button type="button" class="btn-nav btn-next" onclick="nextStep()">
-        مرحله بعد
-        <i class="fas fa-arrow-left"></i>
-    </button>
-
-    <button type="submit" class="btn-nav btn-submit">
-        <i class="fas fa-check"></i>
-        ایجاد آزمون
-    </button>
-</div>
-
-        </form>
+        </div>
     </div>
-</div>
-@endsection
 
+</div>
 @push('scripts')
-<script src="{{ asset('assets/js/exam-wizard.js') }}"></script>
-<script src="{{ asset('assets/js/classroom-modal.js') }}"></script>
+    @include('dashboard.teacher.exams.create-script')
 @endpush
+
+@endsection

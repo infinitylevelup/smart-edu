@@ -18,48 +18,57 @@ class StoreExamRequest extends FormRequest
         $isClassExam = $examType !== 'public';
 
         $base = [
-            'exam_type'   => ['required', 'string', Rule::in(['public', 'class_single', 'class_comprehensive'])],
-            'title'       => ['required', 'string', 'max:250'],
-            'description' => ['nullable', 'string'],
-            'duration'    => ['required', 'integer', 'min:5', 'max:300'],
-            'is_active'   => ['sometimes', 'boolean'],
+            'exam_type'        => ['required', 'string', Rule::in(['public', 'class_single', 'class_comprehensive'])],
+            'title'            => ['required', 'string', 'max:250'],
+            'description'      => ['nullable', 'string'],
+            'duration_minutes' => ['required', 'integer', 'min:5', 'max:300'],
+            'is_active'        => ['sometimes', 'boolean'],
         ];
 
         if ($isClassExam) {
-            // کلاس‌محور: فقط کلاس لازم است
+            $type = (string) $this->input('exam_type');
+            $requiredClassroomType = $type === 'class_single' ? 'single' : 'comprehensive';
+
             return $base + [
-                'classroom_id' => ['required', 'integer', 'exists:classrooms,id'],
+                'classroom_id' => [
+                    'required',
+                    'integer',
+                    Rule::exists('classrooms', 'id')
+                        ->where('teacher_id', auth()->id())
+                        ->where('classroom_type', $requiredClassroomType),
+                ],
+                'exam_type' => 'required|in:public,class,class_single,class_comprehensive',
             ];
         }
 
-        // public exam: taxonomy + subjects required (با پشتیبانی ALL)
+        // ✅ برای آزمون عمومی - validation منعطف‌تر
         return $base + [
             'classroom_id' => ['nullable'],
 
-            // اینها در DB شما integer هستند، پس integer می‌مانند
-            'section_id'  => ['required', 'integer', 'exists:sections,id'],
-            'grade_id'    => ['required', 'integer', 'exists:grades,id'],
-            'branch_id'   => ['required', 'integer', 'exists:branches,id'],
-            'field_id'    => ['required', 'integer', 'exists:fields,id'],
-            'subfield_id' => ['required', 'integer', 'exists:subfields,id'],
+            // اینها required هستند اما اگر در فرم نباشند باید handle شوند
+            'section_id'   => ['required', 'integer', 'exists:sections,id'],
+            'grade_id'     => ['required', 'integer', 'exists:grades,id'],
+            'branch_id'    => ['required', 'integer', 'exists:branches,id'],
+            'field_id'     => ['required', 'integer', 'exists:fields,id'],
+            'subfield_id'  => ['required', 'integer', 'exists:subfields,id'],
 
-            // ✅ اگر حالت ALL بود، لازم نیست
-            'subject_type_slug' => ['nullable', 'string', Rule::in(['all'])],
-
-            // ✅ UI ممکنه UUID بفرسته، و در حالت ALL خالیه
-            'subject_type_id' => [
-                Rule::requiredIf(fn () => (string) $this->input('subject_type_slug') !== 'all'),
-                'nullable',
-                'string',
-            ],
-
-            // Wizard ارسال می‌کنه: JSON string از uuidها
-            'subjects' => ['required', 'string'],
+            'subject_type_id' => ['nullable', 'string'],
+            'subjects'        => ['required', 'string'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        // ✅ مطمئن شوید مقادیر خالی تبدیل به null شوند
+        $this->merge([
+            'section_id'      => $this->input('section_id') ?: null,
+            'grade_id'        => $this->input('grade_id') ?: null,
+            'branch_id'       => $this->input('branch_id') ?: null,
+            'field_id'        => $this->input('field_id') ?: null,
+            'subfield_id'     => $this->input('subfield_id') ?: null,
+            'subject_type_id' => $this->input('subject_type_id') ?: null,
+        ]);
+
         $examType = (string) $this->input('exam_type', 'public');
         $isClassExam = $examType !== 'public';
 

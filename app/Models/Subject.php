@@ -12,9 +12,9 @@ class Subject extends Model
 
     protected $table = 'subjects';
 
-    // ✅ id اتواینکریمنت است => اینها نباید باشند
-    // public $incrementing = false;
-    // protected $keyType = 'string';
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
+    // public $incrementing = true; // پیش‌فرض
+    // protected $keyType = 'int';  // پیش‌فرض
 
     protected $fillable = [
         'uuid',
@@ -33,16 +33,47 @@ class Subject extends Model
     ];
 
     protected $casts = [
-        'section_id'      => 'integer',
-        'grade_id'        => 'integer',
-        'branch_id'       => 'integer',
-        'field_id'        => 'integer',
-        'subfield_id'     => 'integer',
+        'section_id' => 'integer',
+        'grade_id' => 'integer',
+        'branch_id' => 'integer',
+        'field_id' => 'integer',
+        'subfield_id' => 'integer',
         'subject_type_id' => 'integer',
-        'hours'           => 'integer',
-        'sort_order'      => 'integer',
-        'is_active'       => 'boolean',
+        'hours' => 'integer',
+        'sort_order' => 'integer',
+        'is_active' => 'boolean',
     ];
+
+    // ================== Accessors ==================
+
+    /**
+     * نام کامل درس شامل پایه و شاخه
+     */
+    public function getFullNameAttribute(): string
+    {
+        $parts = [];
+        if ($this->grade) $parts[] = $this->grade->name_fa;
+        if ($this->branch) $parts[] = $this->branch->name_fa;
+        $parts[] = $this->title_fa;
+
+        return implode(' - ', $parts);
+    }
+
+    /**
+     * مدت زمان درس به صورت فرمت شده
+     */
+    public function getHoursFormattedAttribute(): string
+    {
+        return $this->hours . ' ساعت';
+    }
+
+    /**
+     * وضعیت فعال بودن به فارسی
+     */
+    public function getActiveStatusAttribute(): string
+    {
+        return $this->is_active ? 'فعال' : 'غیرفعال';
+    }
 
     protected static function booted()
     {
@@ -95,8 +126,20 @@ class Subject extends Model
             'exam_id'
         );
     }
+
+    // classrooms pivot
+    public function classrooms()
+    {
+        return $this->belongsToMany(
+            Classroom::class,
+            'classroom_subject',
+            'subject_id',
+            'classroom_id'
+        )->withTimestamps();
+    }
+
     public function getSectionAttribute()
     {
-            return $this->grade?->section;
+        return $this->grade?->section;
     }
 }

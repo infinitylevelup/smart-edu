@@ -1,11 +1,14 @@
 <?php
 
 namespace App\Models;
+use App\Enums\QuestionType;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+
 
 class Question extends Model
 {
@@ -13,9 +16,9 @@ class Question extends Model
 
     protected $table = 'questions';
 
-    // ❌ چون id در دیتابیس auto increment است، این دو خط باید حذف شوند
-    // public $incrementing = false;
-    // protected $keyType = 'string';
+    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
+    // public $incrementing = true; // پیش‌فرض
+    // protected $keyType = 'int';  // پیش‌فرض
 
     protected $fillable = [
         'uuid',
@@ -50,31 +53,29 @@ class Question extends Model
     ];
 
     protected $casts = [
-        'options'        => 'array',
+        'options' => 'array',
         'correct_answer' => 'array',
-        'ai_confidence'  => 'float',
-        'is_active'      => 'boolean',
+        'ai_confidence' => 'float',
+        'is_active' => 'boolean',
+        'question_type' => QuestionType::class,
     ];
 
     protected static function booted()
     {
         static::creating(function ($q) {
-
-            // چون id اکنون auto increment است → نباید UUID بدهیم
-
-            // uuid (ستون NOT NULL)
+            // ✅ فقط uuid بساز، نه id
             if (empty($q->uuid)) {
                 $q->uuid = (string) Str::uuid();
             }
 
             // user_id
-            if (empty($q->user_id) && auth()->check()) {
-                $q->user_id = auth()->id();
+            if (empty($q->user_id) && auth::check()) {
+                $q->user_id = auth::id();
             }
 
             // creator_id
-            if (empty($q->creator_id) && auth()->check()) {
-                $q->creator_id = auth()->id();
+            if (empty($q->creator_id) && auth::check()) {
+                $q->creator_id = auth::id();
             }
 
             // active

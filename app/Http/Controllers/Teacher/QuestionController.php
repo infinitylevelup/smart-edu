@@ -9,13 +9,22 @@ use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Enums\QuestionType;
+use Illuminate\Validation\Rules\Enum;
+use App\Services\Teacher\ExamAccessService;
 
 class QuestionController extends Controller
 {
+    public function __construct(
+        protected ExamAccessService $examAccess
+    ) {}
+
+
     public function index(Exam $exam)
     {
-        $this->authorizeTeacherExam($exam);
-
+        //------------------------------
+        $this->examAccess->authorizeTeacherExam($exam);
+        $examMode = $this->examAccess->detectExamMode($exam);
+        //-----------------------------
         $exam->load('classroom');
 
         $questions = Question::where('exam_id', $exam->id)
@@ -27,10 +36,10 @@ class QuestionController extends Controller
 
     public function create(Exam $exam)
     {
-        $this->authorizeTeacherExam($exam);
-
-        $examMode = $this->detectExamMode($exam);
-
+        //------------------------------
+        $this->examAccess->authorizeTeacherExam($exam);
+        $examMode = $this->examAccess->detectExamMode($exam);
+        //-----------------------------
         $subjects = null;
         if ($examMode === 'multi_subject') {
             $subjects = $exam->subjects()->get(['id', 'title_fa']);
@@ -46,11 +55,12 @@ class QuestionController extends Controller
     // ✅ store (final)
 public function store(Request $request, Exam $exam)
 {
-    $this->authorizeTeacherExam($exam);
-
+    //------------------------------
+    $this->examAccess->authorizeTeacherExam($exam);
+    //-----------------------------
     $validated = $request->validate([
         'content'       => 'required|string|max:2000',
-        'question_type' => ['required', Rule::in(\App\Enums\QuestionType::values())],
+        'question_type' => ['required', new Enum(QuestionType::class)],
         'score'         => 'nullable|numeric|min:0',
         'explanation'   => 'nullable|string',
         'is_active'     => 'nullable|boolean',
@@ -107,11 +117,12 @@ public function store(Request $request, Exam $exam)
 
     public function edit(Exam $exam, Question $question)
     {
-        $this->authorizeTeacherExam($exam);
-
+        //------------------------------
+        $this->examAccess->authorizeTeacherExam($exam);
+        $examMode = $this->examAccess->detectExamMode($exam);
+        //-----------------------------
         if ($question->exam_id !== $exam->id) abort(404);
 
-        $examMode = $this->detectExamMode($exam);
         $subjects = null;
 
         if ($examMode === 'multi_subject') {
@@ -129,15 +140,16 @@ public function store(Request $request, Exam $exam)
     // ✅ update (final)
 public function update(Request $request, Exam $exam, Question $question)
 {
-    $this->authorizeTeacherExam($exam);
-
+    //------------------------------
+    $this->examAccess->authorizeTeacherExam($exam);
+    //-----------------------------
     if ($question->exam_id !== $exam->id) {
         abort(404);
     }
 
     $validated = $request->validate([
         'content'       => 'required|string|max:2000',
-        'question_type' => ['required', Rule::in(\App\Enums\QuestionType::values())],
+        'question_type' => ['required', new Enum(QuestionType::class)],
         'score'         => 'nullable|numeric|min:0',
         'explanation'   => 'nullable|string',
         'is_active'     => 'nullable|boolean',
@@ -185,8 +197,9 @@ public function update(Request $request, Exam $exam, Question $question)
 
     public function destroy(Exam $exam, Question $question)
     {
-        $this->authorizeTeacherExam($exam);
-
+    //------------------------------
+    $this->examAccess->authorizeTeacherExam($exam);
+    //-----------------------------
         if ($question->exam_id !== $exam->id) abort(404);
 
         $question->delete();
@@ -196,33 +209,5 @@ public function update(Request $request, Exam $exam, Question $question)
             ->with('success', 'سؤال حذف شد.');
     }
 
-    private function detectExamMode(Exam $exam): string
-    {
-        if (!empty($exam->exam_mode)) return $exam->exam_mode;
-
-        if ($exam->exam_type === 'class_comprehensive') return 'multi_subject';
-
-        return 'single_subject';
-    }
-
-    private function authorizeTeacherExam(Exam $exam): void
-    {
-        $teacherId = Auth::id();
-
-        $exam->loadMissing('classroom');
-
-        if (is_null($exam->classroom_id)) {
-            abort_unless(
-                $exam->teacher_id === $teacherId,
-                403,
-                'شما اجازه مدیریت سوالات این آزمون را ندارید.'
-            );
-        } else {
-            abort_unless(
-                $exam->classroom && $exam->classroom->teacher_id === $teacherId,
-                403,
-                'شما اجازه مدیریت سوالات این آزمون را ندارید.'
-            );
-        }
-    }
+   
 }
