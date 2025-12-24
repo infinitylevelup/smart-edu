@@ -2,43 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
 /**
  * User Model (Smart-Edu)
  * - Roles are stored in roles table and role_user pivot (single-role)
- * - NO dependency on users.role column
- *
- * users columns:
- * id, name, email, phone, password, status, is_active, created_at, updated_at
+ * - Also supports selected_role column for backward compatibility
  */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    // ✅ ID auto-increment است - تنظیمات پیش‌فرض لاراول
-    // public $incrementing = true; // پیش‌فرض
-    // protected $keyType = 'int';  // پیش‌فرض
-
     /**
      * Mass Assignment fields
+     * Now matches the migration structure
      */
     protected $fillable = [
-        'id',
         'name',
         'email',
         'phone',
         'password',
         'status',
-        // 'role' ❌ حذف شد (نقش از pivot خوانده می‌شود)
-        'is_active',
+        'is_active', // ✅ حالا وجود دارد
+        'selected_role', // برای سازگاری
     ];
 
     /**
@@ -55,22 +48,52 @@ class User extends Authenticatable
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'is_active' => 'boolean',
+        'is_active' => 'boolean', // ✅ حالا می‌توانیم cast کنیم
+    ];
+
+    /**
+     * Default attribute values
+     */
+    protected $attributes = [
+        'is_active' => true,
+        'status' => 'active',
     ];
 
     // ==========================================================
-    // Role helpers (PIVOT-BASED)
+    // Role helpers (PIVOT-BASED with backward compatibility)
     // ==========================================================
 
     /**
      * Backward compatible attribute accessor:
-     * اگر جایی هنوز $user->role را می‌خواند،
-     * از pivot مقدار role را برمی‌گردانیم.
+     * اول selected_role را چک می‌کند، اگر نبود از pivot می‌خواند
      */
     public function getRoleAttribute($value = null): ?string
     {
+        // اول selected_role را برمی‌گرداند (برای سازگاری)
+        if ($this->selected_role) {
+            return $this->selected_role;
+        }
+
+        // اگر selected_role نبود، از pivot می‌خواند
         $this->loadMissing('roles');
+
         return $this->roles->first()?->slug;
+    }
+
+    /**
+     * Mutator برای selected_role
+     */
+    public function setSelectedRoleAttribute($value): void
+    {
+        $this->attributes['selected_role'] = $value;
+
+        // اگر pivot role هم می‌خواهید خودکار sync شود
+        if ($value && ! $this->hasRole($value)) {
+            $role = Role::where('slug', $value)->first();
+            if ($role) {
+                $this->roles()->sync([$role->id]);
+            }
+        }
     }
 
     /**
@@ -78,13 +101,17 @@ class User extends Authenticatable
      */
     public function primaryRole(): ?string
     {
-        $this->loadMissing('roles');
-        return $this->roles->first()?->slug;
+        return $this->role;
     }
 
     public function hasRole(string $slug): bool
     {
+        if ($this->selected_role === $slug) {
+            return true;
+        }
+
         $this->loadMissing('roles');
+
         return $this->roles->contains('slug', $slug);
     }
 
@@ -109,14 +136,34 @@ class User extends Authenticatable
     }
 
     /**
-     * Scope: filter users by role (pivot-based)
-     * Usage: User::role('student')->get()
+     * Scope: filter users by role (supports both selected_role and pivot)
      */
     public function scopeRole(Builder $query, string $slug): Builder
     {
-        return $query->whereHas('roles', function ($q) use ($slug) {
-            $q->where('slug', $slug);
+        return $query->where(function ($q) use ($slug) {
+            $q->where('selected_role', $slug)
+                ->orWhereHas('roles', function ($q2) use ($slug) {
+                    $q2->where('slug', $slug);
+                });
         });
+    }
+
+    /**
+     * Scope: active users
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->where('status', 'active');
+    }
+
+    /**
+     * Scope: inactive users
+     */
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('is_active', false)
+            ->orWhere('status', '!=', 'active');
     }
 
     // ==========================================================
@@ -130,10 +177,34 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(
             Role::class,
-            "role_user",
-            "user_id",
-            "role_id"
+            'role_user',
+            'user_id',
+            'role_id'
         );
+    }
+
+    /**
+     * Assign a role to user
+     */
+    public function assignRole(string $roleSlug): void
+    {
+        $role = Role::where('slug', $roleSlug)->first();
+        if ($role) {
+            // Update both selected_role and pivot
+            $this->selected_role = $roleSlug;
+            $this->roles()->sync([$role->id]);
+            $this->save();
+        }
+    }
+
+    /**
+     * Remove all roles from user
+     */
+    public function removeRoles(): void
+    {
+        $this->selected_role = null;
+        $this->roles()->detach();
+        $this->save();
     }
 
     /**
@@ -207,6 +278,13 @@ class User extends Authenticatable
         static::creating(function ($user) {
             if (empty($user->uuid)) {
                 $user->uuid = Str::uuid()->toString();
+            }
+
+            // Ensure is_active and status are in sync
+            if ($user->is_active && ! $user->status) {
+                $user->status = 'active';
+            } elseif (! $user->is_active && ! $user->status) {
+                $user->status = 'inactive';
             }
         });
     }

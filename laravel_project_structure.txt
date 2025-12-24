@@ -1,0 +1,561 @@
+ساختار پروژه لاراول - برای استفاده در هوش مصنوعی
+================================================
+
+================================================
+          اطلاعات پروژه لاراول
+================================================
+تاریخ تولید: Sat Dec 20 20:36:04 EAST 2025
+مسیر پروژه: /c/xampp/htdocs/smart-edu
+
+--- اطلاعات Composer ---
+    "name": "laravel/laravel",
+    "description": "The skeleton application for the Laravel framework.",
+
+--- اطلاعات NPM/Package ---
+
+--- متغیرهای محیطی مهم ---
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:4VjCAenS2YBUqZ+L1yAiqlehFnVSVhhkQzxIaTmmdE8=
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+APP_MAINTENANCE_DRIVER=file
+DB_CONNECTION=mysql
+
+================================================
+          ساختار درختی پروژه
+================================================
+
+├── 📄 .editorconfig
+├── 🔐 .env
+├── 📄 .env.example
+├── 📄 .gitattributes
+├── 📁 .github/
+│   ├── 📝 AiPrompt.md
+│   ├── 📁 ISSUE_TEMPLATE/
+│   │   └── 📄 feature-proposal.yml
+│   ├── 📝 PULL_REQUEST_TEMPLATE.md
+│   ├── 📝 copilot-instructions.md
+│   └── 📁 workflows/
+│       ├── 📁 AiPrampt.md/
+│       └── 📄 pr-guard.yml
+├── 🔧 .gitignore
+├── 📝 README.md
+├── 📁 Z_Backup/
+│   ├── 🐘 create.blade.php
+│   ├── 🐘 edit.blade.php
+│   ├── 🐘 index.blade copy.php
+│   ├── 🐘 index1.blade.php
+│   ├── 📝 mergefile.txt
+│   └── 🐘 role-select.blade.php
+├── 📁 Z_Report/
+│   ├── 📄 .htaccess
+│   ├── 📝 README.md
+│   ├── 🐘 api.php
+│   └── 🐘 index.php
+├── 📁 app/
+│      (تعداد فایل: 95)
+│   ├── 📁 Console/
+│   │   ├── 📁 Commands/
+│   │   │   └── 🐘 MergeFiles.php
+│   │   └── 🐘 Kernel.php
+│   ├── 📁 Enums/
+│   │   └── 🐘 QuestionType.php
+│   ├── 📁 Http/
+│   │   ├── 📁 Controllers/
+│   │   │   ├── 📁 AI/
+│   │   │   │   └── 🐘 ExamAIController.php
+│   │   │   ├── 📁 Admin/
+│   │   │   │   ├── 🐘 AdminAuthController.php
+│   │   │   │   ├── 🐘 AdminDashboardController.php
+│   │   │   │   ├── 🐘 AdminUserController.php
+│   │   │   │   ├── 🐘 BaseTaxonomyController.php
+│   │   │   │   ├── 🐘 BranchController.php
+│   │   │   │   ├── 🐘 ClassroomController.php
+│   │   │   │   ├── 🐘 ExamController.php
+│   │   │   │   ├── 🐘 FieldController.php
+│   │   │   │   ├── 🐘 GradeController.php
+│   │   │   │   ├── 🐘 SectionController.php
+│   │   │   │   ├── 🐘 SubfieldController.php
+│   │   │   │   ├── 🐘 SubjectController.php
+│   │   │   │   ├── 🐘 SubjectTaxonomyController.php
+│   │   │   │   └── 🐘 SubjectTypeController.php
+│   │   │   ├── 🐘 AuthController.php
+│   │   │   ├── 🐘 Controller.php
+│   │   │   ├── 📁 Counselor/
+│   │   │   │   ├── 🐘 CounselorAttemptController.php
+│   │   │   │   ├── 🐘 CounselorDashboardController.php
+│   │   │   │   ├── 🐘 CounselorLearningPathController.php
+│   │   │   │   ├── 🐘 CounselorProfileController.php
+│   │   │   │   └── 🐘 CounselorStudentController.php
+│   │   │   ├── 🐘 DevController.php
+│   │   │   ├── 📁 Diagnosis/
+│   │   │   │   ├── 🐘 DiagnosisController.php
+│   │   │   │   └── 🐘 MergeController.php
+│   │   │   ├── 🐘 LandingController.php
+│   │   │   ├── 📁 Parent/
+│   │   │   │   └── 🐘 ParentDashboardController.php
+│   │   │   ├── 📁 Student/
+│   │   │   │   ├── 🐘 LearningPathController.php
+│   │   │   │   ├── 🐘 MyTeachersController.php
+│   │   │   │   ├── 🐘 PublicExamController.php
+│   │   │   │   ├── 🐘 StudentClassController.php
+│   │   │   │   ├── 🐘 StudentExamController.php
+│   │   │   │   └── 🐘 StudentProfileController.php
+│   │   │   └── 📁 Teacher/
+│   │   │       ├── 🐘 DashboardController.php
+│   │   │       ├── 🐘 QuestionController.php
+│   │   │       ├── 🐘 QuestionWizardController.php
+│   │   │       ├── 🐘 SubjectController.php
+│   │   │       ├── 🐘 TeacherClassController.php
+│   │   │       ├── 🐘 TeacherExamController.php
+│   │   │       └── 🐘 TeacherStudentController.php
+│   │   ├── 📁 Middleware/
+│   │   │   ├── 🐘 EnsureRoleSelected.php
+│   │   │   ├── 🐘 RequestIdMiddleware.php
+│   │   │   ├── 🐘 RoleMiddleware.php
+│   │   │   └── 🐘 VerifyCsrfToken.php
+│   │   └── 📁 Requests/
+│   │       ├── 🐘 StoreExamRequest.php
+│   │       └── 🐘 UpdateExamRequest.php
+│   ├── 📁 Logging/
+│   │   └── 🐘 PrettyFormatter.php
+│   ├── 📁 Models/
+│   │   ├── 🐘 AcademicAssessment.php
+│   │   ├── 🐘 AiAgent.php
+│   │   ├── 🐘 AiArtifact.php
+│   │   ├── 🐘 AiFeedback.php
+│   │   ├── 🐘 AiMessage.php
+│   │   ├── 🐘 AiSession.php
+│   │   ├── 🐘 Attempt.php
+│   │   ├── 🐘 AttemptAnswer.php
+│   │   ├── 🐘 Branch.php
+│   │   ├── 🐘 Classroom.php
+│   │   ├── 🐘 Content.php
+│   │   ├── 🐘 CounselingTask.php
+│   │   ├── 🐘 CounselorProfile.php
+│   │   ├── 🐘 Exam.php
+│   │   ├── 🐘 ExamAttempt.php
+│   │   ├── 🐘 Field.php
+│   │   ├── 🐘 Grade.php
+│   │   ├── 🐘 LearningPath.php
+│   │   ├── 🐘 LearningPathStep.php
+│   │   ├── 🐘 ModelName.php
+│   │   ├── 🐘 PsychoAssessment.php
+│   │   ├── 🐘 Question.php
+│   │   ├── 🐘 Role.php
+│   │   ├── 🐘 Section.php
+│   │   ├── 🐘 StudentCounselingTaskLog.php
+│   │   ├── 🐘 StudentDailyLog.php
+│   │   ├── 🐘 StudentGamificationProfile.php
+│   │   ├── 🐘 StudentGoal.php
+│   │   ├── 🐘 StudentLearningProfile.php
+│   │   ├── 🐘 StudentProfile.php
+│   │   ├── 🐘 Subfield.php
+│   │   ├── 🐘 Subject.php
+│   │   ├── 🐘 SubjectType.php
+│   │   ├── 🐘 TeacherProfile.php
+│   │   ├── 🐘 Topic.php
+│   │   ├── 🐘 User.php
+│   │   └── 🐘 XpLog.php
+│   ├── 📁 Providers/
+│   │   ├── 🐘 AppServiceProvider.php
+│   │   └── 🐘 TelescopeServiceProvider.php
+│   ├── 📁 Services/
+│   │   ├── 🐘 AutoGradingService.php
+│   │   ├── 🐘 GamificationService.php
+│   │   ├── 🐘 OtpSender.php
+│   │   ├── 🐘 OtpService.php
+│   │   └── 📁 Teacher/
+│   │       └── 🐘 ExamAccessService.php
+│   └── 🐘 helpers.php
+├── 📄 artisan
+├── 📁 bootstrap/
+│   ├── 🐘 app.php
+│   ├── 📁 cache/
+│   │   ├── 🐘 packages.php
+│   │   └── 🐘 services.php
+│   └── 🐘 providers.php
+├── 📦 composer.json
+├── 🔒 composer.lock
+├── 📁 config/
+│   ├── 🐘 app.php
+│   ├── 🐘 auth.php
+│   ├── 🐘 cache.php
+│   ├── 🐘 database.php
+│   ├── 🐘 filesystems.php
+│   ├── 🐘 logging.php
+│   ├── 🐘 mail.php
+│   ├── 🐘 otp.php
+│   ├── 🐘 queue.php
+│   ├── 🐘 sentry.php
+│   ├── 🐘 services.php
+│   ├── 🐘 session.php
+│   ├── 🐘 telescope.php
+│   └── 🐘 view.php
+├── 📁 database/
+│      (تعداد فایل: 63)
+│   ├── 🔧 .gitignore
+│   ├── 📁 factories/
+│   │   ├── 🐘 ClassroomFactory.php
+│   │   ├── 🐘 ExamFactory.php
+│   │   ├── 🐘 QuestionFactory.php
+│   │   └── 🐘 UserFactory.php
+│   ├── 📁 migrations/
+│   │   ├── 🐘 2025_12_05_103024_create_users_table.php
+│   │   ├── 🐘 2025_12_06_102953_1_create_sections_table.php
+│   │   ├── 🐘 2025_12_06_102953_2_0_create_grades_table.php
+│   │   ├── 🐘 2025_12_06_102953_2_1_create_branches_table.php
+│   │   ├── 🐘 2025_12_06_102953_3_create_fields_table.php
+│   │   ├── 🐘 2025_12_06_102953_4_create_subfields_table.php
+│   │   ├── 🐘 2025_12_06_102953_5_0_create_subject_types_table.php
+│   │   ├── 🐘 2025_12_06_102953_5_1_create_subjects_table.php
+│   │   ├── 🐘 2025_12_06_102953_create_classrooms_table.php
+│   │   ├── 🐘 2025_12_06_102954_create_classroom_subject_table.php
+│   │   ├── 🐘 2025_12_06_102955_create_classroom_user_table.php
+│   │   ├── 🐘 2025_12_06_102958_create_counselor_profiles_table.php
+│   │   ├── 🐘 2025_12_06_102959_create_exams_table.php
+│   │   ├── 🐘 2025_12_06_103000_create_exam_attempts_table.php
+│   │   ├── 🐘 2025_12_06_103002_create_exam_subject_table.php
+│   │   ├── 🐘 2025_12_06_103005_create_learning_paths_table.php
+│   │   ├── 🐘 2025_12_06_103008_create_psycho_assessments_table.php
+│   │   ├── 🐘 2025_12_06_103010_create_roles_table.php
+│   │   ├── 🐘 2025_12_06_103013_create_student_counseling_task_logs_table.php
+│   │   ├── 🐘 2025_12_06_103014_create_student_daily_logs_table.php
+│   │   ├── 🐘 2025_12_06_103016_create_student_learning_profiles_table.php
+│   │   ├── 🐘 2025_12_06_103017_create_student_profiles_table.php
+│   │   ├── 🐘 2025_12_06_103021_create_teacher_profiles_table.php
+│   │   ├── 🐘 2025_12_06_103022_create_teacher_subject_table.php
+│   │   ├── 🐘 2025_12_06_103023_create_topics_table.php
+│   │   ├── 🐘 2025_12_06_103050_create_contents_table.php
+│   │   ├── 🐘 2025_12_06_103060_create_questions_table.php
+│   │   ├── 🐘 2025_12_06_103110_create_academic_assessments_table.php
+│   │   ├── 🐘 2025_12_06_103120_create_exam_questions_table.php
+│   │   ├── 🐘 2025_12_06_103200_create_attempt_answers_table.php
+│   │   ├── 🐘 2025_12_06_103300_create_learning_path_steps_table.php
+│   │   ├── 🐘 2025_12_06_103310_create_student_goals_table.php
+│   │   ├── 🐘 2025_12_06_184150_create_role_user_table.php
+│   │   ├── 🐘 2025_12_06_200000_create_ai_sessions_table.php
+│   │   ├── 🐘 2025_12_06_200010_create_ai_messages_table.php
+│   │   ├── 🐘 2025_12_06_200020_create_ai_feedback_table.php
+│   │   ├── 🐘 2025_12_06_200030_create_ai_artifacts_table.php
+│   │   ├── 🐘 2025_12_10_030000_add_ai_session_fks_to_tables.php
+│   │   ├── 🐘 2025_12_10_045832_drop_otps_table.php
+│   │   ├── 🐘 2025_12_10_145341_add_section_id_to_subjects_table.php
+│   │   ├── 🐘 2025_12_11_070018_add_scope_subject_level_to_exams_table.php
+│   │   ├── 🐘 2025_12_11_082656_add_exam_id_and_score_to_questions_table.php
+│   │   ├── 🐘 2025_12_11_185939_add_exam_mode_to_exams_table.php
+│   │   ├── 🐘 2025_12_11_190019_add_metadata_to_questions_table.php
+│   │   ├── 🐘 2025_12_12_190019_add_coverage_to_exam_subject_table.php
+│   │   ├── 🐘 2025_12_16_122522_create_telescope_entries_table.php
+│   │   ├── 🐘 2025_12_17_000001_remove_exam_id_from_questions_table.php
+│   │   ├── 🐘 2025_12_17_102919_add_is_global_to_questions_table.php
+│   │   ├── 🐘 2025_12_17_110935_add_module_label_to_questions_table.php
+│   │   ├── 🐘 2025_12_17_111036_fix_questions_table_columns.php
+│   │   ├── 🐘 2025_12_17_121727_add_filter_columns_to_questions_table.php
+│   │   └── 🐘 2025_12_18_132539_add_deleted_at_to_classrooms_table.php
+│   └── 📁 seeders/
+│       ├── 🐘 DatabaseSeeder.php
+│       ├── 🐘 FakeStudentSeeder.php
+│       ├── 🐘 RoleSeeder.php
+│       ├── 🐘 SubjectSeeder.php
+│       ├── 🐘 TaxonomySeeder.php
+│       └── 🐘 TechUsageExamsSeeder.php
+├── 📁 docs/
+│   ├── 📝 DataBase01.md
+│   ├── 📝 DataBase02.md
+│   ├── 📝 ExamDoc.md
+│   ├── 📝 Smart-Edu_DataModel_Exam_Classroom_Flow.md
+│   ├── 📝 TopicEror.md
+│   ├── 📝 admin-flow.md
+│   ├── 📝 backlog.md
+│   ├── 📝 counselor-flow.md
+│   ├── 📝 current_status_student_ui_phase1.md
+│   ├── 📝 database-full.md
+│   ├── 📝 database.md
+│   ├── 📝 gamification.md
+│   ├── 📝 kanban.md
+│   ├── 📝 route-fix.md
+│   ├── 🗃️ smart_edu_db_upgrade_no_seed.sql
+│   ├── 📝 student-flow.md
+│   ├── 📝 student-phase1-structure.md
+│   ├── 📝 teacher-flow.md
+│   └── 📝 temp.md
+├── 📄 elr.sh
+├── 📝 files.txt
+├── 📄 laravel-full-tree.sh
+├── 📄 laravel-project-tree.sh
+├── 📝 laravel_project_structure.txt
+├── 📝 merged_output.txt
+├── 📦 package-lock.json
+├── 📦 package.json
+├── 📄 phpstan.neon
+├── 📄 phpunit.xml
+├── 📁 public/
+│   ├── 📄 .htaccess
+│   ├── 🐘 adminer-5.4.1.php
+│   ├── 📁 assets/
+│   │   ├── 📁 css/
+│   │   │   ├── 🎨 app.css
+│   │   │   ├── 🎨 dashboard.css
+│   │   │   ├── 🎨 exam-wizard.css
+│   │   │   ├── 🎨 exam.css
+│   │   │   ├── 🎨 landing-auth-modal.clean.css
+│   │   │   ├── 🎨 landing.css
+│   │   │   ├── 🎨 landing.tokens.patch.css
+│   │   │   ├── 🎨 landing_old.css
+│   │   │   ├── 🎨 question-wizard.css
+│   │   │   ├── 🎨 student-dashboard.clean.css
+│   │   │   ├── 🎨 student-dashboard.phase.css
+│   │   │   ├── 🎨 student-dashboard.utilities.clean.css
+│   │   │   ├── 🎨 student-user-menu.css
+│   │   │   └── 🎨 teacher-classes.css
+│   │   ├── 📁 images/
+│   │   │   └── 📁 landing/
+│   │   │       └── 📁 screenshots/
+│   │   │              [محتویات پوشه...]
+│   │   ├── 📁 js/
+│   │   │   ├── 📜 admin-auth.js
+│   │   │   ├── 📜 app.js
+│   │   │   ├── 📜 auth.js
+│   │   │   ├── 📜 classroom-modal.js
+│   │   │   ├── 📜 dev-console.js
+│   │   │   ├── 📜 exam-wizard.js
+│   │   │   ├── 📜 exam.js
+│   │   │   ├── 📜 landing.js
+│   │   │   ├── 📜 landing_old.js
+│   │   │   ├── 📜 question-preview.js
+│   │   │   ├── 📜 question-wizard.js
+│   │   │   ├── 📜 student-dashboard.js
+│   │   │   ├── 📜 teacher-classes.js
+│   │   │   └── 📜 teacher-classes1.js
+│   │   └── 📁 samples/
+│   │       ├── 📄 konkur-sample.pdf
+│   │       ├── 📄 olympiad-sample.pdf
+│   │       └── 📄 taghviyati-sample.pdf
+│   ├── 📄 favicon.ico
+│   ├── 🐘 index.php
+│   ├── 🐘 index2.php
+│   └── 📝 robots.txt
+├── 📁 resources/
+│      (تعداد فایل: 135)
+│   ├── 📁 css/
+│   │   └── 🎨 app.css
+│   ├── 📁 js/
+│   │   ├── 📜 app.js
+│   │   └── 📜 bootstrap.js
+│   └── 📁 views/
+│       ├── 📁 dashboard/
+│       │   ├── 📁 admin/
+│       │   │   ├── 📁 classrooms/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 📁 exams/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 🐘 index.blade.php
+│       │   │   ├── 🐘 login.blade.php
+│       │   │   ├── 📁 taxonomies/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   └── 📁 users/
+│       │   │          [محتویات پوشه...]
+│       │   ├── 📁 counselor/
+│       │   │   ├── 📁 attempts/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 🐘 index.blade.php
+│       │   │   ├── 📁 learning-paths/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 🐘 profile.blade.php
+│       │   │   ├── 📁 reports/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   └── 📁 students/
+│       │   │          [محتویات پوشه...]
+│       │   ├── 📁 parent/
+│       │   │   ├── 🐘 help.blade.php
+│       │   │   └── 🐘 index.blade.php
+│       │   ├── 📁 student/
+│       │   │   ├── 📁 attempts/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 📁 classrooms/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 📁 exams/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   ├── 🐘 index.blade.php
+│       │   │   ├── 🐘 learning-path.blade.php
+│       │   │   ├── 🐘 my-teachers.blade.php
+│       │   │   ├── 🐘 profile.blade.php
+│       │   │   ├── 📁 reports/
+│       │   │   │      [محتویات پوشه...]
+│       │   │   └── 📁 support/
+│       │   │          [محتویات پوشه...]
+│       │   └── 📁 teacher/
+│       │       ├── 📁 attempts/
+│       │       │      [محتویات پوشه...]
+│       │       ├── 📁 classes/
+│       │       │      [محتویات پوشه...]
+│       │       ├── 📁 exams/
+│       │       │      [محتویات پوشه...]
+│       │       ├── 🐘 index.blade.php
+│       │       ├── 🐘 profile.blade.php
+│       │       ├── 📁 reports/
+│       │       │      [محتویات پوشه...]
+│       │       ├── 📁 students/
+│       │       │      [محتویات پوشه...]
+│       │       └── 📁 subjects/
+│       │              [محتویات پوشه...]
+│       ├── 📁 dev/
+│       │   ├── 🐘 console-pro.blade.php
+│       │   └── 🐘 console.blade.php
+│       ├── 📁 diagnosis/
+│       │   ├── 🐘 analysis.blade.php
+│       │   ├── 🐘 dashboard.blade.php
+│       │   ├── 🐘 layout.blade.php
+│       │   ├── 🐘 merge-master.blade.php
+│       │   ├── 🐘 merge.blade.php
+│       │   ├── 🐘 performance.blade.php
+│       │   ├── 🐘 security.blade.php
+│       │   └── 📁 structure/
+│       │       ├── 🐘 _tree.blade.php
+│       │       ├── 🐘 app-tree.blade.php
+│       │       ├── 🐘 files.blade.php
+│       │       ├── 🐘 index.blade.php
+│       │       └── 🐘 merge-result.blade.php
+│       ├── 📁 landing/
+│       │   ├── 🐘 index.blade.php
+│       │   └── 🐘 index_old.blade.php
+│       ├── 📁 layouts/
+│       │   ├── 📁 app/
+│       │   │   ├── 🐘 navbar.blade.php
+│       │   │   ├── 🐘 sidebar-admin.blade.php
+│       │   │   ├── 🐘 sidebar-student.blade.php
+│       │   │   ├── 🐘 sidebar-teacher.blade.php
+│       │   │   └── 🐘 sidebar.blade.php
+│       │   ├── 🐘 app.blade.php
+│       │   ├── 🐘 guest.blade.php
+│       │   └── 🐘 student.blade.php
+│       ├── 📁 partials/
+│       │   ├── 📁 landing/
+│       │   │   ├── 🐘 cta.blade.php
+│       │   │   ├── 🐘 demo.blade.php
+│       │   │   ├── 🐘 faq.blade.php
+│       │   │   ├── 🐘 features.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 hero.blade.php
+│       │   │   ├── 🐘 levels.blade.php
+│       │   │   ├── 🐘 pricing.blade.php
+│       │   │   ├── 🐘 samples.blade.php
+│       │   │   ├── 🐘 screenshots.blade.php
+│       │   │   └── 🐘 testimonials.blade.php
+│       │   └── 📁 student/
+│       │       └── 🐘 user-menu.blade.php
+│       ├── 📁 shared/
+│       │   ├── 🐘 auth-modal.blade.php
+│       │   └── 🐘 navigation.blade.php
+├── 📁 routes/
+│   ├── 🐘 admin.php
+│   ├── 🐘 auth.php
+│   ├── 🐘 console.php
+│   ├── 🐘 counselor.php
+│   ├── 🐘 diagnosis.php
+│   ├── 🐘 parent.php
+│   ├── 🐘 student.php
+│   ├── 🐘 teacher.php
+│   └── 🐘 web.php
+├── 📄 setup_migrations.sh
+├── 📁 storage/
+│   ├── 📁 app/
+│   │      (تعداد فایل: 3)
+│   │   ├── 🔧 .gitignore
+│   │   ├── 📁 private/
+│   │   │   └── 🔧 .gitignore
+│   │   └── 📁 public/
+│   │       └── 🔧 .gitignore
+│   ├── 📁 framework/
+│   │   ├── 📁 cache/
+│   │   │   └── 📁 data/
+│   │   │       ├── 📁 44/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 6d/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 76/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 89/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 8f/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 9c/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       ├── 📁 c2/
+│   │   │       │      [محتویات پوشه...]
+│   │   │       └── 📁 de/
+│   │   │              [محتویات پوشه...]
+│   │   ├── 📁 sessions/
+│   │   │   ├── 📄 MXGwGPxm0OLHo0cgyP48ktJy8zJ78H6lo7o0h8Rt
+│   │   │   └── 📄 k1ZSkQQjEBBVMD8z8O7BpzVTjv2SzabSigbhsw8f
+│   │   └── 📁 views/
+│   │       ├── 🐘 1265f2eceaca38614cc35942d3816230.php
+│   │       ├── 🐘 198b49faa31b7a1395275e3bd27c4995.php
+│   │       ├── 🐘 1cd87dd8c0654b81834b4810fe36f940.php
+│   │       ├── 🐘 2d6ccc3266aeb6ce511ce742b68ec92f.php
+│   │       ├── 🐘 34ed9b6cea16ec779304d7a397715582.php
+│   │       ├── 🐘 4e63763fa8dbbb9c7654c46d5b837e89.php
+│   │       ├── 🐘 533c4903d8030a387bfd198a7cd48f43.php
+│   │       ├── 🐘 5d0231f636a532ebf19e7f8e9e7e2c46.php
+│   │       ├── 🐘 6561b720237c9d66caba24454b4d2d71.php
+│   │       ├── 🐘 6b4eeb995ed299f2e5620460bad4be21.php
+│   │       ├── 🐘 7617398fd6d369142d1bbffd3eb7e363.php
+│   │       ├── 🐘 9726bd793d81eaa13d0a6d7b6afa986f.php
+│   │       ├── 🐘 9bdf55b37ef582ef6ca241ccea14ab07.php
+│   │       ├── 🐘 ae8834f3819e04c888df56d27bb40b4f.php
+│   │       ├── 🐘 c022451508343ceebac72e147209e211.php
+│   │       ├── 🐘 c78ac5e5bd6c024adc6fdfb028b2b111.php
+│   │       ├── 🐘 cf0bb7f9e8e1c1ec6340aa9e51f4a8b1.php
+│   │       ├── 🐘 cf4893154bc9c8c143503ea1888b5c3d.php
+│   │       ├── 🐘 da0951d8fcc081687beba2896e4673e2.php
+│   │       ├── 🐘 e11cabbd52fba433d2ce2dae88aeba46.php
+│   │       ├── 🐘 e4bc6ff1387c42c78fa7f983755f7774.php
+│   │       ├── 🐘 e851b305c51afefef5d10296f52fc39c.php
+│   │       └── 🐘 f0829bd58cc3283c8d3c3f081c61772e.php
+│   └── 📁 logs/
+│       └── 🔧 .gitignore
+├── 📝 test.txt
+├── 📁 tests/
+│   ├── 📁 Feature/
+│   │   └── 🐘 ExampleTest.php
+│   ├── 🐘 TestCase.php
+│   └── 📁 Unit/
+│       └── 🐘 ExampleTest.php
+└── 📜 vite.config.js
+================================================
+          خلاصه فایل‌های پروژه
+================================================
+
+📊 آمار کلی:
+  • کل فایل‌ها: 10092
+  • کل پوشه‌ها: 1723
+
+📁 توزیع فایل‌ها بر اساس نوع:
+  • PHP: 8899 فایل
+  • JavaScript: 40 فایل
+  • Vue: 43 فایل
+  • Blade: 214 فایل
+  • CSS: 33 فایل
+  • Sass/SCSS: 5 فایل
+  • JSON: 182 فایل
+  • Markdown: 301 فایل
+  • SQL: 2 فایل
+
+📁 پوشه‌های مهم لاراول:
+  • app/: 95 فایل
+  • database/: 63 فایل
+  • resources/: 135 فایل
+  • routes/: 9 فایل
+  • config/: 14 فایل
+  • public/: 41 فایل
+  • tests/: 3 فایل
+
+================================================
+پایان فایل ساختار پروژه
+تاریخ: Sat Dec 20 20:36:20 EAST 2025
+================================================

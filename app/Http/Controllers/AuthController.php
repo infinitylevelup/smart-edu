@@ -2,83 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
 use App\Services\OTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-/**
- * AuthController
- *
- * OTP Flow:
- * 1) sendOtp(phone)
- * 2) verifyOtp(phone, code) -> login/register
- *    - if no role => need_role = true
- * 3) setRole(role) -> first time only
- * 4) changeRole(role) -> profile only
- */
 class AuthController extends Controller
 {
-    public function __construct(private OTPService $otpService)
-    {
-    }
+    public function __construct(private OTPService $otpService) {}
 
-    /**
-     * Send OTP (no debug code)
-     * ✅ Cache-only via OTPService
-     */
     public function sendOtp(Request $request)
     {
         $data = $request->validate([
-            "phone" => ["required", "regex:/^9\d{9}$/"],
+            'phone' => ['required', "regex:/^9\d{9}$/"],
         ]);
 
-        $phone = $data["phone"];
+        $phone = $data['phone'];
 
-        // ✅ send otp in cache (2 minutes TTL inside service)
         $code = $this->otpService->send($phone);
 
-        // optional log (like before)
         Log::info("OTP for {$phone}: {$code}");
 
         return response()->json([
-            "status"  => "ok",
-            "message" => "کد تایید ارسال شد.",
+            'status' => 'ok',
+            'message' => 'کد تایید ارسال شد.',
         ]);
     }
 
     /**
-     * Verify OTP + login/register
-     * ✅ Cache-only via OTPService
+     * ✅ NEW: verifyOtp now accepts role and saves it (users.selected_role + role_user pivot)
      */
     public function verifyOtp(Request $request)
     {
         $data = $request->validate([
-            "phone" => ["required", "regex:/^9\d{9}$/"],
-            "code"  => ["required", "digits:6"],
+            'phone' => ['required', "regex:/^9\d{9}$/"],
+            'code' => ['required', 'digits:6'],
+            // ✅ نقش از دکمه لندینگ میاد
+            'role' => ['required', 'in:student,teacher'],
         ]);
 
-        $phone = $data["phone"];
-        $code  = $data["code"];
+        $phone = $data['phone'];
+        $code = $data['code'];
+        $roleSlug = $data['role']; // student | teacher
 
-        if (!$this->otpService->verify($phone, $code)) {
+        if (! $this->otpService->verify($phone, $code)) {
             return response()->json([
-                "status"  => "error",
-                "message" => "کد تایید نامعتبر است یا منقضی شده است.",
+                'status' => 'error',
+                'message' => 'کد تایید نامعتبر است یا منقضی شده است.',
             ], 422);
         }
 
-        // ✅ users table new schema (no role column)
+        // ✅ create/login user
         $user = User::firstOrCreate(
-            ["phone" => $phone],
+            ['phone' => $phone],
             [
-                "name"     => "کاربر " . $phone,
-                "password" => Hash::make(Str::random(12)),
-                "status"   => "active",
+                'name' => 'کاربر '.$phone,
+                'password' => Hash::make(Str::random(12)),
+                'status' => 'active',
             ]
         );
 
@@ -88,119 +72,46 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->regenerateToken();
 
-        // Load roles pivot
-        $user->load("roles");
-
-        // ✅ role comes from pivot
-        $needRole = $user->roles->isEmpty();
-
-        $redirect = null;
-        if (!$needRole) {
-            // چون role تو pivot و selected_role نگه‌داری میشه
-            $redirect = match ($user->selected_role) {
-                "student" => route("student.exams.index"),
-                "teacher" => route("teacher.index"),
-                "admin"   => route("admin.dashboard"),
-                "counselor" => route("counselor.index"),
-                default   => route("landing"),
-            };
-        }
-
-        return response()->json([
-            "status"    => "ok",
-            "message"   => "ورود موفق.",
-            "role"      => $user->selected_role,
-            "need_role" => $needRole,
-            "redirect"  => $redirect,
-            "csrf"      => csrf_token(), // ✅ send fresh token to frontend
-        ]);
-    }
-
-    /**
-     * Set role only first time (role == null)
-     * ✅ FIXED: no Seeder needed, role auto-creates if table is empty
-     */
-    public function setRole(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
-        }
-
-        $roleSlug = $request->validate([
-            'role' => 'required|in:student,teacher,admin,counselor'
-        ])['role'];
-
-        // 1) ذخیره slug در users
-        $user->selected_role = $roleSlug;
-        $user->save();
-
-        // 2) پیدا کردن role واقعی از جدول roles با slug
-        $role = Role::where('slug', $roleSlug)->first();
-        if (!$role) {
-            return response()->json([
-                'message' => 'نقش معتبر نیست یا در جدول roles وجود ندارد.'
-            ], 422);
-        }
-
-        // 3) سینک pivot با ID واقعی نقش
-        $user->roles()->sync([$role->id]);  // ✅ role_id صحیح
-
-        return response()->json([
-            'status' => 'ok',
-            'message' => 'نقش ذخیره شد.',
-            'redirect' => match ($roleSlug) {
-                'admin' => route('admin.dashboard'),
-                'teacher' => route('teacher.index'),
-                'student' => route('student.index'),
-                'counselor' => route('counselor.index'),
-                default => route('landing'),
-            }
-        ]);
-    }
-
-    /**
-     * Change role from profile only
-     * ✅ FIXED: no Seeder needed, role auto-creates if missing
-     */
-    public function changeRole(Request $request)
-    {
-        $request->validate([
-            "role" => ["required", "in:student,teacher"],
-        ]);
-
-        $user = Auth::user();
-        abort_unless($user, 401);
-
-        // ✅ اگر نقش نبود بساز
+        /**
+         * ✅ Save role in BOTH places:
+         * 1) users.selected_role
+         * 2) role_user pivot
+         */
         $role = Role::firstOrCreate(
-            ["slug" => $request->role],
+            ['slug' => $roleSlug],
             [
-                "id"        => (string) Str::uuid(),
-                "name"      => $request->role === "teacher" ? "معلم" : "دانش‌آموز",
-                "is_active" => true,
+                'id' => (string) Str::uuid(),
+                'name' => $roleSlug === 'teacher' ? 'معلم' : 'دانش‌آموز',
+                'is_active' => true,
             ]
         );
 
-        // تک‌نقشی: قبلی‌ها پاک و جدید ثبت شود
-        $user->roles()->sync([$role->id]);
-
-        // ✅ همزمان selected_role هم آپدیت شود
-        $user->selected_role = $request->role;
+        // selected_role column exists in migration :contentReference[oaicite:3]{index=3}
+        $user->selected_role = $roleSlug;
         $user->save();
 
-        $redirect = match ($request->role) {
-            "student" => route("student.exams.index"),
-            "teacher" => route("teacher.index"),
-            default   => route("landing"),
+        // pivot sync (single-role)
+        $user->roles()->sync([$role->id]);
+
+        // refresh roles
+        $user->load('roles');
+
+        $redirect = match ($roleSlug) {
+            'student' => route('student.index'),
+            'teacher' => route('teacher.index'),
+            default => route('landing'),
         };
 
-        return redirect($redirect)->with("success", "نقش شما با موفقیت تغییر کرد.");
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'ورود موفق.',
+            'role' => $roleSlug,
+            'redirect' => $redirect,
+            'csrf' => csrf_token(), // ✅ fresh token to frontend
+        ]);
     }
 
-    /**
-     * Logout
-     */
+    // ⚠️ setRole / changeRole / logout can stay as-is (you can delete setRole later if you want)
     public function logout(Request $request)
     {
         Auth::logout();
@@ -208,6 +119,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route("landing");
+        return redirect()->route('landing');
     }
 }

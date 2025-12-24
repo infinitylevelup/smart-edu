@@ -1,353 +1,170 @@
-@extends('layouts.app')
+@extends('layouts.student-app')
 
-@section('title', 'جزئیات کلاس')
-
-@push('styles')
-    <style>
-        /* ------------------------------------------------------------------
-                     | Page Shell
-                     |-------------------------------------------------------------------*/
-        .page-wrap {
-            padding: 1.5rem 0;
-        }
-
-        .soft-card {
-            border: 0;
-            border-radius: 1.25rem;
-            box-shadow: 0 8px 24px rgba(18, 38, 63, .06);
-            background: #fff;
-        }
-
-        /* ------------------------------------------------------------------
-                     | Classroom Header
-                     |-------------------------------------------------------------------*/
-        .class-header {
-            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
-            border-radius: 1.25rem;
-            padding: 1.25rem 1.25rem 1rem 1.25rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .class-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: .35rem;
-            background: #ffffffcc;
-            border: 1px dashed #c7d2fe;
-            font-weight: 800;
-            padding: .25rem .7rem;
-            border-radius: 999px;
-            font-size: .85rem;
-        }
-
-        .meta {
-            color: #64748b;
-            font-size: .9rem;
-        }
-
-        .tiny {
-            font-size: .85rem;
-        }
-
-        .stat-pill {
-            background: #fff;
-            border: 1px solid #eef2f7;
-            padding: .45rem .8rem;
-            border-radius: 999px;
-            font-weight: 700;
-            font-size: .85rem;
-        }
-
-        /* ------------------------------------------------------------------
-                     | Exams List
-                     |-------------------------------------------------------------------*/
-        .exam-card {
-            border: 1px solid #eef2f7;
-            border-radius: 1.1rem;
-            transition: .2s ease;
-            background: #fff;
-        }
-
-        .exam-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(18, 38, 63, .08);
-            border-color: #e5e7eb;
-        }
-
-        .exam-badge {
-            border-radius: 999px;
-            font-size: .8rem;
-            padding: .3rem .6rem;
-            font-weight: 700;
-        }
-
-        /* ------------------------------------------------------------------
-                     | Empty Exams
-                     |-------------------------------------------------------------------*/
-        .empty-wrap {
-            text-align: center;
-            padding: 2.5rem 1rem;
-        }
-
-        .empty-illus {
-            width: 90px;
-            height: 90px;
-            border-radius: 1.75rem;
-            background: #eef2ff;
-            display: grid;
-            place-items: center;
-            margin: 0 auto 1rem;
-            color: #4f46e5;
-            font-size: 2rem;
-        }
-
-        .empty-title {
-            font-weight: 800;
-            margin-bottom: .5rem;
-        }
-
-        .empty-text {
-            color: #64748b;
-            max-width: 520px;
-            margin: 0 auto 1.25rem;
-        }
-    </style>
-@endpush
-
+@section('title', $classroom->title ?? 'کلاس')
 
 @section('content')
-    <div class="container page-wrap">
+    @php
+        $title = $classroom->title ?? ($classroom->name ?? 'کلاس بدون عنوان');
+        $joinCode = $classroom->join_code ?? null;
 
-        {{-- ============================================================
-     | Top Actions
-     |============================================================= --}}
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div>
-                <h4 class="fw-bold mb-1">
-                    <i class="bi bi-easel2-fill text-primary me-1"></i>
-                    جزئیات کلاس
-                </h4>
-                <div class="text-muted small">
-                    در این صفحه اطلاعات کلاس و آزمون‌های مربوط به آن نمایش داده می‌شود.
-                </div>
-            </div>
+        $teacher = $classroom->teacher ?? null;
+        $teacherName = $teacher->display_name ?? ($teacher->name ?? 'نامشخص');
 
-            <div class="d-flex gap-2">
-                <a href="{{ route('student.classrooms.index') }}"
-                    class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm">
-                    <i class="bi bi-arrow-right"></i>
-                    بازگشت به کلاس‌ها
-                </a>
+        $gradeTitle = $classroom->grade?->title ?? null;
 
-                <a href="{{ route('student.classrooms.join.form') }}"
-                    class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    عضویت در کلاس جدید
-                </a>
-            </div>
-        </div>
+        $typeLabel = ($classroom->classroom_type ?? 'single') === 'comprehensive' ? 'کلاس جامع' : 'کلاس تک';
+        $activeLabel = $classroom->is_active ? 'کلاس فعال' : 'کلاس غیرفعال';
 
+        $exams = $classroom->exams ?? collect();
+    @endphp
 
-        @php
-            $title = $classroom->title ?? ($classroom->name ?? 'کلاس بدون عنوان');
+    <section id="classroom-show" class="mobile-section active">
+        <div class="cshow-wrap">
 
-            $joinCode = $classroom->join_code ?? null;
+            {{-- Header --}}
+            <div class="cshow-header-card">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div>
+                        <div class="cshow-title">{{ $title }}</div>
+                        <div class="cshow-meta">
+                            <span class="badge bg-light text-dark border">{{ $typeLabel }}</span>
 
-            $teacher = $classroom->teacher ?? null;
-            $teacherName = $teacher->display_name ?? ($teacher->name ?? 'نامشخص');
-
-            $exams = $classroom->exams ?? collect();
-        @endphp
-
-        {{-- ============================================================
-     | Classroom Header Card
-     |============================================================= --}}
-        <div class="class-header soft-card mb-3">
-
-            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                <div>
-                    <div class="fw-bold fs-4 mb-1">
-                        {{ $title }}
+                            @if($gradeTitle)
+                                <span class="mx-1">•</span>
+                                <span class="text-muted">پایه:</span> {{ $gradeTitle }}
+                            @endif
+                        </div>
                     </div>
 
-                    {{-- subject/grade فقط اگر واقعاً وجود داشته باشند نمایش بده --}}
-                    @if (!empty($classroom->subject) || !empty($classroom->grade))
-                        <div class="meta">
-                            {{ $classroom->subject ?? 'موضوع نامشخص' }}
-                            @if (!empty($classroom->grade))
-                                <span class="mx-1">•</span>
-                                پایه: {{ $classroom->grade }}
-                            @endif
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        @if($joinCode)
+                            <span class="cshow-chip">
+                                <i class="bi bi-key-fill text-primary"></i>
+                                {{ $joinCode }}
+                            </span>
+                        @endif
+
+                        <span class="badge {{ $classroom->is_active ? 'bg-success' : 'bg-secondary' }}">
+                            {{ $activeLabel }}
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Description --}}
+                <div class="mt-3">
+                    @if (!empty($classroom->description))
+                        <div class="small text-muted">{{ $classroom->description }}</div>
+                    @else
+                        <div class="small text-muted">برای این کلاس توضیحی ثبت نشده است.</div>
+                    @endif
+                </div>
+
+                {{-- Teacher --}}
+                <div class="mt-3 d-flex align-items-center gap-2">
+                    <div class="cshow-avatar">
+                        <i class="bi bi-person-badge text-secondary"></i>
+                    </div>
+                    <div>
+                        <div class="cshow-tiny text-muted">معلم کلاس</div>
+                        <div class="fw-semibold">{{ $teacherName }}</div>
+                    </div>
+                </div>
+
+                {{-- Stats --}}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <div class="cshow-pill">
+                        <i class="bi bi-journal-text me-1 text-primary"></i>
+                        آزمون‌ها: {{ $exams->count() }}
+                    </div>
+
+                    @if (isset($classroom->students_count))
+                        <div class="cshow-pill">
+                            <i class="bi bi-people me-1 text-success"></i>
+                            اعضا: {{ $classroom->students_count }}
                         </div>
                     @endif
                 </div>
 
-                <div class="d-flex flex-column align-items-end gap-2">
-                    @if ($joinCode)
-                        <span class="class-chip">
-                            <i class="bi bi-key-fill text-primary"></i>
-                            {{ $joinCode }}
-                        </span>
-                    @endif
+                {{-- Quick actions --}}
+                <div class="cshow-actions mt-3">
+                    <a href="{{ route('student.classrooms.index') }}" class="btn btn-outline-primary cshow-btn">
+                        بازگشت به کلاس‌ها
+                    </a>
 
-                    <span class="badge {{ $classroom->is_active ? 'bg-success' : 'bg-secondary' }} exam-badge">
-                        {{ $classroom->is_active ? 'کلاس فعال' : 'کلاس غیرفعال' }}
-                    </span>
-
-                    @if (isset($classroom->is_published))
-                        <span
-                            class="badge {{ $classroom->is_published ? 'bg-primary' : 'bg-light text-dark border' }} exam-badge">
-                            {{ $classroom->is_published ? 'منتشر شده' : 'پیش‌نویس' }}
-                        </span>
-                    @endif
-                </div>
-            </div>
-
-            {{-- Description --}}
-            <div class="mt-3">
-                @if (!empty($classroom->description))
-                    <div class="small text-muted">
-                        {{ $classroom->description }}
-                    </div>
-                @else
-                    <div class="small text-muted">
-                        برای این کلاس توضیحی ثبت نشده است.
-                    </div>
-                @endif
-            </div>
-
-            {{-- Teacher Info --}}
-            <div class="mt-3 d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-white d-grid place-items-center border" style="width:42px;height:42px;">
-                    <i class="bi bi-person-badge text-secondary"></i>
-                </div>
-                <div>
-                    <div class="tiny text-muted">معلم کلاس</div>
-                    <div class="fw-semibold">{{ $teacherName }}</div>
-                </div>
-            </div>
-
-            {{-- Stats --}}
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <div class="stat-pill">
-                    <i class="bi bi-journal-text me-1 text-primary"></i>
-                    آزمون‌ها: {{ $exams->count() }}
-                </div>
-
-                @if (isset($classroom->students_count))
-                    <div class="stat-pill">
-                        <i class="bi bi-people me-1 text-success"></i>
-                        اعضا: {{ $classroom->students_count }}
-                    </div>
-                @endif
-            </div>
-        </div>
-
-
-        {{-- ============================================================
-     | Exams Section
-     |============================================================= --}}
-        <div class="soft-card p-3 p-md-4">
-
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                <h5 class="fw-bold mb-0">
-                    <i class="bi bi-ui-checks-grid text-primary me-1"></i>
-                    آزمون‌های این کلاس
-                </h5>
-
-                {{-- فعلاً بدون classroom_id چون فیلتر در کنترلر نیست --}}
-                <a href="{{ route('student.exams.index') }}" class="btn btn-outline-primary btn-sm">
-                    مشاهده همه آزمون‌ها
-                </a>
-            </div>
-
-            {{-- Empty exams --}}
-            @if ($exams->isEmpty())
-                <div class="empty-wrap">
-                    <div class="empty-illus">
-                        <i class="bi bi-journal-x"></i>
-                    </div>
-
-                    <h6 class="empty-title">هنوز آزمونی برای این کلاس منتشر نشده</h6>
-
-                    <p class="empty-text">
-                        به محض اینکه معلم آزمون جدیدی بسازد یا منتشر کند،
-                        همینجا لیست می‌شود و می‌توانی شرکت کنی.
-                    </p>
-
-                    <a href="{{ route('student.classrooms.index') }}"
-                        class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-arrow-right"></i>
-                        برگشت به کلاس‌ها
+                    <a href="{{ route('student.exams.classroom') }}" class="btn btn-success cshow-btn">
+                        آزمون‌های کلاسی ⭐
                     </a>
                 </div>
-            @else
-                {{-- Exams list --}}
-                <div class="row g-3">
-                    @foreach ($exams as $exam)
-                        @php
-                            $qCount =
-                                $exam->questions_count ?? (isset($exam->questions) ? $exam->questions->count() : null);
+            </div>
 
-                            $duration = $exam->duration ?? 0;
-                        @endphp
+            {{-- Exams --}}
+            <div class="cshow-card">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-ui-checks-grid text-primary me-1"></i>
+                        آزمون‌های این کلاس
+                    </h5>
 
-                        <div class="col-md-6 col-xl-4">
-                            <div class="exam-card p-3 h-100">
+                    <a href="{{ route('student.exams.index') }}" class="btn btn-outline-primary btn-sm">
+                        مشاهده همه آزمون‌ها
+                    </a>
+                </div>
 
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <div>
-                                        <div class="fw-bold mb-1">
-                                            {{ $exam->title ?? 'آزمون بدون عنوان' }}
-                                        </div>
-                                        <div class="tiny text-muted">
-                                            مدت: {{ $duration }} دقیقه
-                                            @if (!is_null($qCount))
-                                                <span class="mx-1">•</span>
-                                                سوال‌ها: {{ $qCount }}
-                                            @endif
-                                        </div>
+                @if ($exams->isEmpty())
+                    <div class="cshow-empty">
+                        <div class="cshow-empty-illus">
+                            <i class="bi bi-journal-x"></i>
+                        </div>
+                        <div class="cshow-empty-title">هنوز آزمونی برای این کلاس منتشر نشده</div>
+                        <div class="cshow-empty-text">
+                            به محض اینکه معلم آزمون جدیدی بسازد یا منتشر کند، همینجا نمایش داده می‌شود.
+                        </div>
+                    </div>
+                @else
+                    <div class="cshow-exam-list">
+                        @foreach ($exams as $exam)
+                            @php
+                                $examTitle = $exam->title ?? 'آزمون بدون عنوان';
+                                $questionsCount = $exam->questions_count ?? null;
+                                $isActive = (bool)($exam->is_active ?? true);
+                                $isPublished = (bool)($exam->is_published ?? true);
+                            @endphp
+
+                            <div class="cshow-exam-item">
+                                <div class="cshow-exam-main">
+                                    <div class="cshow-exam-title">{{ $examTitle }}</div>
+
+                                    <div class="cshow-exam-meta">
+                                        @if($questionsCount !== null)
+                                            <span class="text-muted">سوالات:</span> {{ $questionsCount }}
+                                            <span class="mx-1">•</span>
+                                        @endif
+
+                                        <span class="text-muted">وضعیت:</span>
+                                        {{ $isPublished ? 'منتشر شده' : 'پیش‌نویس' }}
+                                        <span class="mx-1">•</span>
+                                        {{ $isActive ? 'فعال' : 'غیرفعال' }}
                                     </div>
-
-                                    @if (isset($exam->is_published))
-                                        <span
-                                            class="badge {{ $exam->is_published ? 'bg-success' : 'bg-light text-dark border' }} exam-badge">
-                                            {{ $exam->is_published ? 'منتشر شده' : 'پیش‌نویس' }}
-                                        </span>
-                                    @endif
                                 </div>
 
-                                @if (!empty($exam->description))
-                                    <div class="small text-muted mt-2">
-                                        {{ \Illuminate\Support\Str::limit($exam->description, 90) }}
-                                    </div>
-                                @endif
-
-                                <div class="d-flex gap-2 mt-3">
-                                    <a href="{{ route('student.exams.show', $exam) }}"
-                                        class="btn btn-outline-primary w-100 btn-sm">
+                                <div class="cshow-exam-actions">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       href="{{ route('student.exams.show', $exam) }}">
                                         جزئیات
                                     </a>
 
-                                    @if ($exam->is_published ?? false)
-                                        <a href="{{ route('student.exams.take', $exam) }}"
-                                            class="btn btn-primary w-100 btn-sm">
-                                            شروع آزمون
-                                        </a>
-                                    @else
-                                        <button class="btn btn-secondary w-100 btn-sm" disabled>
-                                            هنوز منتشر نشده
-                                        </button>
-                                    @endif
+                                    {{-- شروع/شرکت (فعلاً از صفحه جزئیات وارد می‌شود) --}}
+                                    <a class="btn btn-primary btn-sm"
+                                       href="{{ route('student.exams.show', $exam) }}">
+                                        ورود
+                                    </a>
                                 </div>
-
                             </div>
-                        </div>
-                    @endforeach
-                </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
 
-            @endif
         </div>
-    </div>
+    </section>
 @endsection

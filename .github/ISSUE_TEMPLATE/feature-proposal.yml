@@ -1,0 +1,112 @@
+name: 🚀 Feature Proposal (Gen Z / Alpha Filtered)
+description: Propose a new feature that must pass the non-negotiable UX rules for ages 8–18.
+title: "[Feature]: "
+labels: ["feature", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠️ Mandatory Rule
+        This platform follows one core principle:
+
+        **Give users space to discover — never deceive them with effects.**
+
+        Any feature that fails the checklist below must be redesigned or rejected.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description (Max 3 lines)
+      description: Briefly describe the feature. No marketing language.
+      placeholder: What does this feature do?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-layer
+    attributes:
+      label: Feature Layer
+      description: Where does this feature belong?
+      options:
+        - Core Experience (70% - simple, predictable, safe)
+        - Hidden Layer (30% - optional, discoverable, playful)
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✅ Feature Decision Checklist
+        Answer **YES / NO** honestly.  
+        If any **critical item** is NO, the feature cannot be approved.
+
+  - type: checkboxes
+    id: checklist-core
+    attributes:
+      label: Core Safety (Critical)
+      options:
+        - label: The main user path remains simple and uninterrupted
+          required: true
+        - label: The user can completely ignore this feature without losing progress
+          required: true
+        - label: The feature does NOT force interaction or attention
+          required: true
+
+  - type: checkboxes
+    id: checklist-discovery
+    attributes:
+      label: Discovery & Meaning
+      options:
+        - label: The feature can be discovered naturally (no announcements or prompts)
+        - label: The feature provides at least one real value (information, relief, ownership, reward)
+
+  - type: checkboxes
+    id: checklist-respect
+    attributes:
+      label: Respect & Tone (Critical)
+      options:
+        - label: The feature is respectful and non-patronizing
+          required: true
+        - label: Errors are never mocked or punished
+          required: true
+
+  - type: checkboxes
+    id: checklist-trust
+    attributes:
+      label: Error Handling & Trust (Critical)
+      options:
+        - label: User mistakes result in guidance or reward, not punishment
+          required: true
+        - label: Parents / educators would see this feature as safe and purposeful
+          required: true
+
+  - type: checkboxes
+    id: checklist-data
+    attributes:
+      label: Data Safety & Clarity (Critical)
+      options:
+        - label: The feature does NOT alter or risk real user data
+          required: true
+        - label: The feature is self-explanatory without tooltips or tutorials
+          required: true
+
+  - type: dropdown
+    id: final-decision
+    attributes:
+      label: Final Decision
+      options:
+        - Approved
+        - Needs Redesign
+        - Rejected
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision-reason
+    attributes:
+      label: Reason (1–2 lines max)
+      description: Brief justification for the decision.
+    validations:
+      required: true

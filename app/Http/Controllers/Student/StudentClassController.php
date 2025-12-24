@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClassRoom;  //اصلاح به ClassRoom
+use App\Models\ClassRoom;  // اصلاح به ClassRoom
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,17 +34,51 @@ class StudentClassController extends Controller
      * GET /dashboard/student/classrooms
      * name: student.classrooms.index
      */
-    public function index()
+    // بالا: use ها (اگر ندارید اضافه کنید)
+
+    public function index(Request $request)
     {
         $student = Auth::user();
 
-        // کلاس‌های عضو شده + اطلاعات معلم
         $classrooms = $student->classrooms()
             ->with('teacher')
-            ->withCount(['students','exams'])
+            ->withCount(['students', 'exams'])
             ->latest()
             ->get();
 
+        // ✅ JSON mode for SPA sync
+        if ($request->expectsJson()) {
+
+            $payload = $classrooms->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'title' => $c->title ?? $c->name ?? 'کلاس',
+                    'teacher' => $c->teacher?->name ?? '—',
+                    'progress' => (int) ($c->progress ?? 0),
+
+                    // optional useful fields
+                    'students_count' => (int) ($c->students_count ?? 0),
+                    'exams_count' => (int) ($c->exams_count ?? 0),
+                    'updated_at' => optional($c->updated_at)->toISOString(),
+                ];
+            })->values();
+
+            $etag = '"'.sha1($payload->toJson()).'"';
+
+            if ($request->header('If-None-Match') === $etag) {
+                return response('', 304, [
+                    'ETag' => $etag,
+                    'Cache-Control' => 'private, must-revalidate',
+                ]);
+            }
+
+            return response()->json(['classes' => $payload], 200, [
+                'ETag' => $etag,
+                'Cache-Control' => 'private, must-revalidate',
+            ]);
+        }
+
+        // ✅ HTML mode (همان رفتار قبلی)
         return view('dashboard.student.classrooms.index', compact('classrooms'));
     }
 
@@ -72,7 +106,7 @@ class StudentClassController extends Controller
         // لود اطلاعات تکمیلی برای نمایش در صفحه
         $classroom->load([
             'teacher',
-            'exams' => fn($q) => $q->latest(),
+            'exams' => fn ($q) => $q->latest(),
         ]);
 
         return view('dashboard.student.classrooms.show', compact('classroom'));
@@ -112,19 +146,21 @@ class StudentClassController extends Controller
 
         $student = Auth::user();
 
-        $classroom = Classroom::where('join_code', $request->join_code)->firstOrFail();
+        $classroom = ClassRoom::where('join_code', $request->join_code)->firstOrFail();
 
         // جلوگیری از عضویت تکراری
         if ($student->classrooms()->where('classroom_id', $classroom->id)->exists()) {
             return back()->withErrors([
-                'join_code' => 'شما قبلاً عضو این کلاس هستید.'
+                'join_code' => 'شما قبلاً عضو این کلاس هستید.',
             ]);
         }
 
         // عضویت در pivot
         $student->classrooms()->attach($classroom->id);
 
-        return redirect()->route('student.classrooms.index')
-            ->with('success', 'با موفقیت به کلاس اضافه شدید.');
+        return redirect()
+            ->route('student.index')
+            ->with('success', 'عضویت انجام شد ✅')
+            ->with('highlight_class_id', $classroom->id);
     }
 }

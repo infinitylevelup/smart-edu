@@ -23,6 +23,58 @@
   'use strict';
 
   // --------- Core helpers ---------
+  function confirmModal(message) {
+    return new Promise((resolve) => {
+      // اگر Bootstrap در دسترس نبود، fallback به confirm مرورگر
+      if (typeof bootstrap === 'undefined') {
+        resolve(window.confirm(message));
+        return;
+      }
+
+      const modalEl = document.getElementById('confirmModal');
+      const msgEl = document.getElementById('confirmModalMessage');
+      const okBtn = document.getElementById('confirmModalOkBtn');
+
+      if (!modalEl || !msgEl || !okBtn) {
+        resolve(window.confirm(message));
+        return;
+      }
+
+      msgEl.textContent = message || 'آیا مطمئن هستید؟';
+
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+      let decided = false;
+
+      const cleanup = () => {
+        okBtn.removeEventListener('click', onOk);
+        modalEl.removeEventListener('hidden.bs.modal', onHidden);
+      };
+
+      const onOk = () => {
+        decided = true;
+        cleanup();
+        modal.hide();
+        resolve(true);
+      };
+
+      const onHidden = () => {
+        // اگر کاربر با ضربدر/بیرون/ESC بست، یعنی لغو
+        if (!decided) {
+          cleanup();
+          resolve(false);
+        }
+      };
+
+      okBtn.addEventListener('click', onOk, { once: true });
+      modalEl.addEventListener('hidden.bs.modal', onHidden, { once: true });
+
+      modal.show();
+    });
+  }
+
+
+
   function $(sel, root = document) { return root.querySelector(sel); }
   function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
 
@@ -55,6 +107,35 @@
     }
     return res.json();
   }
+
+  function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) return meta.getAttribute('content');
+    const input = document.querySelector('input[name="_token"]');
+    return input ? input.value : '';
+  }
+
+  async function fetchDelete(url) {
+    const token = getCsrfToken();
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${text}`);
+    }
+
+    try { return await res.json(); } catch { return { ok: true }; }
+  }
+
+
+
+
 
   function setSelectOptions(selectEl, items, { placeholder = 'انتخاب کنید', valueKey = 'id', labelKey = 'title' } = {}) {
     if (!selectEl) return;
@@ -214,16 +295,67 @@
 
   // --------- Page inits ---------
   function initIndex(root) {
-    // Optional: confirm delete buttons (data-confirm)
+    // Optional: confirm buttons (data-confirm)
     $all('[data-confirm]', root).forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const msg = btn.getAttribute('data-confirm') || 'آیا مطمئن هستید؟';
         if (!confirm(msg)) e.preventDefault();
       });
     });
+
+    const destroyTpl = root.dataset.destroyUrlTemplate;
+    if (!destroyTpl) return;
+
+    root.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action="delete"]');
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      if (!id) return;
+
+      const msg = btn.getAttribute('data-confirm') || 'حذف شود؟';
+      const ok = await confirmModal(msg);
+      if (!ok) return;
+      const url = destroyTpl.replace('__ID__', encodeURIComponent(String(id)));
+
+      try {
+        btn.disabled = true;
+        await fetchDelete(url);
+
+        const card = btn.closest('.class-card');
+        card?.remove();
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+      }
+    });
   }
 
   function initShow(root) {
+    const destroyUrl = root.dataset.destroyUrl;
+    const redirectUrl = root.dataset.redirectAfterDelete;
+
+    if (destroyUrl) {
+      root.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action="delete"]');
+        if (!btn) return;
+
+        const msg = btn.getAttribute('data-confirm') || 'حذف شود؟';
+        const ok = await confirmModal(msg);
+        if (!ok) return;
+        try {
+          btn.disabled = true;
+          await fetchDelete(destroyUrl);
+          window.location.href = redirectUrl || '/dashboard/teacher/classes';
+        } catch (err) {
+          console.error(err);
+          showToast('حذف انجام نشد', 'خطا');
+          btn.disabled = false;
+        }
+      });
+    }
+
+
     const codeEl = $('#joinCode', root);
     const copyBtn = $('#copyCodeBtn', root);
     if (copyBtn && codeEl) {
@@ -233,6 +365,47 @@
       });
     }
   }
+function initTrash(root) {
+  const tpl = root.dataset.restoreUrlTemplate;
+  if (!tpl) return;
+
+  root.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="restore"]');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+    const msg = btn.getAttribute('data-confirm') || 'بازیابی شود؟';
+
+    const ok = await confirmModal(msg); // همون confirm modal سفارشی
+    if (!ok) return;
+
+    const url = tpl.replace('__ID__', encodeURIComponent(String(id)));
+
+    try {
+      btn.disabled = true;
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
+      });
+
+      // حذف کارت از لیست trash با افکت
+      const card = btn.closest('.trash-card');
+      if (card) {
+        card.classList.add('fade-out');
+        setTimeout(() => card.remove(), 250);
+      }
+
+      showToast('کلاس بازیابی شد', 'موفق');
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      showToast('بازیابی انجام نشد', 'خطا');
+    }
+  });
+}
 
   function initCreate(root) {
     const form = $('form', root);
@@ -587,6 +760,9 @@
         break;
       case 'teacher-classes-edit':
         initEdit(root);
+        break;
+      case 'teacher-classes-trash':
+        initTrash(root);
         break;
       default:
         break;

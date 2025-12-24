@@ -52,8 +52,12 @@ class Subject extends Model
     public function getFullNameAttribute(): string
     {
         $parts = [];
-        if ($this->grade) $parts[] = $this->grade->name_fa;
-        if ($this->branch) $parts[] = $this->branch->name_fa;
+        if ($this->grade) {
+            $parts[] = $this->grade->name_fa;
+        }
+        if ($this->branch) {
+            $parts[] = $this->branch->name_fa;
+        }
         $parts[] = $this->title_fa;
 
         return implode(' - ', $parts);
@@ -64,7 +68,7 @@ class Subject extends Model
      */
     public function getHoursFormattedAttribute(): string
     {
-        return $this->hours . ' ساعت';
+        return $this->hours.' ساعت';
     }
 
     /**
@@ -141,5 +145,10 @@ class Subject extends Model
     public function getSectionAttribute()
     {
         return $this->grade?->section;
+    }
+
+    public function modules()
+    {
+        return $this->hasMany(\App\Models\Module::class)->orderBy('sort_order');
     }
 }

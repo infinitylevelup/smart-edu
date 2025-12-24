@@ -3,6 +3,7 @@
 
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -123,6 +124,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     @stack('scripts')
+    <!-- Global Confirm Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">تأیید عملیات</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+
+        <div class="modal-body">
+            <p class="mb-0" id="confirmModalMessage">آیا مطمئن هستید؟</p>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">لغو</button>
+            <button type="button" class="btn btn-danger" id="confirmModalOkBtn">تأیید</button>
+        </div>
+        </div>
+    </div>
+    </div>
+
 </body>
 
 </html>

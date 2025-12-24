@@ -15,13 +15,16 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
 
             $table->string('name', 150);
-            $table->string('email', 190)->nullable();
-            $table->string('phone', 30)->nullable();
+            $table->string('email', 190)->unique()->nullable(); // بهتر است unique باشد
+            $table->string('phone', 30)->unique()->nullable(); // بهتر است unique باشد
             $table->string('password', 255);
-            $table->string('status', 30);
-            $table->string('selected_role', 30)->nullable(); // منتقل از add_
+            $table->string('status', 30)->default('active'); // مقدار پیش‌فرض
+            $table->boolean('is_active')->default(true); // ✅ اضافه شد
+            $table->string('selected_role', 30)->nullable(); // برای سازگاری با کد قدیم
 
+            $table->rememberToken(); // اگر نیاز به remember_token دارید
             $table->timestamps();
+            $table->softDeletes(); // اگر می‌خواهید حذف نرم داشته باشید
         });
     }
 

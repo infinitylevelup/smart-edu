@@ -1,137 +1,100 @@
-@extends('layouts.app')
+@extends('layouts.student-app')
 
-@section('title', 'ورود به کلاس')
-
-@push('styles')
-    <style>
-        .page-wrap {
-            padding: 1.5rem 0;
-        }
-
-        .soft-card {
-            border: 0;
-            border-radius: 1.25rem;
-            box-shadow: 0 8px 24px rgba(18, 38, 63, .06);
-            background: #fff;
-        }
-
-        .page-header {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: .75rem;
-            margin-bottom: 1rem;
-        }
-
-        .page-title {
-            font-weight: 800;
-            letter-spacing: -.3px;
-        }
-
-        .hint {
-            color: #64748b;
-            font-size: .9rem;
-        }
-
-        .join-input {
-            font-weight: 700;
-            letter-spacing: .08em;
-        }
-    </style>
-@endpush
+@section('title', 'ثبت‌نام کلاس جدید')
 
 @section('content')
-    <div class="container page-wrap">
+    <section id="join-class" class="mobile-section active">
+        <div class="join-wrap">
 
-        {{-- ============================================================
-     | Header
-     |============================================================= --}}
-        <div class="page-header">
-            <div>
-                <h4 class="page-title mb-1">
-                    <i class="bi bi-box-arrow-in-right text-primary me-1"></i>
-                    ورود به کلاس با کد
-                </h4>
-                <div class="hint">
-                    کد ورود (join_code) را از معلمت بگیر و اینجا وارد کن تا عضو کلاس شوی.
-                </div>
+            <div class="join-header">
+                <h3 class="mb-1">ثبت‌نام کلاس جدید</h3>
+                <div class="join-subtitle">کد دعوت را از معلم بگیر و وارد کن تا عضو کلاس شوی.</div>
             </div>
 
-            <a href="{{ route('student.classrooms.index') }}"
-                class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-sm">
-                <i class="bi bi-arrow-right"></i>
-                بازگشت به کلاس‌ها
-            </a>
-        </div>
-
-        {{-- ============================================================
-     | Card
-     |============================================================= --}}
-        <div class="soft-card p-3 p-md-4">
-
-            {{-- پیام موفقیت --}}
+            {{-- Alerts --}}
             @if (session('success'))
-                <div class="alert alert-success soft-card p-3">
-                    <i class="bi bi-check-circle-fill me-1"></i>
+                <div class="alert alert-success join-alert">
                     {{ session('success') }}
                 </div>
             @endif
 
-            {{-- پیام هشدار --}}
-            @if (session('warning'))
-                <div class="alert alert-warning soft-card p-3">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    {{ session('warning') }}
+            @if (session('error'))
+                <div class="alert alert-danger join-alert">
+                    {{ session('error') }}
                 </div>
             @endif
 
-            {{-- پیام خطا کلی --}}
             @if ($errors->any())
-                <div class="alert alert-danger soft-card p-3 small">
-                    لطفاً خطاهای زیر را بررسی کن:
-                    <ul class="mb-0 mt-1">
-                        @foreach ($errors->all() as $err)
-                            <li>{{ $err }}</li>
+                <div class="alert alert-danger join-alert">
+                    <div class="fw-bold mb-1">لطفاً خطاها را بررسی کن:</div>
+                    <ul class="mb-0 pe-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
                         @endforeach
                     </ul>
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('student.classrooms.join') }}" class="mt-2">
-                @csrf
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">کد ورود کلاس</label>
-
-                    {{-- dir="ltr" برای نمایش درست کد --}}
-                    <input type="text" dir="ltr" name="join_code"
-                        class="form-control join-input @error('join_code') is-invalid @enderror"
-                        value="{{ old('join_code') }}" placeholder="مثلاً: ABC123" autocomplete="off">
-
-                    @error('join_code')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-
-                    <div class="form-text">
-                        بعد از ثبت کد، کلاس به لیست «کلاس‌های من» اضافه می‌شود و آزمون‌های کلاس برایت فعال خواهد شد.
-                    </div>
+            <div class="join-card">
+                <div class="join-card-title">ورود کد دعوت</div>
+                <div class="join-card-note">
+                    کد دعوت معمولاً ۶ تا ۱۲ کاراکتر است (عدد/حروف). دقیق وارد کن.
                 </div>
 
-                <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-primary d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check2-circle"></i>
-                        عضویت در کلاس
-                    </button>
+                <form method="POST" action="{{ route('student.classrooms.join') }}" class="join-form" novalidate>
+                    @csrf
 
-                    <a href="{{ route('student.classrooms.index') }}"
-                        class="btn btn-link d-inline-flex align-items-center gap-1">
-                        <i class="bi bi-arrow-right"></i>
-                        بازگشت
+<label for="join_code" class="join-label">کد دعوت کلاس</label>
+<input
+    type="text"
+    id="join_code"
+    name="join_code"
+    value="{{ old('join_code') }}"
+    class="form-control join-input @error('join_code') is-invalid @enderror"
+    placeholder="مثلاً: 494C5446"
+    autocomplete="off"
+    inputmode="text"
+    maxlength="32"
+    required
+>
+
+@error('join_code')
+    <div class="invalid-feedback">
+        {{ $message }}
+    </div>
+@enderror
+
+
+                    <div class="join-actions mt-3">
+                        <button type="submit" class="btn btn-success join-btn">
+                            عضویت در کلاس
+                        </button>
+
+                        <a href="{{ route('student.classrooms.index') }}" class="btn btn-outline-primary join-btn">
+                            بازگشت به کلاس‌های من
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="join-tip-card mt-3">
+                <div class="join-tip-title">راهنما</div>
+                <ul class="join-tip-list">
+                    <li>اگر کد را اشتباه بزنی، سیستم کلاس را پیدا نمی‌کند.</li>
+                    <li>بعد از عضویت، می‌توانی آزمون‌های کلاسی را از صفحه «شروع آزمون» ببینی.</li>
+                    <li>اگر چند بار خطا گرفتی، از معلم بخواه کد جدید بدهد.</li>
+                </ul>
+
+                <div class="join-tip-actions">
+                    <a href="{{ route('student.exams.classroom') }}" class="btn btn-outline-success join-btn">
+                        دیدن آزمون‌های کلاسی
+                    </a>
+                    <a href="{{ route('student.support.index') }}" class="btn btn-outline-secondary join-btn">
+                        پشتیبانی
                     </a>
                 </div>
+            </div>
 
-            </form>
         </div>
-    </div>
+    </section>
 @endsection

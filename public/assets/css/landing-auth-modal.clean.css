@@ -1,0 +1,38 @@
+:root{
+  --primary: #00CED1;
+  --primary-light: rgba(0, 206, 209, 0.1);
+  --primary-gradient: linear-gradient(135deg, #00CED1, #20B2AA);
+  --secondary: #4682B4;
+  --light: #ffffff;
+  --dark: #2F4F4F;
+  --gray: #708090;
+  --light-gray: #F0F8FF;
+  --success: #32CD32;
+  --success-light: rgba(50, 205, 50, 0.1);
+  --elementary: #4A90E2;
+  --middle-school: #32CD32;
+
+  --radius-xl: 24px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.16);
+}
+
+@keyframes fadeIn{
+  from{ opacity:0; transform:translateY(20px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.modal.fade .modal-content{
+  animation: fadeIn 0.4s ease-out;
+}
+
+.modal-content{
+  border: none !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.verification-code{
+  font-family: 'Courier New', monospace !important;
+  letter-spacing: 10px !important;
+}

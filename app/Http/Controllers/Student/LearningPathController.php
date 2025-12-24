@@ -24,7 +24,8 @@ class LearningPathController extends Controller
             ])
             ->where('student_id', $student->id)
             ->whereIn('status', ['submitted', 'graded', 'finished'])
-            ->latest('submitted_at')
+            ->orderByDesc('finished_at')
+            ->orderByDesc('created_at')
             ->take(5)
             ->get();
 
@@ -51,7 +52,7 @@ class LearningPathController extends Controller
         // ==============================
         // 2) محاسبات پیشرفت و Level
         // ==============================
-        $overallPercent = round($attempts->avg(fn($a) => (float) ($a->percent ?? 0)));
+        $overallPercent = round($attempts->avg(fn ($a) => (float) ($a->percent ?? 0)));
 
         $currentLevel = max(1, (int) floor($overallPercent / 25) + 1);
         $currentLevel = min($currentLevel, 5);
@@ -63,12 +64,11 @@ class LearningPathController extends Controller
         // 3) استخراج نقاط ضعف
         // ==============================
         $wrongAnswers = $attempts
-            ->flatMap(fn($a) => $a->answers()->get())   // ✅ FIX HERE
-            ->filter(fn($ans) => (int) $ans->is_correct === 0);
-            // ->values();
+            ->flatMap(fn ($a) => $a->answers()->get())   // ✅ FIX HERE
+            ->filter(fn ($ans) => (int) $ans->is_correct === 0);
+        // ->values();
         $weakSubjects = $wrongAnswers
-            ->groupBy(fn($ans) =>
-                optional($ans->question->exam->subject)->title
+            ->groupBy(fn ($ans) => optional($ans->question->exam->subject)->title
                 ?? optional($ans->question->exam->subject)->name
                 ?? 'بدون درس'
             )
@@ -80,7 +80,7 @@ class LearningPathController extends Controller
             ->all();
 
         $weakTypes = $wrongAnswers
-            ->groupBy(fn($ans) => $ans->question->type ?? 'unknown')
+            ->groupBy(fn ($ans) => $ans->question->type ?? 'unknown')
             ->map->count()
             ->sortDesc()
             ->keys()
@@ -88,17 +88,17 @@ class LearningPathController extends Controller
             ->values()
             ->map(function ($t) {
                 return match ($t) {
-                    'mcq'        => 'تست‌های ۴ گزینه‌ای',
+                    'mcq' => 'تست‌های ۴ گزینه‌ای',
                     'true_false' => 'صحیح/غلط',
                     'fill_blank' => 'جای خالی',
-                    'essay'      => 'تشریحی',
-                    default      => 'سوالات ترکیبی',
+                    'essay' => 'تشریحی',
+                    default => 'سوالات ترکیبی',
                 };
             })
             ->all();
 
         $weakDifficulties = $wrongAnswers
-            ->groupBy(fn($ans) => $ans->question->difficulty ?? 'medium')
+            ->groupBy(fn ($ans) => $ans->question->difficulty ?? 'medium')
             ->map->count()
             ->sortDesc()
             ->keys()
@@ -106,16 +106,16 @@ class LearningPathController extends Controller
             ->values()
             ->map(function ($d) {
                 return match ($d) {
-                    'easy'  => 'سوالات ساده (تمرکز روی دقت)',
-                    'hard'  => 'سوالات سخت (نیاز به تمرین بیشتر)',
+                    'easy' => 'سوالات ساده (تمرکز روی دقت)',
+                    'hard' => 'سوالات سخت (نیاز به تمرین بیشتر)',
                     default => 'سوالات متوسط (تقویت پایه)',
                 };
             })
             ->all();
 
         $focusTopics = array_values(array_unique(array_filter([
-            ...array_map(fn($s) => "ضعف در درس: " . $s, $weakSubjects),
-            ...array_map(fn($t) => "تقویت مهارت: " . $t, $weakTypes),
+            ...array_map(fn ($s) => 'ضعف در درس: '.$s, $weakSubjects),
+            ...array_map(fn ($t) => 'تقویت مهارت: '.$t, $weakTypes),
             ...$weakDifficulties,
         ])));
 
@@ -136,7 +136,7 @@ class LearningPathController extends Controller
         $recommendedLevel = match (true) {
             $overallPercent >= 85 => 'olympiad',
             $overallPercent >= 60 => 'konkur',
-            default               => 'taghviyati',
+            default => 'taghviyati',
         };
 
         // ==============================
@@ -159,115 +159,115 @@ class LearningPathController extends Controller
         ));
     }
 
-
     /**
      * پیشنهاد 3 آزمون:
      * 1) سخت‌تر / سطح بالاتر
      * 2) مشابه برای رکورد
      * 3) کوتاه تقویتی
      */
-private function suggestNextExams(int $studentId, $attempts, int $overallPercent, array $weakSubjects)
-{
-    $user = Auth::user();
+    private function suggestNextExams(int $studentId, $attempts, int $overallPercent, array $weakSubjects)
+    {
+        $user = Auth::user();
 
-    $classroomIds = $user->classrooms?->pluck('id') ?? collect();
+        $classroomIds = $user->classrooms?->pluck('id') ?? collect();
 
-    $doneExamIds = Attempt::where('student_id', $studentId)
-        ->whereIn('status', ['submitted', 'graded', 'finished'])
-        ->pluck('exam_id')
-        ->unique();
+        $doneExamIds = Attempt::where('student_id', $studentId)
+            ->whereIn('status', ['submitted', 'graded', 'finished'])
+            ->pluck('exam_id')
+            ->unique();
 
-    // ✅ base مقاوم
-    $base = Exam::query()
-        ->withCount('questions')
-        ->where('is_published', 1)
-        ->where('is_active', 1)
-        ->whereNotIn('id', $doneExamIds)
-        ->when(Schema::hasColumn('exams','start_at'), function ($q) {
-            $q->where(function ($x) {
-                $x->whereNull('start_at')
-                  ->orWhere('start_at', '<=', now());
-            });
-        })
-        ->where(function ($q) use ($classroomIds) {
-
-            if (Schema::hasColumn('exams','scope')) {
-                $q->whereIn('scope', ['free', 'public', 'general', 'all'])
-                  ->orWhereNull('scope');
-            } else {
-                $q->whereRaw('1=1');
-            }
-
-            if ($classroomIds->isNotEmpty() && Schema::hasColumn('exams','classroom_id')) {
-                $q->orWhereIn('classroom_id', $classroomIds);
-            }
-        });
-
-    $lastExam      = $attempts->first()?->exam;
-    $lastLevel     = $lastExam->level ?? null;
-    $lastSubjectId = $lastExam->subject_id ?? null;
-
-    // 1) سخت‌تر
-    $harder = (clone $base)
-        ->when(true, function ($q) use ($overallPercent) {
-            if ($overallPercent >= 85) $q->where('level', 'olympiad');
-            elseif ($overallPercent >= 60) $q->where('level', 'konkur');
-            else $q->where('level', 'taghviyati');
-        })
-        ->when($lastSubjectId, fn($q) => $q->where('subject_id', $lastSubjectId))
-        ->latest()
-        ->first();
-
-    // 2) مشابه
-    $similar = (clone $base)
-        ->when($lastLevel, fn($q) => $q->where('level', $lastLevel))
-        ->when($lastSubjectId, fn($q) => $q->where('subject_id', $lastSubjectId))
-        ->latest()
-        ->first();
-
-    // 3) کوتاه
-    $short = (clone $base)
-        ->where('level', 'taghviyati')
-        ->orderBy('duration', 'asc')
-        ->first();
-
-    // اگر ضعف درس داریم
-    if (!empty($weakSubjects)) {
-        $weakExam = (clone $base)
-            ->whereHas('subject', function ($q) use ($weakSubjects) {
-                $q->where(function ($qq) use ($weakSubjects) {
-                    $qq->whereIn('title', $weakSubjects);
+        // ✅ base مقاوم
+        $base = Exam::query()
+            ->withCount('questions')
+            ->where('is_published', 1)
+            ->where('is_active', 1)
+            ->whereNotIn('id', $doneExamIds)
+            ->when(Schema::hasColumn('exams', 'start_at'), function ($q) {
+                $q->where(function ($x) {
+                    $x->whereNull('start_at')
+                        ->orWhere('start_at', '<=', now());
                 });
             })
+            ->where(function ($q) use ($classroomIds) {
 
+                if (Schema::hasColumn('exams', 'scope')) {
+                    $q->whereIn('scope', ['free', 'public', 'general', 'all'])
+                        ->orWhereNull('scope');
+                } else {
+                    $q->whereRaw('1=1');
+                }
+
+                if ($classroomIds->isNotEmpty() && Schema::hasColumn('exams', 'classroom_id')) {
+                    $q->orWhereIn('classroom_id', $classroomIds);
+                }
+            });
+
+        $lastExam = $attempts->first()?->exam;
+        $lastLevel = $lastExam->level ?? null;
+        $lastSubjectId = $lastExam->subject_id ?? null;
+
+        // 1) سخت‌تر
+        $harder = (clone $base)
+            ->when(true, function ($q) use ($overallPercent) {
+                if ($overallPercent >= 85) {
+                    $q->where('level', 'olympiad');
+                } elseif ($overallPercent >= 60) {
+                    $q->where('level', 'konkur');
+                } else {
+                    $q->where('level', 'taghviyati');
+                }
+            })
+            ->when($lastSubjectId, fn ($q) => $q->where('subject_id', $lastSubjectId))
             ->latest()
             ->first();
 
-        $harder ??= $weakExam;
-        $similar ??= $weakExam;
-        $short  ??= $weakExam;
-    }
-
-    $out = collect([$harder, $similar, $short])
-        ->filter()
-        ->unique('id')
-        ->values();
-
-    // ✅ اگر هنوز کمتر از 3 بود، از هرچی هست پر کن
-    if ($out->count() < 3) {
-        $fill = (clone $base)
+        // 2) مشابه
+        $similar = (clone $base)
+            ->when($lastLevel, fn ($q) => $q->where('level', $lastLevel))
+            ->when($lastSubjectId, fn ($q) => $q->where('subject_id', $lastSubjectId))
             ->latest()
-            ->take(3 - $out->count())
-            ->get();
+            ->first();
 
-        $out = $out->concat($fill)->unique('id')->values();
+        // 3) کوتاه
+        $short = (clone $base)
+            ->where('level', 'taghviyati')
+            ->orderBy('duration', 'asc')
+            ->first();
+
+        // اگر ضعف درس داریم
+        if (! empty($weakSubjects)) {
+            $weakExam = (clone $base)
+                ->whereHas('subject', function ($q) use ($weakSubjects) {
+                    $q->where(function ($qq) use ($weakSubjects) {
+                        $qq->whereIn('title', $weakSubjects);
+                    });
+                })
+
+                ->latest()
+                ->first();
+
+            $harder ??= $weakExam;
+            $similar ??= $weakExam;
+            $short ??= $weakExam;
+        }
+
+        $out = collect([$harder, $similar, $short])
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        // ✅ اگر هنوز کمتر از 3 بود، از هرچی هست پر کن
+        if ($out->count() < 3) {
+            $fill = (clone $base)
+                ->latest()
+                ->take(3 - $out->count())
+                ->get();
+
+            $out = $out->concat($fill)->unique('id')->values();
+        }
+
+        return $out;
     }
-
-    return $out;
-}
-
-
-
 
     /**
      * پیشنهاد پیش‌فرض برای دانش‌آموز تازه‌وارد
@@ -279,7 +279,8 @@ private function suggestNextExams(int $studentId, $attempts, int $overallPercent
             ->where('scope', 'free')
             ->where('is_published', 1)
             ->where('is_active', 1)
-            ->orderBy('duration', 'asc')
+            ->orderBy('questions_count', 'asc')
+            ->orderByDesc('created_at')
             ->take(3)
             ->get();
     }

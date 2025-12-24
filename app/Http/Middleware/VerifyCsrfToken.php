@@ -10,5 +10,6 @@ class VerifyCsrfToken extends Middleware
         // ✅ OTP برای مهمان‌ها نباید CSRF بخواد
         'auth/send-otp',
         'auth/verify-otp',
+        'auth/set-role',
     ];
 }

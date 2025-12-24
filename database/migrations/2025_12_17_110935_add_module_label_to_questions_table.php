@@ -6,21 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('questions', function (Blueprint $table) {
-            // اضافه کردن ستون‌های مورد نیاز
-            $table->string('module_label')->nullable()->after('subject_id');
-            $table->unsignedBigInteger('chapter_id')->nullable()->after('module_label');
-            $table->integer('page_number')->nullable()->after('chapter_id');
-            $table->enum('difficulty', ['easy', 'medium', 'hard'])->nullable()->after('score');
+            // مشکل: ستون difficulty ممکنه از قبل وجود داشته باشه
+            if (!Schema::hasColumn('questions', 'difficulty')) {
+                $table->enum('difficulty', ['easy', 'medium', 'hard'])->nullable()->after('score');
+            }
+            
+            // بقیه ستون‌ها...
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->dropColumn(['module_label', 'chapter_id', 'page_number', 'difficulty']);
+            $table->dropColumn(['difficulty']); // و بقیه ستون‌ها
         });
     }
 };

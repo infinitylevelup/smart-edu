@@ -1,0 +1,24 @@
+/*
+  Optional Patch Layer
+  - فقط برای override کردن توکن‌های landing.css بدون دست زدن به فایل اصلی.
+  - اگر چیزی نمی‌خواهی override کنی، همین فایل را نگه دار (مشکلی ندارد).
+*/
+
+:root{
+  /* مثال‌ها (در صورت نیاز uncomment کن): */
+
+  /* --sky: #4AA3FF; */
+  /* --sky-dark: #1e7ae6; */
+  /* --green: #6FD7B2; */
+  /* --gold: #D6A73A; */
+
+  /* --text: #0a0c0e; */
+  /* --muted: #64748b; */
+  /* --light-bg: #f8fafc; */
+
+  /* --radius-lg: 24px; */
+  /* --radius-md: 16px; */
+  /* --radius-sm: 12px; */
+
+  /* --transition: all .3s ease; */
+}

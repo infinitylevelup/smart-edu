@@ -10,9 +10,6 @@ class TaxonomySeeder extends Seeder
 {
     public function run(): void
     {
-        // ==========================================================
-        // 0) TRUNCATE OUTSIDE TRANSACTION  (MySQL TRUNCATE auto-commits)
-        // ==========================================================
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         DB::table("subjects")->truncate();
@@ -25,12 +22,8 @@ class TaxonomySeeder extends Seeder
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // ==========================================================
-        // INSERTS
-        // ==========================================================
         DB::transaction(function () {
 
-            // helper for insert basic taxonomy rows
             $insBasic = function ($table, $data) {
                 return DB::table($table)->insertGetId(array_merge([
                     "uuid"       => (string) Str::uuid(),
@@ -43,8 +36,6 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 1) Sections
-            // (فرض بر اساس الگوی جدول‌های شما: name_fa, slug, sort_order, is_active)
-            // اگر اسم ستون متنیش فرق داشت، فقط name_fa رو عوض کن.
             // ==========================================================
             $sections = [
                 ["name_fa" => "متوسطه اول",  "slug" => "middle-1"],
@@ -65,7 +56,6 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 2) Grades
-            // schema واقعی: section_id, value, name_fa, slug
             // ==========================================================
             $gradesData = [
                 "متوسطه اول" => [
@@ -90,8 +80,8 @@ class TaxonomySeeder extends Seeder
                 ],
             ];
 
-            $gradeIdsBySection = [];   // [sectionName][value] => id
-            $gradeSectionOf = [];      // [gradeId] => sectionId
+            $gradeIdsBySection = [];
+            $gradeSectionOf = [];
             foreach ($gradesData as $sectionName => $grades) {
                 $sort = 1;
                 foreach ($grades as $g) {
@@ -109,8 +99,6 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 3) Branches
-            // schema واقعی: section_id, slug, name_fa
-            // (توجه: grade_id در branches وجود ندارد)
             // ==========================================================
             $branchesData = [
                 "متوسطه اول" => ["عمومی"],
@@ -119,8 +107,8 @@ class TaxonomySeeder extends Seeder
                 "هنرستان کار و دانش"    => ["کارودانش"],
             ];
 
-            $branchIds = [];        // [sectionName][branchName] => id
-            $branchSectionOf = [];  // [branchId] => sectionId
+            $branchIds = [];
+            $branchSectionOf = [];
             foreach ($branchesData as $sectionName => $branches) {
                 $sort = 1;
                 foreach ($branches as $b) {
@@ -137,7 +125,6 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 4) Fields
-            // schema واقعی: branch_id, slug, name_fa
             // ==========================================================
             $fieldsData = [
                 "عمومی" => ["عمومی"],
@@ -164,8 +151,8 @@ class TaxonomySeeder extends Seeder
                 ],
             ];
 
-            $fieldIds = [];         // [branchName][fieldName] => id
-            $fieldBranchOf = [];    // [fieldId] => branchId
+            $fieldIds = [];
+            $fieldBranchOf = [];
             foreach ($branchIds as $sectionName => $bMap) {
                 foreach ($bMap as $branchName => $branchId) {
 
@@ -187,8 +174,6 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 5) Subfields
-            // (schema دقیق رو نفرستادی ولی طبق الگو: field_id, slug unique, name_fa)
-            // slug باید global unique باشه => fieldSlug-subSlug
             // ==========================================================
             $subfieldsData = [
                 "کامپیوتر" => ["شبکه","نرم‌افزار","تولید محتوا"],
@@ -198,7 +183,7 @@ class TaxonomySeeder extends Seeder
                 "عمومی" => [],
             ];
 
-            $subfieldIds = []; // [fieldName][subName] => id
+            $subfieldIds = [];
 
             foreach ($fieldIds as $branchName => $fMap) {
                 foreach ($fMap as $fieldName => $fid) {
@@ -223,15 +208,13 @@ class TaxonomySeeder extends Seeder
 
             // ==========================================================
             // 6) Subject Types
-            // schema واقعی: فقط لیست عمومی، هیچ FK ندارد.
-            // name ستون: name_fa
             // ==========================================================
             $subjectTypes = [
                 ["name_fa" => "عمومی",  "slug" => "omomi"],
                 ["name_fa" => "تخصصی", "slug" => "takhassosi"],
             ];
 
-            $subjectTypeIds = []; // [name_fa] => id
+            $subjectTypeIds = [];
             $sort = 1;
             foreach ($subjectTypes as $st) {
                 $stid = $insBasic("subject_types", [
@@ -243,11 +226,7 @@ class TaxonomySeeder extends Seeder
             }
 
             // ==========================================================
-            // 7) Subjects
-            // schema واقعی:
-            // title_fa (NOT NULL)
-            // grade_id, branch_id, field_id (NOT NULL)
-            // subfield_id (nullable), subject_type_id (nullable)
+            // 7) Subjects - بخش اصلاح شده
             // ==========================================================
             $subjectsData = [
                 "عمومی" => [
@@ -281,7 +260,6 @@ class TaxonomySeeder extends Seeder
                     $branchId  = $fieldBranchOf[$fid];
                     $sectionId = $branchSectionOf[$branchId];
 
-                    // همه پایه‌های همان section
                     $gradesOfSection = collect($gradeIdsBySection)
                         ->filter(fn($v, $secName) => $sectionIds[$secName] == $sectionId)
                         ->first() ?? [];
@@ -292,26 +270,27 @@ class TaxonomySeeder extends Seeder
 
                         foreach ($typeMap as $typeName => $subs) {
 
-                            $typeId = $subjectTypeIds[$typeName] ?? null; // nullable ok
+                            $typeId = $subjectTypeIds[$typeName] ?? null;
                             $sort = 1;
 
                             foreach ($subs as $subj) {
 
-                                // slug global unique
                                 $slug = Str::slug($fieldName . "-" . $typeName . "-" . $subj . "-" . $gradeValue);
 
+                                // بخش اصلاح شده: اضافه کردن section_id
                                 DB::table("subjects")->insert([
                                     "uuid"            => (string) Str::uuid(),
-                                    "title_fa"        => $subj,   // ✅ ستون صحیح
+                                    "title_fa"        => $subj,
                                     "slug"            => $slug,
                                     "sort_order"      => $sort++,
                                     "is_active"       => 1,
 
+                                    "section_id"      => $sectionId, // اضافه شد
                                     "grade_id"        => $gradeId,
                                     "branch_id"       => $branchId,
                                     "field_id"        => $fid,
                                     "subfield_id"     => null,
-                                    "subject_type_id" => $typeId, // nullable
+                                    "subject_type_id" => $typeId,
 
                                     "created_at"      => now(),
                                     "updated_at"      => now(),

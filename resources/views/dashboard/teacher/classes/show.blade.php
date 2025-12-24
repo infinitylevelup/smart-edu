@@ -137,7 +137,10 @@
 @endpush
 
 @section('content')
-    <div class="container-fluid">
+<div class="container-fluid"
+     data-page="teacher-classes-show"
+     data-destroy-url="{{ route('teacher.classes.destroy', $class) }}"
+     data-redirect-after-delete="{{ route('teacher.classes.index') }}">
 
         {{-- HERO HEADER --}}
         <div class="hero mb-4 fade-up">
@@ -381,12 +384,13 @@
                     style="border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.04)">
                     <div class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle me-1"></i> ناحیه خطر</div>
                     <div class="small text-muted mb-2">حذف کلاس باعث حذف ارتباط دانش‌آموزان با این کلاس می‌شود.</div>
-                    <form action="{{ route('teacher.classes.destroy', $class) }}" method="POST">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-outline-danger w-100" onclick="return confirm('کلاس حذف شود؟')">
+                        <button type="button"
+                                class="btn btn-outline-danger w-100"
+                                data-action="delete"
+                                data-confirm="کلاس حذف شود؟">
                             حذف کلاس
                         </button>
-                    </form>
+
                 </div>
             </div>
 

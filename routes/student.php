@@ -1,97 +1,99 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Student\StudentExamController;
-use App\Http\Controllers\Student\StudentClassController;
 use App\Http\Controllers\Student\LearningPathController;
 use App\Http\Controllers\Student\MyTeachersController;
+use App\Http\Controllers\Student\StudentClassController;
+use App\Http\Controllers\Student\StudentExamController;
 use App\Http\Controllers\Student\StudentProfileController;
-use App\Http\Controllers\Student\PublicExamController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('dashboard')->middleware(['auth', 'role.selected'])->group(function () {
-        Route::prefix('student')->name('student.')->middleware('role:student')->group(function ()
-        {
+Route::prefix('dashboard')->middleware(['auth'])->group(function () {
 
-                // Dashboard
-                Route::view('/', 'dashboard.student.index')->name('index');
+    Route::prefix('student')->name('student.')->middleware('role:student')->group(function () {
 
+        // Dashboard
+        // Dashboard
+        Route::get('/', function () {
+            $user = Auth::user();
 
-                // Classrooms
-                Route::get('/classrooms/join', [StudentClassController::class, 'showJoinForm'])
-                    ->name('classrooms.join.form');
+            // canonical list از رابطه کلاس‌های دانش‌آموز
+            $classes = $user->classrooms()
+                ->with('teacher')
+                ->withCount(['students', 'exams'])
+                ->latest()
+                ->get();
 
-                Route::post('/classrooms/join', [StudentClassController::class, 'join'])
-                    ->name('classrooms.join');
+            return view('dashboard.student.index', compact('user', 'classes'));
+        })->name('index');
 
-                Route::get('/classrooms', [StudentClassController::class, 'index'])
-                    ->name('classrooms.index');
+        // Classrooms
+        Route::get('/classrooms/join', [StudentClassController::class, 'showJoinForm'])
+            ->name('classrooms.join.form');
 
-                Route::get('/classrooms/{classroom}', [StudentClassController::class, 'show'])
-                    ->name('classrooms.show');
+        Route::post('/classrooms/join', [StudentClassController::class, 'join'])
+            ->name('classrooms.join');
 
+        Route::get('/classrooms', [StudentClassController::class, 'index'])
+            ->name('classrooms.index');
 
-                // Exams (legacy general list - keep for now)
-                Route::get('/exams', [StudentExamController::class, 'index'])
-                    ->name('exams.index');
+        Route::get('/classrooms/{classroom}', [StudentClassController::class, 'show'])
+            ->name('classrooms.show');
 
-                // ✅ NEW: split exam lists by type
-                Route::get('/exams/public', [StudentExamController::class, 'publicIndex'])
-                    ->name('exams.public');
+        // Exams (legacy general list - keep for now)
+        Route::get('/exams', [StudentExamController::class, 'index'])
+            ->name('exams.index');
 
-                Route::get('/exams/classroom', [StudentExamController::class, 'classroomIndex'])
-                    ->name('exams.classroom');
+        // ✅ NEW: split exam lists by type
+        Route::get('/exams/public', [StudentExamController::class, 'publicIndex'])
+            ->name('exams.public');
 
-                // Shared exam routes
-                Route::get('/exams/{exam}', [StudentExamController::class, 'show'])
-                    ->name('exams.show');
+        Route::get('/exams/classroom', [StudentExamController::class, 'classroomIndex'])
+            ->name('exams.classroom');
 
-                Route::get('/exams/{exam}/take', [StudentExamController::class, 'take'])
-                    ->name('exams.take');
+        // Shared exam routes
+        Route::get('/exams/{exam}', [StudentExamController::class, 'show'])
+            ->name('exams.show');
 
-                Route::post('/exams/{exam}/start', [StudentExamController::class, 'start'])
-                    ->name('exams.start');
+        Route::get('/exams/{exam}/take', [StudentExamController::class, 'take'])
+            ->name('exams.take');
 
-                Route::post('/exams/{exam}/submit', [StudentExamController::class, 'submit'])
-                    ->name('exams.submit');
+        Route::post('/exams/{exam}/start', [StudentExamController::class, 'start'])
+            ->name('exams.start');
 
+        Route::post('/exams/{exam}/submit', [StudentExamController::class, 'submit'])
+            ->name('exams.submit');
 
-                // ✅ NEW: Attempt result & analysis
-                Route::get('/attempts/{attempt}/result', [StudentExamController::class, 'result'])
-                    ->name('attempts.result');
+        // ✅ NEW: Attempt result & analysis
+        Route::get('/attempts/{attempt}/result', [StudentExamController::class, 'result'])
+            ->name('attempts.result');
 
-                Route::get('/attempts/{attempt}/analysis', [StudentExamController::class, 'analysis'])
-                    ->name('attempts.analysis');
+        Route::get('/attempts/{attempt}/analysis', [StudentExamController::class, 'analysis'])
+            ->name('attempts.analysis');
 
-                // legacy attempt show (keep so old links won't break)
-                Route::get('/attempts/{attempt}', [StudentExamController::class, 'attemptShow'])
-                    ->name('attempts.show');
+        // legacy attempt show (keep so old links won't break)
+        Route::get('/attempts/{attempt}', [StudentExamController::class, 'attemptShow'])
+            ->name('attempts.show');
 
+        // Reports / Support
+        Route::view('/reports', 'dashboard.student.reports.index')
+            ->name('reports.index');
 
-                // Reports / Support
-                Route::view('/reports', 'dashboard.student.reports.index')
-                    ->name('reports.index');
+        Route::view('/support', 'dashboard.student.support.index')
+            ->name('support.index');
 
-                Route::view('/support', 'dashboard.student.support.index')
-                    ->name('support.index');
+        // Learning Path / My Teachers
+        Route::get('/learning-path', [LearningPathController::class, 'index'])
+            ->name('learning-path');
 
+        Route::get('/my-teachers', [MyTeachersController::class, 'index'])
+            ->name('my-teachers.index');
 
-                // Learning Path / My Teachers
-                Route::get('/learning-path', [LearningPathController::class, 'index'])
-                    ->name('learning-path');
+        // Profile
+        Route::get('/profile', [StudentProfileController::class, 'edit'])
+            ->name('profile');
 
-                Route::get('/my-teachers', [MyTeachersController::class, 'index'])
-                    ->name('my-teachers.index');
-
-
-                // Profile
-                Route::get('/profile', [StudentProfileController::class, 'edit'])
-                    ->name('profile');
-
-                Route::put('/profile', [StudentProfileController::class, 'update'])
-                    ->name('profile.update');
-
-                Route::post('/profile/avatar', [StudentProfileController::class, 'updateAvatar'])
-                    ->name('profile.avatar');
-        });
-
+        Route::put('/profile', [StudentProfileController::class, 'update'])
+            ->name('profile.update');
     });
+});

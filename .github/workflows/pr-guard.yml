@@ -1,0 +1,103 @@
+name: PR Guard (Issue + Critical Checklist + Final Confirmation Section)
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  pr-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR body (Issue link + Critical checkboxes + Final section)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr?.body || "";
+            const title = pr?.title || "";
+
+            function fail(msg) {
+              core.setFailed(msg);
+            }
+
+            // 1) Require Issue link line e.g. "- Issue: #123" or "Issue: #123"
+            const issueRegex = /(^|\n)\s*(-\s*)?Issue:\s*#\d+\s*(\n|$)/i;
+            if (!issueRegex.test(body)) {
+              fail("❌ Missing required Issue link. Add a line like: `- Issue: #123` under 'Related Issue (REQUIRED)'.");
+              return;
+            }
+
+            // 2) Require the "Final Confirmation (CRITICAL)" section to exist
+            // This prevents removing the whole section from the PR template.
+            const finalSectionRegex = /##\s*🚨\s*Final Confirmation\s*\(CRITICAL\)/i;
+            if (!finalSectionRegex.test(body)) {
+              fail("❌ Missing required section: 'Final Confirmation'. Do not remove it from the PR template.");
+              return;
+            }
+
+
+            // 3) Require CRITICAL checkboxes to be checked ([x])
+            // Must match the PR template wording exactly (case-insensitive).
+            const requiredChecks = [
+              // Core Safety (CRITICAL)
+              "Main user path remains simple and uninterrupted",
+              "Feature can be fully ignored without losing progress",
+              "No forced interaction or attention grabbing",
+
+              // Respect & Tone (CRITICAL)
+              "Respectful and non-patronizing",
+              "Errors are never mocked or punished",
+
+              // Error Handling & Trust (CRITICAL)
+              "Mistakes result in guidance or reward",
+              "Safe and understandable for parents / educators",
+
+              // Data Safety & Clarity (CRITICAL)
+              "Does NOT alter or risk real user data",
+              "Self-explanatory (no tooltips, no tutorials required)",
+
+              // Final Confirmation (CRITICAL)
+              "This PR fully complies with the Feature Decision Checklist",
+              "Removing this feature would NOT break the core user journey",
+              "This feature gives users space to discover, not pressure to engage"
+            ];
+
+            const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            const missing = [];
+            for (const text of requiredChecks) {
+              // Must appear as a checked task item: - [x] <text>   (or * [x] <text>)
+              const re = new RegExp(
+                `(^|\\n)\\s*[-*]\\s*\\[x\\]\\s*${escapeRegex(text)}\\s*(\\n|$)`,
+                "i"
+              );
+              if (!re.test(body)) missing.push(text);
+            }
+
+            if (missing.length) {
+              fail(
+                "❌ PR Guard failed: The following CRITICAL checklist items must be checked (use `- [x] ...`):\n" +
+                missing.map(x => `- ${x}`).join("\n")
+              );
+              return;
+            }
+
+            // 4) Require Layer selection (at least one checked)
+            const coreChecked = /-\s*\[x\]\s*Core Experience/i.test(body);
+            const hiddenChecked = /-\s*\[x\]\s*Hidden Layer/i.test(body);
+
+            if (!coreChecked && !hiddenChecked) {
+              fail("❌ Please select a Feature Layer by checking one: Core Experience or Hidden Layer.");
+              return;
+            }
+
+            // Optional stricter mode: prevent checking both (uncomment if you want)
+            // if (coreChecked && hiddenChecked) {
+            //   fail("❌ Please select ONLY ONE Feature Layer (Core Experience OR Hidden Layer), not both.");
+            //   return;
+            // }
+
+            console.log("✅ PR Guard passed for:", title);

@@ -422,7 +422,37 @@
     }
 
     .class-footer { padding: 25px 30px 30px; border-top: 2px solid var(--light-gray); position: relative; z-index: 2; }
-    .class-actions { display: flex; gap: 15px; }
+.class-actions{
+  display: flex;
+  gap: 15px;
+}
+
+.class-actions > a,
+.class-actions > button{
+  flex: 1 1 0;
+  min-width: 0;        /* خیلی مهم برای مساوی شدن عرض‌ها */
+}
+
+.btn-class-action{
+  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;        /* برای تراز دقیق آیکن و متن */
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+
+  /* برای اینکه button مثل a رفتار کند */
+  appearance: none;
+  -webkit-appearance: none;
+  border: 3px solid transparent; /* هم‌ضخامت با بقیه */
+  line-height: 1;
+}
+
+.btn-class-action i{
+  line-height: 1;  /* جلوگیری از بالا/پایین شدن آیکن */
+}
     .btn-class-action {
         flex: 1; padding: 16px; border-radius: var(--radius-md); font-weight: 800; font-size: 1rem;
         display:flex; align-items:center; justify-content:center; gap:10px; transition: all 0.4s;
@@ -586,7 +616,9 @@
 @endpush
 
 @section('content')
-<div class="classes-container">
+<div class="classes-container"
+     data-page="teacher-classes-index"
+     data-destroy-url-template="{{ route('teacher.classes.destroy', '__ID__') }}">
 
     {{-- ========== STATS HEADER ========== --}}
     <div class="stats-header">
@@ -913,6 +945,14 @@ $isNew = $diffMinutes < 10080; // 7 روز = 7*24*60
                             <button class="btn-class-action btn-details"
                                     onclick="showClassDetails({{ $class->id }})">
                                 <i class="fas fa-eye"></i> جزئیات
+                            </button>
+                            <button type="button"
+                                    class="btn-class-action btn-details text-danger"
+                                    data-action="delete"
+                                    data-id="{{ $class->id }}"
+                                    data-confirm="کلاس «{{ $class->title ?? 'بدون نام' }}» حذف شود؟">
+                                <i class="fas fa-trash"></i>
+                                حذف
                             </button>
                         </div>
                     </div>

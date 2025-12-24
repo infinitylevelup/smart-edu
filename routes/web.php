@@ -1,9 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AI\ExamAIController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DevController; // 👈 اضافه شد
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\AI\ExamAIController; // 👈 اضافه شد
-use App\Http\Controllers\DevController;
+use Illuminate\Support\Facades\Route;
 
 // ============================================================
 // 🌐 مسیرهای عمومی (بدون احراز هویت)
@@ -45,6 +46,8 @@ require __DIR__.'/admin.php';
 
 // پنل مشاور
 require __DIR__.'/counselor.php';
+//
+require __DIR__.'/parent.php';
 
 // ============================================================
 // 🤖 مسیرهای هوش مصنوعی (AI)
@@ -70,13 +73,13 @@ if (app()->environment('local')) {
     Route::prefix('dev')->middleware(['auth'])->group(function () {
         // صفحه اصلی کنسول توسعه
         Route::get('/console', [DevController::class, 'index'])->name('dev.console');
-        
+
         // اجرای دستورات
         Route::post('/run-command', [DevController::class, 'runCommand'])->name('dev.run.command');
-        
+
         // لیست آزمون‌ها
         Route::get('/exams-list', [DevController::class, 'getExamsList'])->name('dev.exams.list');
-        
+
         // دانلود فایل‌های لاگ
         Route::get('/download-logs', [DevController::class, 'downloadLogs'])->name('dev.download.logs');
     });
@@ -89,3 +92,7 @@ if (app()->environment('local')) {
 Route::fallback(function () {
     return redirect()->route('landing');
 });
+
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');

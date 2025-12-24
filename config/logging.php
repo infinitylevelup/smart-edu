@@ -32,8 +32,10 @@ return [
     */
 
     'deprecations' => [
-        'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),
+        'channel' => env('LOG_DEPRECATIONS_CHANNEL', null),
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
+        'LOG_DEPRECATIONS_TRACE' => env('LOG_DEPRECATIONS_TRACE', false),
+
     ],
 
     /*
@@ -69,11 +71,12 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
+'days' => (int) env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
 
             // 👇 این خط حیاتی است
-            'tap' => [App\Logging\CustomizeFormatter::class],
+            'tap' => [App\Logging\PrettyFormatter::class], // ✅ فقط این خط را اضافه کن
+
         ],
 
         'slack' => [
@@ -104,14 +107,14 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
-            'formatter' => env('LOG_STDERR_FORMATTER'),
+'formatter' => env('LOG_STDERR_FORMATTER', null),
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
         'syslog' => [
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
-            'facility' => env('LOG_SYSLOG_FACILITY', LOG_USER),
+'facility' => (int) env('LOG_SYSLOG_FACILITY', LOG_USER),
             'replace_placeholders' => true,
         ],
 
